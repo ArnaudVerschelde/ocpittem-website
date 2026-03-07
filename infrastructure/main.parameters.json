@@ -1,0 +1,72 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "location": {
+      "value": "westeurope"
+    },
+    "nameSuffix": {
+      "value": "2026"
+    },
+    "storageAccountName": {
+      "value": "stocpittem2026"
+    },
+    "functionAppName": {
+      "value": "func-ocpittem-2026"
+    },
+    "staticWebAppName": {
+      "value": "swa-ocpittem-2026"
+    },
+    "appInsightsName": {
+      "value": "appi-ocpittem-2026"
+    },
+    "keyVaultName": {
+      "value": "kv-ocpittem-2026"
+    },
+    "enablePurgeProtection": {
+      "value": true
+    },
+    "appFrontendUrl": {
+      "value": "https://ocpittem.be"
+    },
+    "appContactEmail": {
+      "value": "oudercomitepittem@gmail.com"
+    },
+    "sendGridFromEmail": {
+      "value": "balparental@ocpittem.be"
+    },
+    "sendGridFromName": {
+      "value": "Oudercomit\u00e9 met Pit"
+    },
+    "stripeTicketPriceId": {
+      "value": "price_xxx"
+    },
+    "tableNameOrders": {
+      "value": "Orders"
+    },
+    "tableNameTickets": {
+      "value": "Tickets"
+    },
+    "tableNameWebhookEvents": {
+      "value": "WebhookEvents"
+    },
+    "tableNameSponsors": {
+      "value": "SponsorRequests"
+    },
+    "kvSecretStripeSecretKeyName": {
+      "value": "stripe-secret-key"
+    },
+    "kvSecretStripeWebhookSecretName": {
+      "value": "stripe-webhook-secret"
+    },
+    "kvSecretSendGridApiKeyName": {
+      "value": "sendgrid-api-key"
+    },
+    "corsAllowedOrigins": {
+      "value": [
+        "https://ocpittem.be",
+        "https://www.ocpittem.be"
+      ]
+    }
+  }
+}
