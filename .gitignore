@@ -1,0 +1,60 @@
+# Dependencies
+node_modules/
+.pnp/
+.pnp.js
+
+# Build output
+frontend/dist/
+backend/**/bin/
+backend/**/obj/
+
+# Environment files
+.env
+.env.local
+.env.*.local
+frontend/.env
+
+# IDE
+.vs/
+.vscode/
+*.suo
+*.user
+*.sln.docstates
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Azure Functions
+local.settings.json
+
+# Logs
+*.log
+npm-debug.log*
+
+# Misc
+*.swp
+*.swo
+
+# Vite build output
+dist/
+
+# Vite/React tooling caches
+.vite/
+.eslintcache
+
+# Azure Static Web Apps CLI
+.swa/
+
+# Azure Functions local artifacts
+backend/**/.azure/
+backend/**/obj/
+backend/**/bin/
+
+# Coverage / test output
+coverage/
+TestResults/
+
+# OneDrive / Windows noise
+*.tmp
+~$*
