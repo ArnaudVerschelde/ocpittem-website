@@ -1,0 +1,5 @@
+<Solution>
+  <Folder Name="/backend/">
+    <Project Path="backend/OCPittem.Functions/OCPittem.Functions.csproj" />
+  </Folder>
+</Solution>
