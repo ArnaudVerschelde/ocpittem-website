@@ -33,7 +33,7 @@ const members: Member[] = [
     { name: 'Arnaud Verschelde', initials: 'AV', description: 'papa van Henri en Alixe' },
     { name: 'Charlot Bossuyt', initials: 'CB', description: 'mama van Nya en Zyas' },
     { name: 'Cindy De Clercq', initials: 'CDC', description: 'mama van Maure' },
-    { name: 'Delfine Lafaut', initials: 'DL', description: 'mama van Odiel' },
+    { name: 'Delphine Lafaut', initials: 'DL', description: 'mama van Odiel' },
     { name: 'Dempsey Van Renterghem', initials: 'DVR', description: 'papa van Vince, Fons en Dré' },
     { name: 'Dominique Vermeersch', initials: 'DV', description: 'papa van Maure' },
     { name: 'Eline Desmet', initials: 'ED', description: 'mama van Louise en Victor' },
