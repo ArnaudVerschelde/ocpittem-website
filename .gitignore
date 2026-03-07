@@ -1,60 +1,85 @@
+# =========================
 # Dependencies
+# =========================
 node_modules/
 .pnp/
 .pnp.js
 
+# =========================
 # Build output
+# =========================
+dist/
 frontend/dist/
 backend/**/bin/
 backend/**/obj/
 
-# Environment files
+# =========================
+# Tooling caches
+# =========================
+.vite/
+frontend/.vite/
+frontend/.vite/deps/
+.eslintcache
+
+# =========================
+# Environment / secrets
+# =========================
 .env
+.env.*
 .env.local
 .env.*.local
 frontend/.env
+frontend/.env.*
+backend/**/local.settings.json
+local.settings.json
 
-# IDE
+# =========================
+# IDE (Visual Studio / VS Code)
+# =========================
 .vs/
 .vscode/
 *.suo
 *.user
+*.userosscache
 *.sln.docstates
-
-# OS
-.DS_Store
-Thumbs.db
-
-# Azure Functions
-local.settings.json
-
-# Logs
+*.cache
 *.log
-npm-debug.log*
 
-# Misc
-*.swp
-*.swo
+# Visual Studio solution user files / sqlite
+**/*.sqlite
+**/*.db
 
-# Vite build output
-dist/
+# =========================
+# Azure Functions local artifacts
+# =========================
+backend/**/.azure/
+.azure/
 
-# Vite/React tooling caches
-.vite/
-.eslintcache
-
+# =========================
 # Azure Static Web Apps CLI
+# =========================
 .swa/
 
-# Azure Functions local artifacts
-backend/**/.azure/
-backend/**/obj/
-backend/**/bin/
+# =========================
+# Logs
+# =========================
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+*.log
 
-# Coverage / test output
-coverage/
-TestResults/
-
-# OneDrive / Windows noise
+# =========================
+# OS junk
+# =========================
+.DS_Store
+Thumbs.db
+Desktop.ini
 *.tmp
 ~$*
+
+# =========================
+# Misc / Editor swap files
+# =========================
+*.swp
+*.swo
