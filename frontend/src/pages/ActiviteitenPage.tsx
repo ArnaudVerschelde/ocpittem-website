@@ -5,7 +5,7 @@ import Section from '../components/Section';
 const events = [
   {
     title: 'Bal Parental 2026',
-    date: 'Datum wordt later bekendgemaakt',
+    date: 'zaterdag 20 juni 2026',
     description:
       'Ons jaarlijks ouderbal! Een fantastische avond met muziek, drank en gezelligheid. Tickets zijn binnenkort online beschikbaar.',
     cta: { label: 'Tickets & info', to: '/bal-parental' },
