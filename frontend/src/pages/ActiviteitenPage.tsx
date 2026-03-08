@@ -13,7 +13,7 @@ const events = [
   },
   {
     title: 'Apero op de speelplaats',
-    date: 'Zomer 2026',
+    date: 'September 2026',
     description:
         'Een gezellige dag waarbij ouders, kinderen en leerkrachten samenkomen op de speelplaats voor een hapje en een drankje. Ontspannen en gezellig!',
     cta: null,
