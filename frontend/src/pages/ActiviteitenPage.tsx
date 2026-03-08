@@ -12,10 +12,18 @@ const events = [
     color: 'primary',
   },
   {
-    title: 'Koekjesverkoop 2025',
-    date: 'Najaar 2025',
+    title: 'Apero op de speelplaats',
+    date: 'Zomer 2026',
     description:
-      'Onze jaarlijkse koekjesverkoop. Bestel heerlijke koekjes en steun daarmee de school!',
+        'Een gezellige dag waarbij ouders, kinderen en leerkrachten samenkomen op de speelplaats voor een hapje en een drankje. Ontspannen en gezellig!',
+    cta: null,
+    color: 'accent',
+  },
+  {
+    title: 'Koekjesverkoop 2026',
+    date: 'Najaar 2026',
+    description:
+        'Onze jaarlijkse koekjesverkoop. Bestel heerlijke koekjes en steun daarmee de school!',
     cta: null,
     color: 'accent',
   },

@@ -15,10 +15,10 @@ const activities = [
       'Ons jaarlijks feest voor ouders en sympathisanten. Een avond vol muziek, gezelligheid en plezier!',
   },
   {
-    icon: '🎄',
-    title: 'Kerstmarkt & evenementen',
+    icon: '🥂',
+    title: 'Apero op de speelplaats',
     description:
-      'We helpen mee aan schoolevenementen zoals de kerstmarkt, fancy fair en andere festiviteiten doorheen het schooljaar.',
+      'Een gezellige dag waarbij ouders, kinderen en leerkrachten samenkomen op de speelplaats voor een hapje en een drankje. Ontspannen en gezellig!',
   },
   {
     icon: '📚',
@@ -33,10 +33,10 @@ const activities = [
       'We vormen de brug tussen ouders en de school. Zo zorgen we samen voor een warme, betrokken schoolgemeenschap.',
   },
   {
-    icon: '🎈',
-    title: 'Speelgoeddag & buitenactiviteiten',
+    icon: '🎪',
+    title: 'Extra activiteiten',
     description:
-      'Regelmatig organiseren we leuke extra activiteiten voor de kinderen, van een speelgoeddag tot sportieve evenementen.',
+      'Doorheen het jaar verrassen we met extra leuke initiatieven zoals een foodtruck, sportieve activiteiten en nog veel meer verrassingen.',
   },
 ];
 
@@ -67,7 +67,7 @@ export default function WatDoenWePage() {
             <h2 className="section-title">Waar gaat het geld naartoe?</h2>
             <p className="section-subtitle">
               Alle opbrengsten van onze activiteiten gaan rechtstreeks naar projecten voor de kinderen
-              van de gemeentelijke basisschool van Pittem. Denk aan nieuw speelplaatsmateriaal,
+              van de basisschool PIT! van Pittem. Denk aan nieuw speelplaatsmateriaal,
               leuke schooluitstappen, boeken voor de bib, en nog veel meer.
             </p>
           </div>

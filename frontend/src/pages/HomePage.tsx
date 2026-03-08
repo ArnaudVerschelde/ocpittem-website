@@ -13,7 +13,7 @@ export default function HomePage() {
         <div className="relative mx-auto max-w-7xl px-4 py-24 sm:px-6 sm:py-32 lg:px-8">
           <div className="max-w-3xl">
             <p className="text-sm font-semibold uppercase tracking-widest text-primary-100">
-              Gemeentelijke Basisschool Pittem
+              Basisschool PIT! Pittem
             </p>
             <h1 className="mt-3 font-display text-5xl font-extrabold tracking-tight text-white sm:text-6xl lg:text-7xl">
               Oudercomité

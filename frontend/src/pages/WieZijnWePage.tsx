@@ -21,6 +21,8 @@ const board: BoardMember[] = [
     { name: 'Matthias Lefebvre', role: 'Ondervoorzitter', initials: 'ML', color: 'bg-primary-100 text-primary-700' },
     { name: 'Steven Truyaert', role: 'Secretaris', initials: 'ST', color: 'bg-primary-100 text-primary-700' },
     { name: 'Arnaud Verschelde', role: 'Penningmeester', initials: 'AV', color: 'bg-primary-100 text-primary-700' },
+    { name: 'Nynke Colpaert', role: 'Bestuurslid', initials: 'NC', color: 'bg-primary-100 text-primary-700' },
+    { name: 'Petra Vansteenhuyse', role: 'Bestuurslid', initials: 'PV', color: 'bg-primary-100 text-primary-700' },
 ];
 
 const members: Member[] = [

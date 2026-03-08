@@ -17,7 +17,7 @@ export default function Footer() {
               </span>
             </div>
             <p className="mt-3 text-sm leading-relaxed text-gray-500">
-              Het oudercomité van de gemeentelijke basisschool van Pittem.
+              Het oudercomité van de basisschool PIT! van Pittem.
               Samen zorgen we voor onvergetelijke momenten voor onze kinderen!
             </p>
           </div>

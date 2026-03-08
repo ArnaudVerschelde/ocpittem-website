@@ -310,7 +310,7 @@ export default function BalParentalPage() {
             <h2 className="section-title">Praktische info</h2>
             <dl className="mt-8 space-y-6">
               {[
-                { label: '📅 Datum', value: 'Wordt later bekendgemaakt' },
+                { label: '📅 Datum', value: 'zaterdag 20 juni 2026' },
                 { label: '📍 Locatie', value: 'Pittem — locatie wordt later bekendgemaakt' },
                 { label: '🎵 Muziek', value: 'DJ — wordt later bekendgemaakt' },
                 { label: '💰 Prijs', value: '€25 per persoon (voorverkoop)' },
