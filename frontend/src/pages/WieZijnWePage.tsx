@@ -150,11 +150,11 @@ export default function WieZijnWePage() {
                         </p>
                     </div>
 
-                    <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+                    <div className="mt-12 flex flex-wrap justify-center gap-6">
                         {board.map((member) => {
                             const initials = resolveInitials(member);
                             return (
-                                <div key={member.name} className="card flex flex-col items-center gap-3 text-center">
+                                <div key={member.name} className="card flex w-full flex-col items-center gap-3 text-center sm:w-60">
                                     <AvatarInitials
                                         initials={initials}
                                         size={64}
