@@ -41,7 +41,7 @@ export default function HomePage() {
         <div className="text-center">
           <h2 className="section-title">Wat maakt ons bijzonder?</h2>
           <p className="section-subtitle mx-auto max-w-2xl">
-            Het oudercomité van de gemeentelijke basisschool van Pittem zet zich in
+            Het oudercomité van de basisschool PIT! van Pittem zet zich in
             voor leuke activiteiten en een hechte schoolgemeenschap.
           </p>
         </div>
