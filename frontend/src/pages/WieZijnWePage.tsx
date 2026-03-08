@@ -112,7 +112,7 @@ export default function WieZijnWePage() {
         <>
             <Hero
                 title="Wie zijn we?"
-                subtitle="Een enthousiaste groep ouders die zich vrijwillig inzet voor de kinderen van de gemeentelijke basisschool van Pittem."
+                subtitle="Een enthousiaste groep ouders die zich vrijwillig inzet voor de kinderen van de basisschool PIT! van Pittem."
                 backgroundClass="bg-gradient-to-br from-secondary-500 via-secondary-600 to-secondary-800"
             />
 
