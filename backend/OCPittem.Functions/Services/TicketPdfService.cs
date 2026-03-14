@@ -4,11 +4,6 @@ using QuestPDF.Infrastructure;
 
 namespace OCPittem.Functions.Services;
 
-public interface ITicketPdfService
-{
-    byte[] GenerateTicketPdf(string ticketId, string customerName, string eventName, string qrPayload);
-}
-
 public class TicketPdfService : ITicketPdfService
 {
     public TicketPdfService()

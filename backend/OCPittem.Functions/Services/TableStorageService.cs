@@ -1,6 +1,5 @@
 using Azure;
 using Azure.Data.Tables;
-using Microsoft.Extensions.Configuration;
 using OCPittem.Functions.Models;
 
 namespace OCPittem.Functions.Services;
@@ -13,13 +12,13 @@ public class TableStorageService : IStorageService
     private readonly string _webhookEventsTable;
     private readonly string _sponsorsTable;
 
-    public TableStorageService(string connectionString, IConfiguration config)
+    public TableStorageService(string connectionString, StorageOptions options)
     {
         _serviceClient = new TableServiceClient(connectionString);
-        _ordersTable = config["Storage:TableNameOrders"] ?? "Orders";
-        _ticketsTable = config["Storage:TableNameTickets"] ?? "Tickets";
-        _webhookEventsTable = config["Storage:TableNameWebhookEvents"] ?? "WebhookEvents";
-        _sponsorsTable = config["Storage:TableNameSponsors"] ?? "SponsorRequests";
+        _ordersTable = options.TableNameOrders;
+        _ticketsTable = options.TableNameTickets;
+        _webhookEventsTable = options.TableNameWebhookEvents;
+        _sponsorsTable = options.TableNameSponsors;
     }
 
     private async Task<TableClient> GetTableAsync(string tableName)

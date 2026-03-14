@@ -5,12 +5,6 @@ namespace OCPittem.Functions.Services;
 
 public record StripeCheckoutResult(string Url, string SessionId);
 
-public interface IStripeService
-{
-    Task<StripeCheckoutResult> CreateCheckoutSessionAsync(string orderId, string email, string name, int quantity);
-    Stripe.Event ConstructWebhookEvent(string json, string signature);
-}
-
 public class StripeService : IStripeService
 {
     private readonly string _webhookSecret;

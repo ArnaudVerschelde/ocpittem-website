@@ -1,8 +1,9 @@
 using Microsoft.Azure.Functions.Worker;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
+using OCPittem.Functions;
 using OCPittem.Functions.Services;
 
 var host = new HostBuilder()
@@ -11,29 +12,32 @@ var host = new HostBuilder()
     {
         var config = context.Configuration;
 
+        services.Configure<StripeOptions>(config.GetSection("Stripe"));
+        services.Configure<MailjetOptions>(config.GetSection("Mailjet"));
+        services.Configure<EmailOptions>(config.GetSection("Email"));
+        services.Configure<AppOptions>(config.GetSection("App"));
+        services.Configure<StorageOptions>(config.GetSection("Storage"));
+
         services.AddSingleton<IStorageService>(sp =>
         {
-            var connectionString = config.GetValue<string>("AzureWebJobsStorage") ?? "UseDevelopmentStorage=true";
-            return new TableStorageService(connectionString, config);
+            var connectionString = config["AzureWebJobsStorage"] ?? "UseDevelopmentStorage=true";
+            var opts = sp.GetRequiredService<IOptions<StorageOptions>>().Value;
+            return new TableStorageService(connectionString, opts);
         });
 
         services.AddSingleton<IStripeService>(sp =>
         {
-            var secretKey = config["Stripe:SecretKey"] ?? "";
-            var webhookSecret = config["Stripe:WebhookSecret"] ?? "";
-            var ticketPriceId = config["Stripe:TicketPriceId"] ?? "";
-            var frontendUrl = config["App:FrontendUrl"] ?? "http://localhost:5173";
-            return new StripeService(secretKey, webhookSecret, ticketPriceId, frontendUrl);
+            var stripe = sp.GetRequiredService<IOptions<StripeOptions>>().Value;
+            var app = sp.GetRequiredService<IOptions<AppOptions>>().Value;
+            return new StripeService(stripe.SecretKey, stripe.WebhookSecret, stripe.TicketPriceId, app.FrontendUrl);
         });
 
         services.AddSingleton<IEmailService>(sp =>
         {
-            var apiKey = config["SendGrid:ApiKey"] ?? "";
-            var fromEmail = config["SendGrid:FromEmail"] ?? "noreply@ocpittem.be";
-            var fromName = config["SendGrid:FromName"] ?? "Oudercomité met Pit";
-            var enabled = config.GetValue<bool>("Email:Enabled");
-            var logger = sp.GetRequiredService<ILogger<SendGridEmailService>>();
-            return new SendGridEmailService(apiKey, fromEmail, fromName, enabled, logger);
+            var mailjet = sp.GetRequiredService<IOptions<MailjetOptions>>().Value;
+            var email = sp.GetRequiredService<IOptions<EmailOptions>>().Value;
+            var logger = sp.GetRequiredService<ILogger<MailjetEmailService>>();
+            return new MailjetEmailService(mailjet.ApiKey, mailjet.ApiSecret, mailjet.FromEmail, mailjet.FromName, email.Enabled, logger);
         });
 
         services.AddSingleton<ITicketPdfService, TicketPdfService>();
