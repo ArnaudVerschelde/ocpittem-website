@@ -40,8 +40,8 @@ public class StripeService : IStripeService
                 }
             ],
             Mode = "payment",
-            SuccessUrl = $"{_frontendUrl}/bal-parental?success=true&session_id={{CHECKOUT_SESSION_ID}}",
-            CancelUrl = $"{_frontendUrl}/bal-parental?canceled=true",
+            SuccessUrl = $"{_frontendUrl}/betaling/success?session_id={{CHECKOUT_SESSION_ID}}",
+            CancelUrl = $"{_frontendUrl}/betaling/cancel",
             Metadata = new Dictionary<string, string>
             {
                 { "orderId", orderId },
