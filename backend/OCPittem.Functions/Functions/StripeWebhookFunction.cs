@@ -51,28 +51,14 @@ public class StripeWebhookFunction
         }
         catch (StripeException ex)
         {
-            var msg = ex.Message ?? "";
-            var isSignatureProblem =
-                msg.Contains("No signatures found", StringComparison.OrdinalIgnoreCase) ||
-                msg.Contains("signature", StringComparison.OrdinalIgnoreCase);
-
-            if (isSignatureProblem)
-            {
-                var remoteIp = req.Headers.TryGetValue("X-Forwarded-For", out var ips) ? ips.ToString() : "unknown";
-                _logger.LogWarning(ex, "Stripe webhook signature verification failed. Check Stripe__WebhookSecret. RemoteIp={RemoteIp}", remoteIp);
-                return new BadRequestObjectResult(new { error = "Invalid signature." });
-            }
-
-            _logger.LogError(ex, "Stripe webhook parsing failed. Message={Message}", ex.Message);
-            return new StatusCodeResult(500);
+            _logger.LogWarning(ex, "Invalid Stripe webhook signature");
+            return new BadRequestObjectResult(new { error = "Invalid signature." });
         }
-
-        _logger.LogInformation("Stripe webhook received. EventId={EventId}, Type={Type}", stripeEvent.Id, stripeEvent.Type);
 
         // Idempotency check
         if (await _storage.WebhookEventExistsAsync(stripeEvent.Id))
         {
-            _logger.LogInformation("Stripe webhook already processed. EventId={EventId}", stripeEvent.Id);
+            _logger.LogInformation("Webhook event {EventId} already processed, skipping", stripeEvent.Id);
             return new OkResult();
         }
 
