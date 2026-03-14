@@ -32,9 +32,15 @@ jobs:
           cd publish
           zip -r ../func-package.zip .
 
-      - name: Deploy
-        uses: Azure/functions-action@v1
+      - name: Azure Login
+        uses: Azure/login@v2
         with:
-          app-name: "func-ocpittem-2026"
-          package: "func-package.zip"
-          publish-profile: ${{ secrets.AZURE_FUNCTIONAPP_PUBLISH_PROFILE }}
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Deploy to Flex Consumption
+        run: |
+          az functionapp deploy \
+            --resource-group rg-ocpittem \
+            --name func-ocpittem-2026 \
+            --src-path func-package.zip \
+            --type zip
