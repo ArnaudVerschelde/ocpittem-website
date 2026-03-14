@@ -19,13 +19,8 @@ jobs:
         with:
           dotnet-version: "8.0.x"
 
-      - name: Build
-        run: |
-          dotnet restore backend/OCPittem.Functions/OCPittem.Functions.csproj --configfile backend/OCPittem.Functions/nuget.config
-          dotnet publish backend/OCPittem.Functions/OCPittem.Functions.csproj \
-            -c Release \
-            -o publish \
-            --no-restore
+      - name: Restore NuGet packages
+        run: dotnet restore backend/OCPittem.Functions/OCPittem.Functions.csproj --configfile backend/OCPittem.Functions/nuget.config
 
       - name: Azure Login
         uses: Azure/login@v2
@@ -37,6 +32,6 @@ jobs:
 
       - name: Deploy to Flex Consumption
         run: |
-          cd publish
-          func azure functionapp publish func-ocpittem-2026 --dotnet-isolated --no-build
+          cd backend/OCPittem.Functions
+          func azure functionapp publish func-ocpittem-2026 --dotnet-isolated
 
