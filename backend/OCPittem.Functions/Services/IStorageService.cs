@@ -11,4 +11,5 @@ public interface IStorageService
     Task<bool> WebhookEventExistsAsync(string eventId);
     Task SaveWebhookEventAsync(WebhookEventEntity webhookEvent);
     Task SaveSponsorRequestAsync(SponsorRequestEntity request);
+    Task UpsertWebhookEventAsync(WebhookEventEntity webhookEvent);
 }

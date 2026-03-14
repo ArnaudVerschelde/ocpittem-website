@@ -3,9 +3,11 @@ using Stripe.Checkout;
 
 namespace OCPittem.Functions.Services;
 
+public record StripeCheckoutResult(string Url, string SessionId);
+
 public interface IStripeService
 {
-    Task<string> CreateCheckoutSessionAsync(string orderId, string email, string name, int quantity);
+    Task<StripeCheckoutResult> CreateCheckoutSessionAsync(string orderId, string email, string name, int quantity);
     Stripe.Event ConstructWebhookEvent(string json, string signature);
 }
 
@@ -23,7 +25,7 @@ public class StripeService : IStripeService
         _frontendUrl = frontendUrl;
     }
 
-    public async Task<string> CreateCheckoutSessionAsync(string orderId, string email, string name, int quantity)
+    public async Task<StripeCheckoutResult> CreateCheckoutSessionAsync(string orderId, string email, string name, int quantity)
     {
         var options = new SessionCreateOptions
         {
@@ -49,7 +51,7 @@ public class StripeService : IStripeService
 
         var service = new SessionService();
         var session = await service.CreateAsync(options);
-        return session.Url;
+        return new StripeCheckoutResult(session.Url, session.Id);
     }
 
     public Stripe.Event ConstructWebhookEvent(string json, string signature)

@@ -65,6 +65,7 @@ public class StripeWebhookFunction
         // Record the event
         var webhookEntity = new WebhookEventEntity
         {
+            PartitionKey = "Stripe",
             RowKey = stripeEvent.Id,
             ReceivedAt = DateTime.UtcNow,
             Result = "received",
@@ -102,6 +103,7 @@ public class StripeWebhookFunction
             webhookEntity.Result = $"error: {ex.Message}";
         }
 
+        await _storage.UpsertWebhookEventAsync(webhookEntity);
         return new OkResult();
     }
 
@@ -121,7 +123,6 @@ public class StripeWebhookFunction
         }
 
         var orderId = session.Metadata.GetValueOrDefault("orderId") ?? "";
-        var customerName = session.Metadata.GetValueOrDefault("customerName") ?? "";
 
         if (string.IsNullOrEmpty(orderId))
         {
@@ -129,27 +130,20 @@ public class StripeWebhookFunction
             return;
         }
 
-        // Update order
         var order = await _storage.GetOrderByStripeSessionAsync(session.Id);
         if (order == null)
         {
-            // Order may have been stored without StripeSessionId — try finding by orderId
-            _logger.LogInformation("Order not found by session, creating tickets for order {OrderId}", orderId);
-        }
-        else
-        {
-            order.Status = "paid";
-            order.StripeSessionId = session.Id;
-            await _storage.UpdateOrderAsync(order);
+            _logger.LogWarning("Order not found for Stripe session {SessionId}. Cannot generate tickets.", session.Id);
+            return;
         }
 
-        // Generate tickets
-        var quantity = (int)(session.AmountTotal.GetValueOrDefault() > 0
-            ? session.LineItems?.Data?.Sum(li => li.Quantity ?? 0) ?? 1
-            : 1);
+        order.Status = "paid";
+        order.StripeSessionId = session.Id;
+        await _storage.UpdateOrderAsync(order);
 
-        // Use order quantity if available
-        if (order != null) quantity = order.Quantity;
+        var quantity = order.Quantity;
+        var email = session.CustomerEmail ?? order.Email ?? "";
+        var customerName = session.Metadata.GetValueOrDefault("customerName") ?? order.Name ?? "";
 
         var pdfPages = new List<byte[]>();
 
@@ -171,9 +165,7 @@ public class StripeWebhookFunction
             pdfPages.Add(pdf);
         }
 
-        // Send email with first ticket PDF (in production, merge PDFs or attach all)
         var combinedPdf = pdfPages.FirstOrDefault();
-        var email = session.CustomerEmail ?? order?.Email ?? "";
 
         if (!string.IsNullOrEmpty(email))
         {

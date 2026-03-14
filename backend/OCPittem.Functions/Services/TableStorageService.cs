@@ -85,4 +85,10 @@ public class TableStorageService : IStorageService
         var table = await GetTableAsync(_sponsorsTable);
         await table.AddEntityAsync(request);
     }
+
+    public async Task UpsertWebhookEventAsync(WebhookEventEntity webhookEvent)
+    {
+        var table = await GetTableAsync(_webhookEventsTable);
+        await table.UpsertEntityAsync(webhookEvent, TableUpdateMode.Replace);
+    }
 }

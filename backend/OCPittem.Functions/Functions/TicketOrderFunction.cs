@@ -48,7 +48,7 @@ public class TicketOrderFunction
 
         try
         {
-            var checkoutUrl = await _stripe.CreateCheckoutSessionAsync(orderId, body.Email, body.Name, body.Quantity);
+            var checkout = await _stripe.CreateCheckoutSessionAsync(orderId, body.Email, body.Name, body.Quantity);
 
             var order = new OrderEntity
             {
@@ -58,19 +58,22 @@ public class TicketOrderFunction
                 Name = body.Name,
                 Quantity = body.Quantity,
                 Status = "pending",
-                StripeSessionId = "",
+                StripeSessionId = checkout.SessionId,
             };
 
             await _storage.SaveOrderAsync(order);
 
             _logger.LogInformation("Checkout session created for order {OrderId}", orderId);
 
-            return new OkObjectResult(new CreateCheckoutResponse(checkoutUrl));
+            return new OkObjectResult(new CreateCheckoutResponse(checkout.Url));
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to create checkout session for order {OrderId}", orderId);
-            return new StatusCodeResult(StatusCodes.Status500InternalServerError);
+            return new ObjectResult(new { error = "Er ging iets mis bij het starten van de betaling." })
+            {
+                StatusCode = StatusCodes.Status500InternalServerError
+            };
         }
     }
 }
