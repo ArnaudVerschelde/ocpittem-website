@@ -22,11 +22,19 @@ jobs:
       - name: Build
         run: |
           dotnet restore backend/OCPittem.Functions/OCPittem.Functions.csproj --configfile backend/OCPittem.Functions/nuget.config
-          dotnet publish backend/OCPittem.Functions/OCPittem.Functions.csproj -c Release -o publish --no-restore
+          dotnet publish backend/OCPittem.Functions/OCPittem.Functions.csproj \
+            -c Release \
+            -o publish \
+            --no-restore
+
+      - name: Create zip package
+        run: |
+          cd publish
+          zip -r ../func-package.zip .
 
       - name: Deploy
         uses: Azure/functions-action@v1
         with:
           app-name: "func-ocpittem-2026"
-          package: "publish"
+          package: "func-package.zip"
           publish-profile: ${{ secrets.AZURE_FUNCTIONAPP_PUBLISH_PROFILE }}

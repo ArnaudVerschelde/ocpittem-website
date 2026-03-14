@@ -1,7 +1,7 @@
-// ============================================================
-// OC Pittem — Azure Infrastructure (Bicep) — West Europe
-// Deploy: az deployment group create -g rg-ocpittem -f infrastructure/main.bicep -p infrastructure/main.parameters.json
-// ============================================================
+# ============================================================
+# OC Pittem — Azure Infrastructure (Bicep) — West Europe
+# Deploy: az deployment group create -g rg-ocpittem -f infrastructure/main.bicep -p infrastructure/main.parameters.json
+# ============================================================
 
 @description('Location for all resources. Use westeurope to maximize service compatibility.')
 param location string = 'westeurope'
@@ -42,8 +42,12 @@ param tableNameWebhookEvents string = 'WebhookEvents'
 param tableNameSponsors string = 'SponsorRequests'
 
 // ---- Key Vault secret names (values are set AFTER deployment) ----
+// These params hold the *names* of secrets, not actual secret values — linter warnings are false positives.
+#disable-next-line secure-secrets-in-params
 param kvSecretStripeSecretKeyName string = 'stripe-secret-key'
+#disable-next-line secure-secrets-in-params
 param kvSecretStripeWebhookSecretName string = 'stripe-webhook-secret'
+#disable-next-line secure-secrets-in-params
 param kvSecretSendGridApiKeyName string = 'sendgrid-api-key'
 
 // ---- CORS ----
@@ -94,15 +98,21 @@ resource tableSponsors 'Microsoft.Storage/storageAccounts/tableServices/tables@2
 }
 
 // Content share for Functions (Linux Consumption)
-resource fileService 'Microsoft.Storage/storageAccounts/fileServices@2023-05-01' = {
+// NOT needed for Flex Consumption — replaced by blob container below
+
+// Blob container for Flex Consumption deployment packages
+resource blobService 'Microsoft.Storage/storageAccounts/blobServices@2023-05-01' = {
   parent: storageAccount
   name: 'default'
 }
-var contentShareName = toLower('content${uniqueString(resourceGroup().id, functionAppName)}')
-resource contentShare 'Microsoft.Storage/storageAccounts/fileServices/shares@2023-05-01' = {
-  parent: fileService
-  name: contentShareName
-  properties: {}
+
+var deploymentContainerName = 'func-deployments'
+resource deploymentContainer 'Microsoft.Storage/storageAccounts/blobServices/containers@2023-05-01' = {
+  parent: blobService
+  name: deploymentContainerName
+  properties: {
+    publicAccess: 'None'
+  }
 }
 
 // ============================================================
@@ -141,19 +151,19 @@ var stripeWebhookSecretUri = '${kvBaseUri}secrets/${kvSecretStripeWebhookSecretN
 var sendGridApiKeyUri = '${kvBaseUri}secrets/${kvSecretSendGridApiKeyName}'
 
 // ============================================================
-// App Service Plan (Consumption, Linux)
+// App Service Plan (Flex Consumption, Linux)
 // ============================================================
 resource hostingPlan 'Microsoft.Web/serverfarms@2023-12-01' = {
   name: '${functionAppName}-plan'
   location: location
-  sku: { name: 'Y1', tier: 'Dynamic' }
+  sku: { name: 'FC1', tier: 'FlexConsumption' }
   properties: {
     reserved: true // Linux
   }
 }
 
 // ============================================================
-// Function App (.NET 8 isolated)
+// Function App (.NET 8 isolated — Flex Consumption)
 // ============================================================
 resource functionApp 'Microsoft.Web/sites@2023-12-01' = {
   name: functionAppName
@@ -163,21 +173,33 @@ resource functionApp 'Microsoft.Web/sites@2023-12-01' = {
   properties: {
     serverFarmId: hostingPlan.id
     httpsOnly: true
+    functionAppConfig: {
+      deployment: {
+        storage: {
+          type: 'blobContainer'
+          value: '${storageAccount.properties.primaryEndpoints.blob}${deploymentContainerName}'
+          authentication: {
+            type: 'StorageAccountConnectionString'
+            storageAccountConnectionStringName: 'AzureWebJobsStorage'
+          }
+        }
+      }
+      scaleAndConcurrency: {
+        maximumInstanceCount: 100
+        instanceMemoryMB: 2048
+      }
+      runtime: {
+        name: 'dotnet-isolated'
+        version: '8.0'
+      }
+    }
     siteConfig: {
-      linuxFxVersion: 'DOTNET-ISOLATED|8.0'
       cors: {
         allowedOrigins: corsAllowedOrigins
       }
       appSettings: [
-        // Core runtime
-        { name: 'FUNCTIONS_EXTENSION_VERSION', value: '~4' }
-        { name: 'FUNCTIONS_WORKER_RUNTIME', value: 'dotnet-isolated' }
-        { name: 'WEBSITE_RUN_FROM_PACKAGE', value: '1' }
-
         // Storage
         { name: 'AzureWebJobsStorage', value: storageConnectionString }
-        { name: 'WEBSITE_CONTENTAZUREFILECONNECTIONSTRING', value: storageConnectionString }
-        { name: 'WEBSITE_CONTENTSHARE', value: contentShareName }
 
         // App Insights
         { name: 'APPINSIGHTS_INSTRUMENTATIONKEY', value: appInsights.properties.InstrumentationKey }
