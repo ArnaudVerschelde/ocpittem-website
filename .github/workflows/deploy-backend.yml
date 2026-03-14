@@ -1,4 +1,4 @@
-﻿name: Deploy Backend (Azure Functions)
+name: Deploy Backend (Azure Functions)
 
 on:
   push:
@@ -38,5 +38,5 @@ jobs:
       - name: Deploy to Flex Consumption
         run: |
           cd publish
-          func azure functionapp publish func-ocpittem-2026 --no-build
+          func azure functionapp publish func-ocpittem-2026 --dotnet-isolated --no-build
 
