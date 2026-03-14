@@ -60,7 +60,7 @@ public class StripeService : IStripeService
             json,
             signature,
             _webhookSecret,
-            tolerance: 300,
+            tolerance: 600,
             throwOnApiVersionMismatch: false
         );
     }
