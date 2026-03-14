@@ -13,7 +13,7 @@ export default function Footer() {
             <div className="flex items-center gap-3">
               <Logo size={36} />
               <span className="font-display text-base font-bold text-gray-900">
-                Oudercomité met Pit
+                Oudercomité met PIT!
               </span>
             </div>
             <p className="mt-3 text-sm leading-relaxed text-gray-500">
@@ -87,7 +87,7 @@ export default function Footer() {
 
         <div className="mt-10 border-t border-gray-200 pt-6 text-center">
           <p className="text-xs text-gray-400">
-            &copy; {year} Oudercomité met Pit — Pittem. Alle rechten voorbehouden.
+            &copy; {year} Oudercomité met PIT! — Pittem. Alle rechten voorbehouden.
           </p>
         </div>
       </div>

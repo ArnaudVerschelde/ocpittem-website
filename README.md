@@ -1,6 +1,6 @@
 # OC Pittem Website — ocpittem.be
 
-Moderne website voor **Oudercomité met Pit** (Pittem) met online ticketverkoop, sponsorpakketten en contactformulier.
+Moderne website voor **Oudercomité met PIT!** (Pittem) met online ticketverkoop, sponsorpakketten en contactformulier.
 
 ## Projectstructuur
 

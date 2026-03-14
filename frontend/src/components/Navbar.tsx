@@ -21,7 +21,7 @@ export default function Navbar() {
           <Logo size={40} />
           <div className="hidden sm:block">
             <span className="font-display text-lg font-bold text-gray-900">
-              Oudercomité met Pit
+              Oudercomité met PIT!
             </span>
             <span className="block text-xs text-gray-500">Pittem</span>
           </div>

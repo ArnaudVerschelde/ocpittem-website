@@ -19,7 +19,7 @@ export default function Logo({ size = 40 }: LogoProps) {
     return (
       <img
         src="/logo.png"
-        alt="Oudercomité met Pit logo"
+        alt="Oudercomité met PIT! logo"
         width={size}
         height={size}
         className="rounded-full object-cover"
@@ -35,7 +35,7 @@ export default function Logo({ size = 40 }: LogoProps) {
       viewBox="0 0 64 64"
       width={size}
       height={size}
-      aria-label="Oudercomité met Pit logo"
+      aria-label="Oudercomité met PIT! logo"
     >
       <defs>
         <linearGradient id="logo-bg" x1="0%" y1="0%" x2="100%" y2="100%">

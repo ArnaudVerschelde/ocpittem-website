@@ -31,8 +31,8 @@ param enablePurgeProtection bool = true
 // ---- App settings (non-secret) ----
 param appFrontendUrl string = 'https://ocpittem.be'
 param appContactEmail string = 'oudercomitepittem@gmail.com'
-param sendGridFromEmail string = 'balparental@ocpittem.be'
-param sendGridFromName string = 'Oudercomité met Pit'
+param sendGridFromEmail string = 'oudercomitepittem@gmail.com'
+param sendGridFromName string = 'Oudercomité met PIT!'
 param stripeTicketPriceId string = 'price_xxx'
 
 // ---- Table names ----

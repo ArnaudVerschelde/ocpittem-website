@@ -28,13 +28,13 @@ public class SendGridEmailService : IEmailService
         var msg = new SendGridMessage
         {
             From = new EmailAddress(_fromEmail, _fromName),
-            Subject = $"Jouw tickets voor Bal Parental — Oudercomité met Pit",
+            Subject = $"Jouw tickets voor Bal Parental — Oudercomité met PIT!",
             HtmlContent = $@"
                 <h2>Bedankt voor je bestelling, {toName}!</h2>
                 <p>Je hebt <strong>{quantity} ticket(s)</strong> besteld voor het Bal Parental.</p>
                 <p>In bijlage vind je jouw ticket(s) als PDF met QR-code.</p>
                 <p>Tot dan!</p>
-                <p><em>Oudercomité met Pit — Pittem</em></p>
+                <p><em>Oudercomité met PIT! — Pittem</em></p>
             ",
         };
         msg.AddTo(new EmailAddress(toEmail, toName));
@@ -72,14 +72,14 @@ public class SendGridEmailService : IEmailService
         var msg = new SendGridMessage
         {
             From = new EmailAddress(_fromEmail, _fromName),
-            Subject = $"Sponsoraanvraag ontvangen — Oudercomité met Pit",
+            Subject = $"Sponsoraanvraag ontvangen — Oudercomité met PIT!",
             HtmlContent = $@"
                 <h2>Bedankt voor uw sponsoraanvraag!</h2>
                 <p>Beste {companyName},</p>
                 <p>We hebben uw aanvraag voor het <strong>{packageName}</strong> pakket goed ontvangen.</p>
                 <p>Een lid van het oudercomité zal zo snel mogelijk contact met u opnemen voor de verdere afhandeling.</p>
                 <p>Met vriendelijke groeten,</p>
-                <p><em>Oudercomité met Pit — Pittem</em></p>
+                <p><em>Oudercomité met PIT! — Pittem</em></p>
             ",
         };
         msg.AddTo(new EmailAddress(toEmail));

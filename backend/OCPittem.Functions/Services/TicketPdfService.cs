@@ -30,7 +30,7 @@ public class TicketPdfService : ITicketPdfService
                 {
                     row.RelativeItem().Column(col =>
                     {
-                        col.Item().Text("Oudercomité met Pit").FontSize(20).Bold().FontColor(Colors.Orange.Darken2);
+                        col.Item().Text("Oudercomité met PIT!").FontSize(20).Bold().FontColor(Colors.Orange.Darken2);
                         col.Item().Text(eventName).FontSize(14).FontColor(Colors.Grey.Darken1);
                     });
                 });
