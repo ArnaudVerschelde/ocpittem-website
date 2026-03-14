@@ -122,7 +122,7 @@ export default function WieZijnWePage() {
                     <h2 className="section-title">Ons verhaal</h2>
                     <div className="mt-6 space-y-4 text-gray-600 leading-relaxed">
                         <p>
-                            Het <strong>Oudercomité met PIT!</strong> is het oudercomité van de basisschool PIT! van Pittem.
+                            Het <strong>Oudercomité met Pit</strong> is het oudercomité van de basisschool PIT! van Pittem.
                             We zijn een groep enthousiaste ouders die zich vrijwillig
                             inzetten om het schoolleven van onze kinderen nog leuker te maken.
                         </p>

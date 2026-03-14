@@ -110,7 +110,7 @@ export default function ContactPage() {
                     rel="noopener noreferrer"
                     className="text-sm text-primary-600 hover:text-primary-700"
                   >
-                    Oudercomité met PIT!
+                    Oudercomité met Pit
                   </a>
                 </div>
               </div>

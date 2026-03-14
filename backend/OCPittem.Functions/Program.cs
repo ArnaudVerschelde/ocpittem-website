@@ -29,7 +29,7 @@ var host = new HostBuilder()
         {
             var apiKey = config["SendGrid:ApiKey"] ?? "";
             var fromEmail = config["SendGrid:FromEmail"] ?? "noreply@ocpittem.be";
-            var fromName = config["SendGrid:FromName"] ?? "Oudercomité met PIT!";
+            var fromName = config["SendGrid:FromName"] ?? "Oudercomité met Pit";
             return new SendGridEmailService(apiKey, fromEmail, fromName);
         });
 

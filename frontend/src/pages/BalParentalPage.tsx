@@ -126,7 +126,7 @@ function TermsModal({ onClose }: { onClose: () => void }) {
           <div>
             <h3 className="font-semibold text-gray-900">2. Betaling</h3>
             <p className="mt-1">
-              Betaling verloopt via Stripe, een beveiligde betaalprovider. Oudercomité met PIT!
+              Betaling verloopt via Stripe, een beveiligde betaalprovider. Oudercomité met Pit
               bewaart geen betalingsgegevens op eigen servers. Alle transacties zijn beveiligd
               via SSL/TLS-encryptie.
             </p>
@@ -171,7 +171,7 @@ function TermsModal({ onClose }: { onClose: () => void }) {
           <div>
             <h3 className="font-semibold text-gray-900">7. Aansprakelijkheid</h3>
             <p className="mt-1">
-              Oudercomité met PIT! is niet aansprakelijk voor verlies, diefstal of schade aan
+              Oudercomité met Pit is niet aansprakelijk voor verlies, diefstal of schade aan
               persoonlijke bezittingen tijdens het evenement. Deelname is op eigen risico.
             </p>
           </div>
@@ -299,7 +299,7 @@ export default function BalParentalPage() {
 
       <Hero
         title="Bal Parental 2026"
-        subtitle="Het jaarlijks feest van het Oudercomité met PIT! Een onvergetelijke avond vol muziek, gezelligheid en plezier."
+        subtitle="Het jaarlijks feest van het Oudercomité met Pit! Een onvergetelijke avond vol muziek, gezelligheid en plezier."
         backgroundClass="bg-gradient-to-br from-primary-500 via-primary-600 to-secondary-700"
       />
 
