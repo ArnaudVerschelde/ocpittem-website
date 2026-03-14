@@ -2,6 +2,7 @@ using Microsoft.Azure.Functions.Worker;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using OCPittem.Functions.Services;
 
 var host = new HostBuilder()
@@ -30,7 +31,9 @@ var host = new HostBuilder()
             var apiKey = config["SendGrid:ApiKey"] ?? "";
             var fromEmail = config["SendGrid:FromEmail"] ?? "noreply@ocpittem.be";
             var fromName = config["SendGrid:FromName"] ?? "Oudercomité met Pit";
-            return new SendGridEmailService(apiKey, fromEmail, fromName);
+            var enabled = config.GetValue<bool>("Email:Enabled");
+            var logger = sp.GetRequiredService<ILogger<SendGridEmailService>>();
+            return new SendGridEmailService(apiKey, fromEmail, fromName, enabled, logger);
         });
 
         services.AddSingleton<ITicketPdfService, TicketPdfService>();

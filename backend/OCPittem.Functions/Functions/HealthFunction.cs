@@ -1,7 +1,7 @@
+using System.Net;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Azure.Functions.Worker.Http;
 using Microsoft.Extensions.Logging;
-using System.Net;
 
 namespace OCPittem.Functions.Functions;
 
@@ -15,13 +15,13 @@ public class HealthFunction
     }
 
     [Function("Health")]
-    public HttpResponseData Run(
+    public async Task<HttpResponseData> Run(
         [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "health")] HttpRequestData req)
     {
         _logger.LogInformation("Health check hit.");
+
         var res = req.CreateResponse(HttpStatusCode.OK);
-        res.Headers.Add("Content-Type", "application/json; charset=utf-8");
-        res.WriteString("""{"status":"ok"}""");
+        await res.WriteAsJsonAsync(new { status = "ok" });
         return res;
     }
 }
