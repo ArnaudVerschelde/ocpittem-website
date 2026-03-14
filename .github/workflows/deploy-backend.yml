@@ -1,4 +1,4 @@
-name: Deploy Backend (Azure Functions)
+﻿name: Deploy Backend (Azure Functions)
 
 on:
   push:
@@ -27,20 +27,16 @@ jobs:
             -o publish \
             --no-restore
 
-      - name: Create zip package
-        run: |
-          cd publish
-          zip -r ../func-package.zip .
-
       - name: Azure Login
         uses: Azure/login@v2
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
+      - name: Install Azure Functions Core Tools
+        run: npm install -g azure-functions-core-tools@4 --unsafe-perm true
+
       - name: Deploy to Flex Consumption
         run: |
-          az functionapp deploy \
-            --resource-group rg-ocpittem \
-            --name func-ocpittem-2026 \
-            --src-path func-package.zip \
-            --type zip
+          cd publish
+          func azure functionapp publish func-ocpittem-2026 --no-build
+
