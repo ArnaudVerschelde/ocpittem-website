@@ -253,7 +253,9 @@ export default function BalParentalPage() {
       });
       if (!res.ok) throw new Error();
       const data = await res.json();
-      if (data.checkoutUrl) window.location.href = data.checkoutUrl;
+      const checkoutUrl = data.checkoutUrl || data.url;
+      if (checkoutUrl) window.location.href = checkoutUrl;
+      else throw new Error("No checkout url in response");
     } catch {
       setTicketError('Er ging iets mis. Probeer het later opnieuw.');
     } finally {
