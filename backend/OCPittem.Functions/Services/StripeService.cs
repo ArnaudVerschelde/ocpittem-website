@@ -56,6 +56,12 @@ public class StripeService : IStripeService
 
     public Stripe.Event ConstructWebhookEvent(string json, string signature)
     {
-        return EventUtility.ConstructEvent(json, signature, _webhookSecret);
+        return EventUtility.ConstructEvent(
+            json,
+            signature,
+            _webhookSecret,
+            tolerance: 300,
+            throwOnApiVersionMismatch: false
+        );
     }
 }
