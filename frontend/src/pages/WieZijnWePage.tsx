@@ -18,10 +18,10 @@ type Member = PersonBase & {
 
 const board: BoardMember[] = [
     { name: 'Jolien De Neve', role: 'Voorzitter', initials: 'JDN', color: 'bg-primary-100 text-primary-700' },
-    { name: 'Matthias Lefebvre', role: 'Ondervoorzitter', initials: 'ML', color: 'bg-primary-100 text-primary-700' },
-    { name: 'Steven Truyaert', role: 'Secretaris', initials: 'ST', color: 'bg-primary-100 text-primary-700' },
+    { name: 'Matthias Lefebvre', role: 'Secretaris', initials: 'ML', color: 'bg-primary-100 text-primary-700' },
+    { name: 'Nynke Colpaert', role: 'Verantwoordelijke communicatie/sociale media', initials: 'NC', color: 'bg-primary-100 text-primary-700' },
     { name: 'Arnaud Verschelde', role: 'Penningmeester', initials: 'AV', color: 'bg-primary-100 text-primary-700' },
-    { name: 'Nynke Colpaert', role: 'Bestuurslid', initials: 'NC', color: 'bg-primary-100 text-primary-700' },
+    { name: 'Steven Truyaert', role: 'Bestuurslid', initials: 'ST', color: 'bg-primary-100 text-primary-700' },
     { name: 'Petra Vansteenhuyse', role: 'Bestuurslid', initials: 'PV', color: 'bg-primary-100 text-primary-700' },
 ];
 
