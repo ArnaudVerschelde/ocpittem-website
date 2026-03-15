@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using OCPittem.Functions.Models;
 using OCPittem.Functions.Services;
 
@@ -12,14 +13,17 @@ public class SponsorRequestFunction
 {
     private readonly IStorageService _storage;
     private readonly IEmailService _email;
-    private readonly IConfiguration _config;
+    private readonly IOptions<AppOptions> _appOptions;
     private readonly ILogger<SponsorRequestFunction> _logger;
 
-    public SponsorRequestFunction(IStorageService storage, IEmailService email, IConfiguration config, ILogger<SponsorRequestFunction> logger)
+    public SponsorRequestFunction(IStorageService storage, 
+        IEmailService email, 
+        IOptions<AppOptions> appOptions, 
+        ILogger<SponsorRequestFunction> logger)
     {
         _storage = storage;
         _email = email;
-        _config = config;
+        _appOptions = appOptions;
         _logger = logger;
     }
 
@@ -67,7 +71,9 @@ public class SponsorRequestFunction
             await _email.SendSponsorConfirmationAsync(body.Email, body.CompanyName, body.Package);
 
             // Notify the committee
-            var contactEmail = _config["App:ContactEmail"] ?? "oudercomitepittem@gmail.com";
+            var contactEmail = string.IsNullOrEmpty(_appOptions.Value.ContactEmail)
+                ? "oudercomitepittem@gmail.com"
+                : _appOptions.Value.ContactEmail;
             await _email.SendContactNotificationAsync(
                 body.ContactName,
                 body.Email,

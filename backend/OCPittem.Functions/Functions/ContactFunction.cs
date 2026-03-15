@@ -1,8 +1,8 @@
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.Functions.Worker;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using OCPittem.Functions.Models;
 using OCPittem.Functions.Services;
 
@@ -11,13 +11,15 @@ namespace OCPittem.Functions.Functions;
 public class ContactFunction
 {
     private readonly IEmailService _email;
-    private readonly IConfiguration _config;
+    private readonly AppOptions _appOptions;
     private readonly ILogger<ContactFunction> _logger;
 
-    public ContactFunction(IEmailService email, IConfiguration config, ILogger<ContactFunction> logger)
+    public ContactFunction(IEmailService email, 
+        IOptions<AppOptions> appOptions, 
+        ILogger<ContactFunction> logger)
     {
         _email = email;
-        _config = config;
+        _appOptions = appOptions.Value;
         _logger = logger;
     }
 
@@ -50,7 +52,9 @@ public class ContactFunction
             return new BadRequestObjectResult(new { error = "Een of meer velden zijn te lang." });
         }
 
-        var contactEmail = _config["App:ContactEmail"] ?? "oudercomitepittem@gmail.com";
+        var contactEmail = string.IsNullOrEmpty(_appOptions.ContactEmail)
+            ? "oudercomitepittem@gmail.com"
+            : _appOptions.ContactEmail;
 
         try
         {

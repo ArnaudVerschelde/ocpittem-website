@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using NSubstitute;
 using NSubstitute.ExceptionExtensions;
 using OCPittem.Functions.Functions;
@@ -13,14 +13,13 @@ namespace OCPittem.Functions.Tests.Functions;
 public class ContactFunctionTests
 {
     private readonly IEmailService _email = Substitute.For<IEmailService>();
-    private readonly IConfiguration _config = Substitute.For<IConfiguration>();
+    private readonly IOptions<AppOptions> _appOptions = Options.Create(new AppOptions { ContactEmail = "committee@example.com" });
     private readonly ILogger<ContactFunction> _logger = Substitute.For<ILogger<ContactFunction>>();
     private readonly ContactFunction _sut;
 
     public ContactFunctionTests()
     {
-        _config["App:ContactEmail"].Returns("committee@example.com");
-        _sut = new ContactFunction(_email, _config, _logger);
+        _sut = new ContactFunction(_email, _appOptions, _logger);
     }
 
     [Fact]

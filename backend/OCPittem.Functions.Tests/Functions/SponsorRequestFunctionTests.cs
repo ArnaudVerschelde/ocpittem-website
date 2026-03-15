@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using NSubstitute;
 using NSubstitute.ExceptionExtensions;
 using OCPittem.Functions.Functions;
@@ -15,14 +16,13 @@ public class SponsorRequestFunctionTests
 {
     private readonly IStorageService _storage = Substitute.For<IStorageService>();
     private readonly IEmailService _email = Substitute.For<IEmailService>();
-    private readonly IConfiguration _config = Substitute.For<IConfiguration>();
+    private readonly IOptions<AppOptions> _appOptions = Options.Create(new AppOptions { ContactEmail = "committee@example.com" });
     private readonly ILogger<SponsorRequestFunction> _logger = Substitute.For<ILogger<SponsorRequestFunction>>();
     private readonly SponsorRequestFunction _sut;
 
     public SponsorRequestFunctionTests()
     {
-        _config["App:ContactEmail"].Returns("committee@example.com");
-        _sut = new SponsorRequestFunction(_storage, _email, _config, _logger);
+        _sut = new SponsorRequestFunction(_storage, _email, _appOptions, _logger);
     }
 
     [Fact]
