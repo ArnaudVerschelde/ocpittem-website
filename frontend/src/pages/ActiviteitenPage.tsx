@@ -2,6 +2,8 @@ import { Link } from 'react-router-dom';
 import Hero from '../components/Hero';
 import Section from '../components/Section';
 
+const paymentsEnabled = import.meta.env.VITE_ENABLE_PAYMENTS === 'true';
+
 const events = [
   {
     title: 'Bal Parental 2026',
@@ -73,12 +75,13 @@ export default function ActiviteitenPage() {
                     <p className="mt-2 max-w-2xl text-gray-600 leading-relaxed">{event.description}</p>
                   </div>
                   {event.cta && (
-                    <Link
-                      to={event.cta.to}
-                      className="btn-primary mt-2 flex-shrink-0 sm:mt-0"
-                    >
-                      {event.cta.label}
-                    </Link>
+                    paymentsEnabled
+                      ? <Link to={event.cta.to} className="btn-primary mt-2 flex-shrink-0 sm:mt-0">
+                          {event.cta.label}
+                        </Link>
+                      : <span className="mt-2 flex-shrink-0 cursor-not-allowed rounded-lg bg-gray-100 px-5 py-2.5 text-sm font-semibold text-gray-400 sm:mt-0">
+                          Binnenkort beschikbaar
+                        </span>
                   )}
                 </div>
               </div>

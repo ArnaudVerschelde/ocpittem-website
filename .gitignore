@@ -83,3 +83,8 @@ Desktop.ini
 # =========================
 *.swp
 *.swo
+
+# Allow production env file for frontend (non-secret config)
+!frontend/.env.production
+!frontend/.env.production.local
+!frontend/.env.example
