@@ -11,28 +11,33 @@ public class MailjetEmailService : IEmailService
     private readonly MailjetClient? _client;
     private readonly string _fromEmail;
     private readonly string _fromName;
+    private readonly string _contactFromEmail;
+    private readonly string _contactFromName;
+    private readonly string _ticketFromEmail;
+    private readonly string _ticketFromName;
     private readonly bool _enabled;
     private readonly ILogger<MailjetEmailService> _logger;
 
     public MailjetEmailService(
-        string? apiKey,
-        string? apiSecret,
-        string fromEmail,
-        string fromName,
+        MailjetOptions options,
         bool enabled,
         ILogger<MailjetEmailService> logger)
     {
-        _fromEmail = fromEmail;
-        _fromName = fromName;
+        _fromEmail = options.FromEmail;
+        _fromName = options.FromName;
+        _contactFromEmail = string.IsNullOrEmpty(options.ContactFromEmail) ? options.FromEmail : options.ContactFromEmail;
+        _contactFromName = string.IsNullOrEmpty(options.ContactFromName) ? options.FromName : options.ContactFromName;
+        _ticketFromEmail = string.IsNullOrEmpty(options.TicketFromEmail) ? options.FromEmail : options.TicketFromEmail;
+        _ticketFromName = string.IsNullOrEmpty(options.TicketFromName) ? options.FromName : options.TicketFromName;
         _enabled = enabled;
         _logger = logger;
 
         if (_enabled)
         {
-            if (string.IsNullOrWhiteSpace(apiKey) || string.IsNullOrWhiteSpace(apiSecret))
+            if (string.IsNullOrWhiteSpace(options.ApiKey) || string.IsNullOrWhiteSpace(options.ApiSecret))
                 throw new InvalidOperationException("Mailjet API key/secret missing while Email__Enabled=true");
 
-            _client = new MailjetClient(apiKey, apiSecret);
+            _client = new MailjetClient(options.ApiKey, options.ApiSecret);
         }
     }
 
@@ -45,7 +50,7 @@ public class MailjetEmailService : IEmailService
         }
 
         var builder = new TransactionalEmailBuilder()
-            .WithFrom(new SendContact(_fromEmail, _fromName))
+            .WithFrom(new SendContact(_ticketFromEmail, _ticketFromName))
             .WithSubject("Jouw tickets voor Bal Parental — Oudercomité met Pit")
             .WithHtmlPart($@"
                 <h2>Bedankt voor je bestelling, {WebUtility.HtmlEncode(toName)}!</h2>
@@ -82,8 +87,7 @@ public class MailjetEmailService : IEmailService
             .Replace("\n", "<br />");
 
         var email = new TransactionalEmailBuilder()
-            .WithFrom(new SendContact(_fromEmail, _fromName))
-            .WithSubject($"[Contact] {safeSubject}")
+            .WithFrom(new SendContact(_contactFromEmail, _contactFromName))
             .WithHtmlPart($@"
                 <h2>Nieuw contactbericht via ocpittem.be</h2>
                 <p><strong>Van:</strong> {safeFromName} ({safeFromEmail})</p>

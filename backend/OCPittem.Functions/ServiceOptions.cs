@@ -13,6 +13,10 @@ public class MailjetOptions
     public string? ApiSecret { get; init; }
     public string FromEmail { get; init; } = "";
     public string FromName { get; init; } = "";
+    public string ContactFromEmail { get; init; } = "";
+    public string ContactFromName { get; init; } = "";
+    public string TicketFromEmail { get; init; } = "";
+    public string TicketFromName { get; init; } = "";
 }
 
 public class EmailOptions

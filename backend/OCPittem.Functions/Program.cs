@@ -37,7 +37,7 @@ var host = new HostBuilder()
             var mailjet = sp.GetRequiredService<IOptions<MailjetOptions>>().Value;
             var email = sp.GetRequiredService<IOptions<EmailOptions>>().Value;
             var logger = sp.GetRequiredService<ILogger<MailjetEmailService>>();
-            return new MailjetEmailService(mailjet.ApiKey, mailjet.ApiSecret, mailjet.FromEmail, mailjet.FromName, email.Enabled, logger);
+            return new MailjetEmailService(mailjet, email.Enabled, logger);
         });
 
         services.AddSingleton<ITicketPdfService, TicketPdfService>();
