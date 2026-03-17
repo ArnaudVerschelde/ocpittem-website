@@ -1,4 +1,4 @@
-import { Routes, Route } from 'react-router-dom';
+import { Routes, Route, Navigate } from 'react-router-dom';
 import Layout from './components/Layout';
 import HomePage from './pages/HomePage';
 import WatDoenWePage from './pages/WatDoenWePage';
@@ -13,6 +13,10 @@ import PaymentCancelPage from './pages/PaymentCancelPage';
 function App() {
     return (
         <Routes>
+            {/* Oude paden opvangen */}
+            <Route path="/nl" element={<Navigate to="/" replace />} />
+            <Route path="/nl/*" element={<Navigate to="/" replace />} />
+
             <Route path="/" element={<Layout />}>
                 <Route index element={<HomePage />} />
                 <Route path="wat-doen-we" element={<WatDoenWePage />} />
