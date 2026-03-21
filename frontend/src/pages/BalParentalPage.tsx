@@ -1,4 +1,5 @@
 import { useState, FormEvent, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import Hero from '../components/Hero';
 import Section from '../components/Section';
 
@@ -669,7 +670,10 @@ export default function BalParentalPage() {
                         className="font-medium text-primary-600 underline hover:text-primary-700">
                         algemene voorwaarden
                       </button>
-                      {', inclusief de privacy-informatie.'}
+                      {' '}en heb kennis genomen van de{' '}
+                      <Link to="/privacy" className="font-medium text-primary-600 underline hover:text-primary-700">
+                          privacyverklaring
+                      </Link>.
                     </label>
                   </div>
                   {ticketError && <div className="rounded-lg bg-red-50 p-3 text-sm text-red-700">{ticketError}</div>}
@@ -762,7 +766,10 @@ export default function BalParentalPage() {
                         >
                             algemene voorwaarden
                         </button>
-                        {', inclusief de privacy-informatie.'}
+                        {' '}en heb kennis genomen van de{' '}
+                        <Link to="/privacy" className="font-medium text-primary-600 underline hover:text-primary-700">
+                            privacyverklaring
+                        </Link>.
                       </label>
                     </div>
                     {sponsorError && <div className="rounded-lg bg-red-50 p-3 text-sm text-red-700">{sponsorError}</div>}

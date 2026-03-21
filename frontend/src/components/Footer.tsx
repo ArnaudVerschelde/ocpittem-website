@@ -89,6 +89,14 @@ export default function Footer() {
           <p className="text-xs text-gray-400">
             &copy; {year} Oudercomité met Pit — Pittem. Alle rechten voorbehouden.
           </p>
+          <div className="mt-2 flex justify-center gap-4 text-xs">
+              <Link
+                  to="/privacy"
+                  className="text-gray-500 transition-colors hover:text-primary-600"
+              >
+                Privacyverklaring
+              </Link>
+          </div>
         </div>
       </div>
     </footer>

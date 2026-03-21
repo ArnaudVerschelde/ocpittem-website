@@ -10,6 +10,7 @@ import NotFoundPage from './pages/NotFoundPage';
 import PaymentSuccessPage from './pages/PaymentSuccessPage';
 import PaymentCancelPage from './pages/PaymentCancelPage';
 import ScanPage from './pages/ScanPage';
+import PrivacyPage from './pages/PrivacyPage';
 
 function App() {
     return (
@@ -34,6 +35,8 @@ function App() {
                 <Route path="betaling/cancel" element={<PaymentCancelPage />} />
 
                 <Route path="*" element={<NotFoundPage />} />
+
+                <Route path="privacy" element={<PrivacyPage />} />
             </Route>
         </Routes>
     );
