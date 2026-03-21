@@ -143,7 +143,6 @@ public class StripeWebhookFunction
 
         order.Status = nameof(OrderStatus.Paid);
         order.StripeSessionId = session.Id;
-        await _storage.UpdateOrderAsync(order);
 
         var toegangsticketCount = order.ToegangsticketCount;
         var etenPartyCount = order.EtenPartyCount;
@@ -198,9 +197,10 @@ public class StripeWebhookFunction
         {
             var blobUrl = await _storage.SaveTicketPdfAsync(orderId, combinedPdf);
             order.PdfBlobUrl = blobUrl;
-            await _storage.UpdateOrderAsync(order);
             _logger.LogInformation("Ticket PDF saved to blob for order {OrderId}", orderId);
         }
+
+        await _storage.UpdateOrderAsync(order);
 
         if (!string.IsNullOrEmpty(email))
         {
