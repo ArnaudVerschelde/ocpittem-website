@@ -9,6 +9,7 @@ import ContactPage from './pages/ContactPage';
 import NotFoundPage from './pages/NotFoundPage';
 import PaymentSuccessPage from './pages/PaymentSuccessPage';
 import PaymentCancelPage from './pages/PaymentCancelPage';
+import ScanPage from './pages/ScanPage';
 
 function App() {
     return (
@@ -16,6 +17,9 @@ function App() {
             {/* Oude paden opvangen */}
             <Route path="/nl" element={<Navigate to="/" replace />} />
             <Route path="/nl/*" element={<Navigate to="/" replace />} />
+
+            {/* Standalone pagina's zonder Navbar/Footer */}
+            <Route path="scan" element={<ScanPage />} />
 
             <Route path="/" element={<Layout />}>
                 <Route index element={<HomePage />} />

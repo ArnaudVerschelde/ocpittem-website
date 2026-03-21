@@ -26,7 +26,7 @@ public class TicketValidateFunction
 
     [Function("ValidateTicket")]
     public async Task<IActionResult> Run(
-        [HttpTrigger(AuthorizationLevel.Function, "get", Route = "tickets/validate")] HttpRequest req)
+        [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "tickets/validate")] HttpRequest req)
     {
         var code = req.Query["code"].ToString();
 

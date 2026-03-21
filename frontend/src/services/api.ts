@@ -31,6 +31,13 @@ export interface ContactRequest {
   message: string;
 }
 
+export interface ValidateTicketResponse {
+  valid: boolean;
+  ticketId?: string;
+  ticketType?: string;
+  error?: string;
+}
+
 export const api = {
   createTicketCheckout: (data: CreateCheckoutRequest) =>
     request<CreateCheckoutResponse>('/tickets/create-checkout', {
@@ -43,4 +50,7 @@ export const api = {
       method: 'POST',
       body: JSON.stringify(data),
     }),
+
+  validateTicket: (code: string) =>
+    request<ValidateTicketResponse>(`/tickets/validate?code=${encodeURIComponent(code)}`),
 };
