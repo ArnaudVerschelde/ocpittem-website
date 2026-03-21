@@ -127,4 +127,22 @@ public class TableStorageService : IStorageService
         var table = await GetTableAsync(_ticketsTable);
         await table.UpdateEntityAsync(ticket, ticket.ETag, TableUpdateMode.Replace);
     }
+
+    public async Task<IReadOnlyList<OrderEntity>> GetAllOrdersAsync()
+    {
+        var table = await GetTableAsync(_ordersTable);
+        var results = new List<OrderEntity>();
+        await foreach (var entity in table.QueryAsync<OrderEntity>())
+            results.Add(entity);
+        return results;
+    }
+
+    public async Task<IReadOnlyList<SponsorRequestEntity>> GetAllSponsorRequestsAsync()
+    {
+        var table = await GetTableAsync(_sponsorsTable);
+        var results = new List<SponsorRequestEntity>();
+        await foreach (var entity in table.QueryAsync<SponsorRequestEntity>(e => e.PartitionKey == "Sponsor"))
+            results.Add(entity);
+        return results;
+    }
 }

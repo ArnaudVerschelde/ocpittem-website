@@ -194,6 +194,93 @@ public class MailjetEmailService : IEmailService
         _logger.LogInformation("Sponsor confirmation email sent to {Email} ({Company}).", toEmail, companyName);
     }
 
+    public async Task SendDailyReportAsync(IReadOnlyList<string> recipients, byte[] excelBytes, DailyReportStats stats, DateTime reportDate)
+    {
+        var dateLabel = reportDate.ToString("dd/MM/yyyy");
+
+        if (!_enabled)
+        {
+            _logger.LogInformation(
+                "Email disabled. Would send daily report ({Date}) to {Count} recipient(s).",
+                dateLabel, recipients.Count);
+            return;
+        }
+
+        var html = $@"
+            <div style=""font-family:Arial,sans-serif;max-width:600px;margin:0 auto;"">
+                <h2 style=""color:#13A2A3;margin-bottom:4px;"">Bal Parental &mdash; Dagelijks overzicht</h2>
+                <p style=""color:#666;margin-top:0;"">Rapport van {dateLabel}</p>
+                <hr style=""border:none;border-top:2px solid #13A2A3;margin-bottom:20px;""/>
+
+                <h3 style=""margin-bottom:8px;"">🎟️ Bestellingen</h3>
+                <table style=""border-collapse:collapse;width:100%;font-size:14px;"">
+                    <tr style=""background:#f0fafa;"">
+                        <td style=""padding:6px 12px;"">Totaal bestellingen</td>
+                        <td style=""padding:6px 12px;font-weight:bold;"">{stats.TotalOrders}</td>
+                    </tr>
+                    <tr>
+                        <td style=""padding:6px 12px;"">Betaald</td>
+                        <td style=""padding:6px 12px;font-weight:bold;color:#16a34a;"">{stats.PaidOrders}</td>
+                    </tr>
+                    <tr style=""background:#f0fafa;"">
+                        <td style=""padding:6px 12px;"">Toegangstickets verkocht</td>
+                        <td style=""padding:6px 12px;font-weight:bold;"">{stats.TotalToegangstickets}</td>
+                    </tr>
+                    <tr>
+                        <td style=""padding:6px 12px;"">Eten &amp; Party tickets verkocht</td>
+                        <td style=""padding:6px 12px;font-weight:bold;"">{stats.TotalEtenPartyTickets}</td>
+                    </tr>
+                    <tr style=""background:#f0fafa;"">
+                        <td style=""padding:6px 12px;"">Waarvan vegetarisch</td>
+                        <td style=""padding:6px 12px;font-weight:bold;"">{stats.TotalVegetarisch}</td>
+                    </tr>
+                    <tr>
+                        <td style=""padding:6px 12px;"">Drankkaarten &euro;10</td>
+                        <td style=""padding:6px 12px;font-weight:bold;"">{stats.TotalDrankkaart10}</td>
+                    </tr>
+                    <tr style=""background:#f0fafa;"">
+                        <td style=""padding:6px 12px;"">Drankkaarten &euro;20</td>
+                        <td style=""padding:6px 12px;font-weight:bold;"">{stats.TotalDrankkaart20}</td>
+                    </tr>
+                    <tr style=""border-top:2px solid #13A2A3;"">
+                        <td style=""padding:8px 12px;font-weight:bold;"">Totale omzet (betaald)</td>
+                        <td style=""padding:8px 12px;font-weight:bold;color:#13A2A3;font-size:16px;"">&euro;{stats.TotalRevenue:F0}</td>
+                    </tr>
+                </table>
+
+                <h3 style=""margin-top:24px;margin-bottom:8px;"">🤝 Sponsorpakketten</h3>
+                <table style=""border-collapse:collapse;width:100%;font-size:14px;"">
+                    <tr style=""background:#f0fafa;"">
+                        <td style=""padding:6px 12px;"">Totaal aanvragen</td>
+                        <td style=""padding:6px 12px;font-weight:bold;"">{stats.TotalSponsorRequests}</td>
+                    </tr>
+                </table>
+
+                <p style=""margin-top:24px;color:#555;font-size:13px;"">
+                    Het volledige overzicht vind je in de bijlage (Excel-bestand).
+                </p>
+                <hr style=""border:none;border-top:1px solid #eee;margin-top:24px;""/>
+                <p style=""font-size:11px;color:#aaa;"">Oudercomité met Pit &mdash; Pittem &mdash; ocpittem.be</p>
+            </div>";
+
+        var fileName = $"BalParental_Bestellingen_{reportDate:yyyyMMdd}.xlsx";
+        var attachmentBase64 = Convert.ToBase64String(excelBytes);
+
+        var toContacts = recipients.Select(r => new SendContact(r)).ToList();
+
+        var builder = new TransactionalEmailBuilder()
+            .WithFrom(new SendContact(_fromEmail, _fromName))
+            .WithSubject($"Bal Parental — Dagelijks overzicht {dateLabel}")
+            .WithHtmlPart(html)
+            .WithAttachment(new Attachment(fileName, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", attachmentBase64));
+
+        foreach (var contact in toContacts)
+            builder = builder.WithTo(contact);
+
+        await Send(builder.Build(), $"daily report to {recipients.Count} recipient(s)");
+        _logger.LogInformation("Daily report sent to {Count} recipient(s).", recipients.Count);
+    }
+
     private async Task Send(TransactionalEmail email, string context)
     {
         TransactionalEmailResponse resp = await _client!.SendTransactionalEmailAsync(email);

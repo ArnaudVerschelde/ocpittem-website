@@ -1,0 +1,12 @@
+namespace OCPittem.Functions.Models;
+
+public record DailyReportStats(
+    int TotalOrders,
+    int PaidOrders,
+    int TotalToegangstickets,
+    int TotalEtenPartyTickets,
+    int TotalVegetarisch,
+    int TotalDrankkaart10,
+    int TotalDrankkaart20,
+    decimal TotalRevenue,
+    int TotalSponsorRequests);

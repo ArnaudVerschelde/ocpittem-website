@@ -41,6 +41,7 @@ var host = new HostBuilder()
         });
 
         services.AddSingleton<ITicketPdfService, TicketPdfService>();
+        services.AddSingleton<IDailyReportService, DailyReportService>();
     })
     .Build();
 

@@ -1,4 +1,6 @@
-﻿namespace OCPittem.Functions.Services
+﻿using OCPittem.Functions.Models;
+
+namespace OCPittem.Functions.Services
 {
     public interface IEmailService
     {
@@ -14,5 +16,6 @@
             byte[]? pdfAttachment = null);
         Task SendContactNotificationAsync(string fromName, string fromEmail, string subject, string message, string contactEmail);
         Task SendSponsorConfirmationAsync(string toEmail, string companyName, string packageName);
+        Task SendDailyReportAsync(IReadOnlyList<string> recipients, byte[] excelBytes, DailyReportStats stats, DateTime reportDate);
     }
 }

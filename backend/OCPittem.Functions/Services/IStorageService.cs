@@ -15,4 +15,6 @@ public interface IStorageService
     Task<string> SaveTicketPdfAsync(string orderId, byte[] pdf);
     Task<TicketEntity?> GetTicketByIdAsync(string ticketId);
     Task MarkTicketScannedAsync(TicketEntity ticket);
+    Task<IReadOnlyList<OrderEntity>> GetAllOrdersAsync();
+    Task<IReadOnlyList<SponsorRequestEntity>> GetAllSponsorRequestsAsync();
 }

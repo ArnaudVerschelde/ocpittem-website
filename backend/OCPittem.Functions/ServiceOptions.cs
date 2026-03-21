@@ -32,6 +32,10 @@ public class AppOptions
     public string FrontendUrl { get; init; } = "http://localhost:5173";
     public string ContactEmail { get; init; } = "";
     public string TicketHmacSecret { get; init; } = "";
+    public string ReportRecipients { get; init; } = "";
+
+    public IReadOnlyList<string> GetReportRecipients() =>
+        ReportRecipients.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
 }
 
 public class StorageOptions
