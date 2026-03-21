@@ -373,8 +373,6 @@ export default function BalParentalPage() {
                 { label: '📅 Datum', value: 'zaterdag 20 juni 2026' },
                 { label: '📍 Locatie', value: 'Pittem — locatie wordt later bekendgemaakt' },
                 { label: '🎵 Muziek', value: 'DJ — wordt later bekendgemaakt' },
-                { label: '💰 Prijs', value: 'Toegangsticket €8 (v.a. 22u30) · Eten & Party €50 (v.a. 19u00)' },
-                { label: '🍹 Inclusief', value: 'Eten & Party: diner + feest. Drankkaarten €10/€20 beschikbaar.' },
               ].map((item) => (
                 <div key={item.label} className="flex gap-4">
                   <dt className="w-28 flex-shrink-0 text-sm font-semibold text-gray-900">{item.label}</dt>
@@ -382,6 +380,32 @@ export default function BalParentalPage() {
                 </div>
               ))}
             </dl>
+
+            {/* Kies je ticket */}
+            <div className="mt-8">
+              <h3 className="mb-3 text-sm font-semibold text-gray-900">🎫 Kies je ticket</h3>
+              <div className="space-y-3">
+                <div className="rounded-lg border border-gray-200 bg-white p-4">
+                  <p className="font-semibold text-gray-900">🎉 Toegangsticket &mdash; €8 p.p.</p>
+                  <ul className="mt-2 space-y-1 text-sm text-gray-500">
+                    <li>• Vanaf 22u30</li>
+                    <li>• Inclusief toegang tot het feest</li>
+                    <li>• Geen diner inbegrepen</li>
+                    <li>• Optioneel : drankkaarten van €10 of €20</li>
+                  </ul>
+                </div>
+                <div className="rounded-lg border border-gray-200 bg-white p-4">
+                  <p className="font-semibold text-gray-900">🍽️ Eten &amp; Party &mdash; €50 p.p.</p>
+                  <ul className="mt-2 space-y-1 text-sm text-gray-500">
+                    <li>• Vanaf 19u00</li>
+                    <li>• Inclusief diner + feest</li>
+                    <li>• Vegetarische optie mogelijk</li>
+                    <li>• Optioneel : drankkaarten van €10 of €20</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+
             <div className="mt-10 rounded-xl bg-primary-50 p-6">
               <h3 className="font-semibold text-primary-800">💡 Goed om te weten</h3>
               <ul className="mt-3 space-y-2 text-sm text-primary-700">
@@ -441,8 +465,9 @@ export default function BalParentalPage() {
                     {/* Toegangsticket */}
                     <div className="flex items-center justify-between rounded-lg border border-gray-200 px-4 py-3">
                       <div>
-                        <p className="text-sm font-semibold text-gray-900">🎟️ Toegangsticket &mdash; €8</p>
-                        <p className="text-xs text-gray-500">Toegang vanaf 22u30</p>
+                        <p className="text-sm font-semibold text-gray-900">🎉 Toegangsticket</p>
+                        <p className="text-xs text-gray-500">Toegang tot het feest vanaf 22u30 · €8 p.p.</p>
+                        <p className="text-xs text-gray-400">Diner niet inbegrepen</p>
                       </div>
                       <Stepper
                         value={ticketForm.toegangsticketCount}
@@ -454,8 +479,9 @@ export default function BalParentalPage() {
                     <div className="rounded-lg border border-gray-200">
                       <div className="flex items-center justify-between px-4 py-3">
                         <div>
-                          <p className="text-sm font-semibold text-gray-900">🍽️ Eten &amp; Party &mdash; €50</p>
-                          <p className="text-xs text-gray-500">Diner + feest vanaf 19u00</p>
+                          <p className="text-sm font-semibold text-gray-900">🍽️ Eten &amp; Party</p>
+                          <p className="text-xs text-gray-500">Diner + feest vanaf 19u00 · €50 per persoon</p>
+                          <p className="text-xs text-gray-400">Vegetarische optie per ticket mogelijk</p>
                         </div>
                         <Stepper
                           value={ticketForm.etenPartyCount}
@@ -470,7 +496,7 @@ export default function BalParentalPage() {
                         <div className="border-t border-gray-100 bg-green-50 px-4 py-3">
                           <div className="flex items-center justify-between">
                             <div>
-                              <p className="text-sm font-medium text-green-800">🥗 Waarvan vegetarisch</p>
+                              <p className="text-sm font-medium text-green-800">🥗 Aantal vegetarische diners</p>
                               <p className="text-xs text-green-600">Max. {ticketForm.etenPartyCount}</p>
                             </div>
                             <Stepper

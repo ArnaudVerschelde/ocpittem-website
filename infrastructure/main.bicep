@@ -31,8 +31,12 @@ param enablePurgeProtection bool = true
 // ---- App settings (non-secret) ----
 param appFrontendUrl string = 'https://ocpittem.be'
 param appContactEmail string = 'oudercomitepittem@gmail.com'
-param sendGridFromEmail string = 'oudercomitepittem@gmail.com'
-param sendGridFromName string = 'Oudercomité met Pit'
+param mailjetFromEmail string = 'oudercomitepittem@gmail.com'
+param mailjetFromName string = 'Oudercomité met Pit'
+param mailjetContactFromEmail string = 'oudercomitepittem@gmail.com'
+param mailjetContactFromName string = 'Oudercomité met Pit'
+param mailjetTicketFromEmail string = 'balparental@ocpittem.be'
+param mailjetTicketFromName string = 'Oudercomité met Pit — Bal Parental'
 param stripePriceIdToegangsticket string = 'price_xxx'
 param stripePriceIdEtenParty string = 'price_xxx'
 param stripePriceIdDrankkaart10 string = 'price_xxx'
@@ -51,7 +55,9 @@ param kvSecretStripeSecretKeyName string = 'stripe-secret-key'
 #disable-next-line secure-secrets-in-params
 param kvSecretStripeWebhookSecretName string = 'stripe-webhook-secret'
 #disable-next-line secure-secrets-in-params
-param kvSecretSendGridApiKeyName string = 'sendgrid-api-key'
+param kvSecretMailjetApiKeyName string = 'mailjet-api-key'
+#disable-next-line secure-secrets-in-params
+param kvSecretMailjetApiSecretName string = 'mailjet-api-secret'
 
 // ---- CORS ----
 param corsAllowedOrigins array = [
@@ -151,7 +157,8 @@ resource keyVault 'Microsoft.KeyVault/vaults@2023-07-01' = {
 var kvBaseUri = keyVault.properties.vaultUri
 var stripeSecretKeyUri = '${kvBaseUri}secrets/${kvSecretStripeSecretKeyName}'
 var stripeWebhookSecretUri = '${kvBaseUri}secrets/${kvSecretStripeWebhookSecretName}'
-var sendGridApiKeyUri = '${kvBaseUri}secrets/${kvSecretSendGridApiKeyName}'
+var mailjetApiKeyUri = '${kvBaseUri}secrets/${kvSecretMailjetApiKeyName}'
+var mailjetApiSecretUri = '${kvBaseUri}secrets/${kvSecretMailjetApiSecretName}'
 
 // ============================================================
 // App Service Plan (Flex Consumption, Linux)
@@ -211,15 +218,20 @@ resource functionApp 'Microsoft.Web/sites@2023-12-01' = {
         // Secrets via Key Vault references
         { name: 'Stripe__SecretKey', value: '@Microsoft.KeyVault(SecretUri=${stripeSecretKeyUri})' }
         { name: 'Stripe__WebhookSecret', value: '@Microsoft.KeyVault(SecretUri=${stripeWebhookSecretUri})' }
-        { name: 'SendGrid__ApiKey', value: '@Microsoft.KeyVault(SecretUri=${sendGridApiKeyUri})' }
+        { name: 'Mailjet__ApiKey', value: '@Microsoft.KeyVault(SecretUri=${mailjetApiKeyUri})' }
+        { name: 'Mailjet__ApiSecret', value: '@Microsoft.KeyVault(SecretUri=${mailjetApiSecretUri})' }
 
         // Non-secrets
         { name: 'Stripe__PriceIdToegangsticket', value: stripePriceIdToegangsticket }
         { name: 'Stripe__PriceIdEtenParty', value: stripePriceIdEtenParty }
         { name: 'Stripe__PriceIdDrankkaart10', value: stripePriceIdDrankkaart10 }
         { name: 'Stripe__PriceIdDrankkaart20', value: stripePriceIdDrankkaart20 }
-        { name: 'SendGrid__FromEmail', value: sendGridFromEmail }
-        { name: 'SendGrid__FromName', value: sendGridFromName }
+        { name: 'Mailjet__FromEmail', value: mailjetFromEmail }
+        { name: 'Mailjet__FromName', value: mailjetFromName }
+        { name: 'Mailjet__ContactFromEmail', value: mailjetContactFromEmail }
+        { name: 'Mailjet__ContactFromName', value: mailjetContactFromName }
+        { name: 'Mailjet__TicketFromEmail', value: mailjetTicketFromEmail }
+        { name: 'Mailjet__TicketFromName', value: mailjetTicketFromName }
         { name: 'App__FrontendUrl', value: appFrontendUrl }
         { name: 'App__ContactEmail', value: appContactEmail }
 
