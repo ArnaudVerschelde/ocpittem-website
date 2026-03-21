@@ -25,8 +25,19 @@ public class TicketOrderFunctionTests
     [Fact]
     public async Task CreateCheckout_ValidRequest_ReturnsCheckoutUrl()
     {
-        var req = HttpRequestHelper.CreateJsonRequest(new { name = "Jan Janssen", email = "jan@example.com", quantity = 2 });
-        _stripe.CreateCheckoutSessionAsync(Arg.Any<string>(), "jan@example.com", "Jan Janssen", 2)
+        var req = HttpRequestHelper.CreateJsonRequest(new
+        {
+            name = "Jan Janssen",
+            email = "jan@example.com",
+            toegangsticketCount = 2,
+            etenPartyCount = 0,
+            vegetarischCount = 0,
+            drankkaart10Count = 0,
+            drankkaart20Count = 0
+        });
+        _stripe.CreateCheckoutSessionAsync(
+                Arg.Any<string>(), "jan@example.com", "Jan Janssen",
+                Arg.Any<int>(), Arg.Any<int>(), Arg.Any<int>(), Arg.Any<int>())
             .Returns(new StripeCheckoutResult("https://checkout.stripe.com/session123", "sess_123"));
 
         var result = await _sut.CreateCheckout(req);
@@ -36,8 +47,8 @@ public class TicketOrderFunctionTests
         await _storage.Received(1).SaveOrderAsync(Arg.Is<OrderEntity>(o =>
             o.Email == "jan@example.com" &&
             o.Name == "Jan Janssen" &&
-            o.Quantity == 2 &&
-            o.Status == "pending"));
+            o.ToegangsticketCount == 2 &&
+            o.Status == nameof(OrderStatus.Pending)));
     }
 
     [Fact]
@@ -53,7 +64,12 @@ public class TicketOrderFunctionTests
     [Fact]
     public async Task CreateCheckout_MissingName_ReturnsBadRequest()
     {
-        var req = HttpRequestHelper.CreateJsonRequest(new { name = "", email = "test@example.com", quantity = 1 });
+        var req = HttpRequestHelper.CreateJsonRequest(new
+        {
+            name = "", email = "test@example.com",
+            toegangsticketCount = 1, etenPartyCount = 0,
+            vegetarischCount = 0, drankkaart10Count = 0, drankkaart20Count = 0
+        });
 
         var result = await _sut.CreateCheckout(req);
 
@@ -63,20 +79,42 @@ public class TicketOrderFunctionTests
     [Fact]
     public async Task CreateCheckout_MissingEmail_ReturnsBadRequest()
     {
-        var req = HttpRequestHelper.CreateJsonRequest(new { name = "Test", email = "", quantity = 1 });
+        var req = HttpRequestHelper.CreateJsonRequest(new
+        {
+            name = "Test", email = "",
+            toegangsticketCount = 1, etenPartyCount = 0,
+            vegetarischCount = 0, drankkaart10Count = 0, drankkaart20Count = 0
+        });
 
         var result = await _sut.CreateCheckout(req);
 
         Assert.IsType<BadRequestObjectResult>(result);
     }
 
-    [Theory]
-    [InlineData(0)]
-    [InlineData(-1)]
-    [InlineData(11)]
-    public async Task CreateCheckout_InvalidQuantity_ReturnsBadRequest(int quantity)
+    [Fact]
+    public async Task CreateCheckout_ZeroTickets_ReturnsBadRequest()
     {
-        var req = HttpRequestHelper.CreateJsonRequest(new { name = "Test", email = "test@example.com", quantity });
+        var req = HttpRequestHelper.CreateJsonRequest(new
+        {
+            name = "Test", email = "test@example.com",
+            toegangsticketCount = 0, etenPartyCount = 0,
+            vegetarischCount = 0, drankkaart10Count = 0, drankkaart20Count = 0
+        });
+
+        var result = await _sut.CreateCheckout(req);
+
+        Assert.IsType<BadRequestObjectResult>(result);
+    }
+
+    [Fact]
+    public async Task CreateCheckout_NegativeCount_ReturnsBadRequest()
+    {
+        var req = HttpRequestHelper.CreateJsonRequest(new
+        {
+            name = "Test", email = "test@example.com",
+            toegangsticketCount = -1, etenPartyCount = 0,
+            vegetarischCount = 0, drankkaart10Count = 0, drankkaart20Count = 0
+        });
 
         var result = await _sut.CreateCheckout(req);
 
@@ -86,8 +124,15 @@ public class TicketOrderFunctionTests
     [Fact]
     public async Task CreateCheckout_StripeThrows_Returns500()
     {
-        var req = HttpRequestHelper.CreateJsonRequest(new { name = "Test", email = "test@example.com", quantity = 1 });
-        _stripe.CreateCheckoutSessionAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<int>())
+        var req = HttpRequestHelper.CreateJsonRequest(new
+        {
+            name = "Test", email = "test@example.com",
+            toegangsticketCount = 1, etenPartyCount = 0,
+            vegetarischCount = 0, drankkaart10Count = 0, drankkaart20Count = 0
+        });
+        _stripe.CreateCheckoutSessionAsync(
+                Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(),
+                Arg.Any<int>(), Arg.Any<int>(), Arg.Any<int>(), Arg.Any<int>())
             .ThrowsAsync(new Exception("Stripe unavailable"));
 
         var result = await _sut.CreateCheckout(req);

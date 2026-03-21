@@ -18,6 +18,6 @@ public class OrderEntity : ITableEntity
     public int VegetarischCount { get; set; }
     public int Drankkaart10Count { get; set; }
     public int Drankkaart20Count { get; set; }
-    public string Status { get; set; } = "pending";    // pending, paid, failed
+    public string Status { get; set; } = nameof(OrderStatus.Pending);
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 }

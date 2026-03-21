@@ -137,7 +137,7 @@ public class StripeWebhookFunction
             return;
         }
 
-        order.Status = "paid";
+        order.Status = nameof(OrderStatus.Paid);
         order.StripeSessionId = session.Id;
         await _storage.UpdateOrderAsync(order);
 
@@ -215,7 +215,7 @@ public class StripeWebhookFunction
         var order = await _storage.GetOrderByStripeSessionAsync(session.Id);
         if (order != null)
         {
-            order.Status = "failed";
+            order.Status = nameof(OrderStatus.Failed);
             await _storage.UpdateOrderAsync(order);
         }
     }

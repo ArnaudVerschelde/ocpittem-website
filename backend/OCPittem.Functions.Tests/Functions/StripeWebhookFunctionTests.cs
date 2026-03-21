@@ -73,7 +73,9 @@ public class StripeWebhookFunctionTests
             Email = "test@example.com",
             Name = "Test User",
             Quantity = 2,
-            Status = "pending",
+            Status = nameof(OrderStatus.Pending),
+            ToegangsticketCount = 1,
+            EtenPartyCount = 1,
             StripeSessionId = "sess_123"
         };
 
@@ -81,16 +83,19 @@ public class StripeWebhookFunctionTests
         _stripe.ConstructWebhookEvent(Arg.Any<string>(), Arg.Any<string>()).Returns(stripeEvent);
         _storage.WebhookEventExistsAsync("evt_1").Returns(false);
         _storage.GetOrderByStripeSessionAsync("sess_123").Returns(order);
-        _ticketPdf.GenerateTicketPdf(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>())
+        _ticketPdf.GenerateTicketsPdf(
+                Arg.Any<IReadOnlyList<TicketPdfData>>(), Arg.Any<string>(), Arg.Any<string>())
             .Returns(new byte[] { 1, 2, 3 });
 
         var result = await _sut.Run(req);
 
         Assert.IsType<OkResult>(result);
-        Assert.Equal("paid", order.Status);
+        Assert.Equal(nameof(OrderStatus.Paid), order.Status);
         await _storage.Received(2).SaveTicketAsync(Arg.Any<TicketEntity>());
         await _email.Received(1).SendTicketConfirmationAsync(
-            "test@example.com", "Test User", 2, Arg.Any<byte[]>());
+            "test@example.com", "Test User",
+            Arg.Any<int>(), Arg.Any<int>(), Arg.Any<int>(), Arg.Any<int>(), Arg.Any<int>(),
+            Arg.Any<byte[]>());
         await _storage.Received(1).UpsertWebhookEventAsync(
             Arg.Is<WebhookEventEntity>(e => e.Result == "processed"));
     }
@@ -115,7 +120,9 @@ public class StripeWebhookFunctionTests
         Assert.IsType<OkResult>(result);
         await _storage.DidNotReceive().SaveTicketAsync(Arg.Any<TicketEntity>());
         await _email.DidNotReceive().SendTicketConfirmationAsync(
-            Arg.Any<string>(), Arg.Any<string>(), Arg.Any<int>(), Arg.Any<byte[]>());
+            Arg.Any<string>(), Arg.Any<string>(),
+            Arg.Any<int>(), Arg.Any<int>(), Arg.Any<int>(), Arg.Any<int>(), Arg.Any<int>(),
+            Arg.Any<byte[]>());
     }
 
     [Fact]
@@ -174,7 +181,7 @@ public class StripeWebhookFunctionTests
         {
             PartitionKey = "balparental-2026",
             RowKey = "order-fail",
-            Status = "pending",
+            Status = nameof(OrderStatus.Pending),
             StripeSessionId = "sess_fail"
         };
 
@@ -186,7 +193,7 @@ public class StripeWebhookFunctionTests
         var result = await _sut.Run(req);
 
         Assert.IsType<OkResult>(result);
-        Assert.Equal("failed", order.Status);
+        Assert.Equal(nameof(OrderStatus.Failed), order.Status);
         await _storage.Received(1).UpdateOrderAsync(order);
     }
 

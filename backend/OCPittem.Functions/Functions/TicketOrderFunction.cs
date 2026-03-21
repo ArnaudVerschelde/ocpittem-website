@@ -80,7 +80,7 @@ public class TicketOrderFunction
                 VegetarischCount = body.VegetarischCount,
                 Drankkaart10Count = body.Drankkaart10Count,
                 Drankkaart20Count = body.Drankkaart20Count,
-                Status = "pending",
+                Status = nameof(OrderStatus.Pending),
                 StripeSessionId = checkout.SessionId,
             };
 
