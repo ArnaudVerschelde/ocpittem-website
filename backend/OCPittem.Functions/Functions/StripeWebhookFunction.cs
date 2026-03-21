@@ -159,12 +159,12 @@ public class StripeWebhookFunction
                 PartitionKey = orderId,
                 RowKey = ticketId,
                 QrPayload = qrPayload,
-                TicketType = "toegang",
+                TicketType = nameof(TicketKind.Toegang),
                 IsVegetarisch = false,
             };
 
             await _storage.SaveTicketAsync(ticket);
-            pdfTickets.Add(new TicketPdfData(ticketId, qrPayload, "toegang", false));
+            pdfTickets.Add(new TicketPdfData(ticketId, qrPayload, nameof(TicketKind.Toegang), false));
         }
 
         for (int i = 0; i < etenPartyCount; i++)
@@ -178,12 +178,12 @@ public class StripeWebhookFunction
                 PartitionKey = orderId,
                 RowKey = ticketId,
                 QrPayload = qrPayload,
-                TicketType = "etenparty",
+                TicketType = nameof(TicketKind.EtenParty),
                 IsVegetarisch = isVeg,
             };
 
             await _storage.SaveTicketAsync(ticket);
-            pdfTickets.Add(new TicketPdfData(ticketId, qrPayload, "etenparty", isVeg));
+            pdfTickets.Add(new TicketPdfData(ticketId, qrPayload, nameof(TicketKind.EtenParty), isVeg));
         }
 
         byte[]? combinedPdf = pdfTickets.Count > 0

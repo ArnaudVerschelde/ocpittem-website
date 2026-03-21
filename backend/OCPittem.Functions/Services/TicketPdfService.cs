@@ -1,3 +1,4 @@
+using OCPittem.Functions.Models;
 using QuestPDF.Fluent;
 using QuestPDF.Helpers;
 using QuestPDF.Infrastructure;
@@ -17,7 +18,7 @@ public class TicketPdfService : ITicketPdfService
         {
             foreach (var ticket in tickets)
             {
-                var typeLabel = ticket.TicketType == "etenparty"
+                var typeLabel = ticket.TicketType == nameof(TicketKind.EtenParty)
                     ? $"Eten & Party{(ticket.IsVegetarisch ? " (Vegetarisch)" : "")}"
                     : "Toegangsticket";
 
