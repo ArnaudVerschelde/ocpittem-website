@@ -29,7 +29,7 @@ var host = new HostBuilder()
         {
             var stripe = sp.GetRequiredService<IOptions<StripeOptions>>().Value;
             var app = sp.GetRequiredService<IOptions<AppOptions>>().Value;
-            return new StripeService(stripe.SecretKey, stripe.WebhookSecret, stripe.TicketPriceId, app.FrontendUrl);
+            return new StripeService(stripe, app.FrontendUrl);
         });
 
         services.AddSingleton<IEmailService>(sp =>

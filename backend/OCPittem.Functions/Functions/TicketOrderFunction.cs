@@ -36,19 +36,37 @@ public class TicketOrderFunction
 
         if (body == null
             || string.IsNullOrWhiteSpace(body.Name)
-            || string.IsNullOrWhiteSpace(body.Email)
-            || body.Quantity < 1
-            || body.Quantity > 10)
+            || string.IsNullOrWhiteSpace(body.Email))
         {
-            return new BadRequestObjectResult(new { error = "Vul alle velden correct in (max 10 tickets)." });
+            return new BadRequestObjectResult(new { error = "Vul alle verplichte velden correct in." });
         }
+
+        if (body.ToegangsticketCount < 0 || body.EtenPartyCount < 0
+            || body.Drankkaart10Count < 0 || body.Drankkaart20Count < 0
+            || body.VegetarischCount < 0)
+        {
+            return new BadRequestObjectResult(new { error = "Ongeldige aantallen." });
+        }
+
+        var totalTickets = body.ToegangsticketCount + body.EtenPartyCount;
+        if (totalTickets < 1)
+            return new BadRequestObjectResult(new { error = "Kies minstens 1 ticket (toegang of eten & party)." });
+
+        if (totalTickets + body.Drankkaart10Count + body.Drankkaart20Count > 30)
+            return new BadRequestObjectResult(new { error = "Maximum 30 items per bestelling." });
+
+        if (body.VegetarischCount > body.EtenPartyCount)
+            return new BadRequestObjectResult(new { error = "Aantal vegetarische opties mag niet groter zijn dan het aantal eten & party tickets." });
 
         var orderId = Guid.NewGuid().ToString();
         const string eventId = "balparental-2026";
 
         try
         {
-            var checkout = await _stripe.CreateCheckoutSessionAsync(orderId, body.Email, body.Name, body.Quantity);
+            var checkout = await _stripe.CreateCheckoutSessionAsync(
+                orderId, body.Email, body.Name,
+                body.ToegangsticketCount, body.EtenPartyCount,
+                body.Drankkaart10Count, body.Drankkaart20Count);
 
             var order = new OrderEntity
             {
@@ -56,7 +74,12 @@ public class TicketOrderFunction
                 RowKey = orderId,
                 Email = body.Email,
                 Name = body.Name,
-                Quantity = body.Quantity,
+                Quantity = totalTickets,
+                ToegangsticketCount = body.ToegangsticketCount,
+                EtenPartyCount = body.EtenPartyCount,
+                VegetarischCount = body.VegetarischCount,
+                Drankkaart10Count = body.Drankkaart10Count,
+                Drankkaart20Count = body.Drankkaart20Count,
                 Status = "pending",
                 StripeSessionId = checkout.SessionId,
             };

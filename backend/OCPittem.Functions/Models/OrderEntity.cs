@@ -12,7 +12,12 @@ public class OrderEntity : ITableEntity
     public string StripeSessionId { get; set; } = string.Empty;
     public string Email { get; set; } = string.Empty;
     public string Name { get; set; } = string.Empty;
-    public int Quantity { get; set; }
-    public string Status { get; set; } = "pending"; // pending, paid, failed
+    public int Quantity { get; set; }                  // ToegangsticketCount + EtenPartyCount
+    public int ToegangsticketCount { get; set; }
+    public int EtenPartyCount { get; set; }
+    public int VegetarischCount { get; set; }
+    public int Drankkaart10Count { get; set; }
+    public int Drankkaart20Count { get; set; }
+    public string Status { get; set; } = "pending";    // pending, paid, failed
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 }

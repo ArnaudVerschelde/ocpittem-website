@@ -141,13 +141,15 @@ public class StripeWebhookFunction
         order.StripeSessionId = session.Id;
         await _storage.UpdateOrderAsync(order);
 
-        var quantity = order.Quantity;
+        var toegangsticketCount = order.ToegangsticketCount;
+        var etenPartyCount = order.EtenPartyCount;
+        var vegetarischCount = order.VegetarischCount;
         var email = session.CustomerEmail ?? order.Email ?? "";
         var customerName = session.Metadata.GetValueOrDefault("customerName") ?? order.Name ?? "";
 
-        var pdfPages = new List<byte[]>();
+        var pdfTickets = new List<TicketPdfData>();
 
-        for (int i = 0; i < quantity; i++)
+        for (int i = 0; i < toegangsticketCount; i++)
         {
             var ticketId = Guid.NewGuid().ToString();
             var qrPayload = GenerateQrPayload(ticketId);
@@ -157,19 +159,48 @@ public class StripeWebhookFunction
                 PartitionKey = orderId,
                 RowKey = ticketId,
                 QrPayload = qrPayload,
+                TicketType = "toegang",
+                IsVegetarisch = false,
             };
 
             await _storage.SaveTicketAsync(ticket);
-
-            var pdf = _ticketPdf.GenerateTicketPdf(ticketId, customerName, "Bal Parental 2026", qrPayload);
-            pdfPages.Add(pdf);
+            pdfTickets.Add(new TicketPdfData(ticketId, qrPayload, "toegang", false));
         }
 
-        var combinedPdf = pdfPages.FirstOrDefault();
+        for (int i = 0; i < etenPartyCount; i++)
+        {
+            var ticketId = Guid.NewGuid().ToString();
+            var qrPayload = GenerateQrPayload(ticketId);
+            var isVeg = i < vegetarischCount;
+
+            var ticket = new TicketEntity
+            {
+                PartitionKey = orderId,
+                RowKey = ticketId,
+                QrPayload = qrPayload,
+                TicketType = "etenparty",
+                IsVegetarisch = isVeg,
+            };
+
+            await _storage.SaveTicketAsync(ticket);
+            pdfTickets.Add(new TicketPdfData(ticketId, qrPayload, "etenparty", isVeg));
+        }
+
+        byte[]? combinedPdf = pdfTickets.Count > 0
+            ? _ticketPdf.GenerateTicketsPdf(pdfTickets, customerName, "Bal Parental 2026")
+            : null;
 
         if (!string.IsNullOrEmpty(email))
         {
-            await _email.SendTicketConfirmationAsync(email, customerName, quantity, combinedPdf);
+            await _email.SendTicketConfirmationAsync(
+                email, 
+                customerName,
+                toegangsticketCount, 
+                etenPartyCount, 
+                vegetarischCount,
+                order.Drankkaart10Count, 
+                order.Drankkaart20Count,
+                combinedPdf);
             _logger.LogInformation("Ticket confirmation email sent to {Email} for order {OrderId}", email, orderId);
         }
     }

@@ -4,7 +4,10 @@ public class StripeOptions
 {
     public string SecretKey { get; init; } = "";
     public string WebhookSecret { get; init; } = "";
-    public string TicketPriceId { get; init; } = "";
+    public string PriceIdToegangsticket { get; init; } = "";
+    public string PriceIdEtenParty { get; init; } = "";
+    public string PriceIdDrankkaart10 { get; init; } = "";
+    public string PriceIdDrankkaart20 { get; init; } = "";
 }
 
 public class MailjetOptions

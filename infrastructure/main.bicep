@@ -33,7 +33,10 @@ param appFrontendUrl string = 'https://ocpittem.be'
 param appContactEmail string = 'oudercomitepittem@gmail.com'
 param sendGridFromEmail string = 'oudercomitepittem@gmail.com'
 param sendGridFromName string = 'Oudercomité met Pit'
-param stripeTicketPriceId string = 'price_xxx'
+param stripePriceIdToegangsticket string = 'price_xxx'
+param stripePriceIdEtenParty string = 'price_xxx'
+param stripePriceIdDrankkaart10 string = 'price_xxx'
+param stripePriceIdDrankkaart20 string = 'price_xxx'
 
 // ---- Table names ----
 param tableNameOrders string = 'Orders'
@@ -211,7 +214,10 @@ resource functionApp 'Microsoft.Web/sites@2023-12-01' = {
         { name: 'SendGrid__ApiKey', value: '@Microsoft.KeyVault(SecretUri=${sendGridApiKeyUri})' }
 
         // Non-secrets
-        { name: 'Stripe__TicketPriceId', value: stripeTicketPriceId }
+        { name: 'Stripe__PriceIdToegangsticket', value: stripePriceIdToegangsticket }
+        { name: 'Stripe__PriceIdEtenParty', value: stripePriceIdEtenParty }
+        { name: 'Stripe__PriceIdDrankkaart10', value: stripePriceIdDrankkaart10 }
+        { name: 'Stripe__PriceIdDrankkaart20', value: stripePriceIdDrankkaart20 }
         { name: 'SendGrid__FromEmail', value: sendGridFromEmail }
         { name: 'SendGrid__FromName', value: sendGridFromName }
         { name: 'App__FrontendUrl', value: appFrontendUrl }

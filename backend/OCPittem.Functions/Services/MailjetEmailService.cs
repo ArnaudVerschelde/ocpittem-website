@@ -41,21 +41,48 @@ public class MailjetEmailService : IEmailService
         }
     }
 
-    public async Task SendTicketConfirmationAsync(string toEmail, string toName, int quantity, byte[]? pdfAttachment = null)
+    public async Task SendTicketConfirmationAsync(
+        string toEmail, 
+        string toName,
+        int toegangstickets, 
+        int etenPartyTickets, 
+        int vegetarischCount,
+        int drankkaart10, 
+        int drankkaart20,
+        byte[]? pdfAttachment = null)
     {
         if (!_enabled)
         {
-            _logger.LogInformation("Email disabled. Would send ticket confirmation to {Email} ({Qty} tickets).", toEmail, quantity);
+            _logger.LogInformation("Email disabled. Would send ticket confirmation to {Email}.", toEmail);
             return;
         }
+
+        var safeName = WebUtility.HtmlEncode(toName);
+
+        var lines = new System.Text.StringBuilder();
+        if (toegangstickets > 0)
+            lines.AppendLine($"<li><strong>{toegangstickets}x Toegangsticket</strong> (vanaf 22u30) — &euro;{toegangstickets * 8}</li>");
+        if (etenPartyTickets > 0)
+        {
+            var vegStr = vegetarischCount > 0 ? $", waarvan {vegetarischCount} vegetarisch" : "";
+            lines.AppendLine($"<li><strong>{etenPartyTickets}x Eten &amp; Party ticket</strong> (vanaf 19u00{vegStr}) — &euro;{etenPartyTickets * 50}</li>");
+        }
+        if (drankkaart10 > 0)
+            lines.AppendLine($"<li><strong>{drankkaart10}x Drankkaart &euro;10</strong> — &euro;{drankkaart10 * 10}</li>");
+        if (drankkaart20 > 0)
+            lines.AppendLine($"<li><strong>{drankkaart20}x Drankkaart &euro;20</strong> — &euro;{drankkaart20 * 20}</li>");
+
+        var total = (toegangstickets * 8) + (etenPartyTickets * 50) + (drankkaart10 * 10) + (drankkaart20 * 20);
 
         var builder = new TransactionalEmailBuilder()
             .WithFrom(new SendContact(_ticketFromEmail, _ticketFromName))
             .WithSubject("Jouw tickets voor Bal Parental — Oudercomité met Pit")
             .WithHtmlPart($@"
-                <h2>Bedankt voor je bestelling, {WebUtility.HtmlEncode(toName)}!</h2>
-                <p>Je hebt <strong>{quantity} ticket(s)</strong> besteld voor het Bal Parental.</p>
-                <p>In bijlage vind je jouw ticket(s) als PDF met QR-code.</p>
+                <h2>Bedankt voor je bestelling, {safeName}!</h2>
+                <p>Je bestelling voor het Bal Parental is bevestigd. Hieronder een overzicht:</p>
+                <ul>{lines}</ul>
+                <p><strong>Totaal: &euro;{total}</strong></p>
+                <p>In bijlage vind je jouw ticket(s) als PDF met QR-code. Toon deze aan de ingang.</p>
                 <p>Tot dan!</p>
                 <p><em>Oudercomité met Pit — Pittem</em></p>
             ")
@@ -65,7 +92,7 @@ public class MailjetEmailService : IEmailService
             builder = builder.WithAttachment(new Attachment("tickets.pdf", "application/pdf", Convert.ToBase64String(pdfAttachment)));
 
         await Send(builder.Build(), $"ticket confirmation to {toEmail}");
-        _logger.LogInformation("Ticket confirmation email sent to {Email} ({Qty} tickets).", toEmail, quantity);
+        _logger.LogInformation("Ticket confirmation email sent to {Email}.", toEmail);
     }
 
     public async Task SendContactNotificationAsync(string fromName, string fromEmail, string subject, string message, string contactEmail)

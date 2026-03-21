@@ -204,13 +204,56 @@ function Spinner() {
 }
 
 // ---------------------------------------------------------------------------
+// Stepper helper
+// ---------------------------------------------------------------------------
+
+function Stepper({
+  value, onChange, min = 0, max = 20,
+}: {
+  value: number;
+  onChange: (n: number) => void;
+  min?: number;
+  max?: number;
+}) {
+  return (
+    <div className="flex items-center gap-2">
+      <button
+        type="button"
+        onClick={() => onChange(Math.max(min, value - 1))}
+        disabled={value <= min}
+        className="flex h-8 w-8 items-center justify-center rounded-full border border-gray-300 text-gray-700 hover:bg-gray-50 disabled:opacity-30"
+      >
+        <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M5 12h14" />
+        </svg>
+      </button>
+      <span className="w-6 text-center text-sm font-semibold tabular-nums">{value}</span>
+      <button
+        type="button"
+        onClick={() => onChange(Math.min(max, value + 1))}
+        disabled={value >= max}
+        className="flex h-8 w-8 items-center justify-center rounded-full border border-gray-300 text-gray-700 hover:bg-gray-50 disabled:opacity-30"
+      >
+        <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M12 5v14M5 12h14" />
+        </svg>
+      </button>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
 // Page
 // ---------------------------------------------------------------------------
 
 interface TicketForm {
   name: string;
   email: string;
-  quantity: number;
+  toegangsticketCount: number;
+  etenPartyCount: number;
+  vegetarischCount: number;
+  drankkaart10Count: number;
+  drankkaart20Count: number;
   acceptTerms: boolean;
 }
 
@@ -229,7 +272,12 @@ export default function BalParentalPage() {
   const [showTerms, setShowTerms] = useState(false);
 
   // Ticket form
-  const [ticketForm, setTicketForm] = useState<TicketForm>({ name: '', email: '', quantity: 1, acceptTerms: false });
+  const [ticketForm, setTicketForm] = useState<TicketForm>({
+    name: '', email: '',
+    toegangsticketCount: 0, etenPartyCount: 0, vegetarischCount: 0,
+    drankkaart10Count: 0, drankkaart20Count: 0,
+    acceptTerms: false,
+  });
   const [ticketLoading, setTicketLoading] = useState(false);
   const [ticketError, setTicketError] = useState('');
 
@@ -243,19 +291,29 @@ export default function BalParentalPage() {
     e.preventDefault();
     setTicketError('');
     if (!ticketForm.acceptTerms) { setTicketError('Je moet de algemene voorwaarden accepteren.'); return; }
+    const totalTickets = ticketForm.toegangsticketCount + ticketForm.etenPartyCount;
+    if (totalTickets < 1) { setTicketError('Kies minstens 1 ticket.'); return; }
     setTicketLoading(true);
     try {
       const apiBase = import.meta.env.VITE_API_BASE_URL || '/api';
       const res = await fetch(`${apiBase}/tickets/create-checkout`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: ticketForm.name, email: ticketForm.email, quantity: ticketForm.quantity }),
+        body: JSON.stringify({
+          name: ticketForm.name,
+          email: ticketForm.email,
+          toegangsticketCount: ticketForm.toegangsticketCount,
+          etenPartyCount: ticketForm.etenPartyCount,
+          vegetarischCount: ticketForm.vegetarischCount,
+          drankkaart10Count: ticketForm.drankkaart10Count,
+          drankkaart20Count: ticketForm.drankkaart20Count,
+        }),
       });
       if (!res.ok) throw new Error();
       const data = await res.json();
       const checkoutUrl = data.checkoutUrl || data.url;
       if (checkoutUrl) window.location.href = checkoutUrl;
-      else throw new Error("No checkout url in response");
+      else throw new Error('No checkout url in response');
     } catch {
       setTicketError('Er ging iets mis. Probeer het later opnieuw.');
     } finally {
@@ -315,8 +373,8 @@ export default function BalParentalPage() {
                 { label: '📅 Datum', value: 'zaterdag 20 juni 2026' },
                 { label: '📍 Locatie', value: 'Pittem — locatie wordt later bekendgemaakt' },
                 { label: '🎵 Muziek', value: 'DJ — wordt later bekendgemaakt' },
-                { label: '💰 Prijs', value: '€25 per persoon (voorverkoop)' },
-                { label: '🍹 Inclusief', value: 'Toegang + eerste drankje' },
+                { label: '💰 Prijs', value: 'Toegangsticket €8 (v.a. 22u30) · Eten & Party €50 (v.a. 19u00)' },
+                { label: '🍹 Inclusief', value: 'Eten & Party: diner + feest. Drankkaarten €10/€20 beschikbaar.' },
               ].map((item) => (
                 <div key={item.label} className="flex gap-4">
                   <dt className="w-28 flex-shrink-0 text-sm font-semibold text-gray-900">{item.label}</dt>
@@ -360,7 +418,7 @@ export default function BalParentalPage() {
               <div className="mt-4 rounded-2xl bg-white p-8 shadow-xl ring-1 ring-gray-100">
                 <h2 className="text-2xl font-bold text-gray-900">Tickets bestellen</h2>
                 <p className="mt-2 text-sm text-gray-500">
-                  Vul onderstaand formulier in. Je wordt doorgestuurd naar een beveiligde betaalpagina.
+                  Vul je gegevens in en kies je tickets. Je wordt doorgestuurd naar een beveiligde betaalpagina.
                 </p>
                 <form onSubmit={handleTicketSubmit} className="mt-6 space-y-5">
                   <div>
@@ -375,16 +433,90 @@ export default function BalParentalPage() {
                       onChange={(e) => setTicketForm({ ...ticketForm, email: e.target.value })}
                       className={inputClass} placeholder="jouw@email.be" />
                   </div>
-                  <div>
-                    <label htmlFor="t-qty" className="block text-sm font-medium text-gray-700">Aantal tickets</label>
-                    <select id="t-qty" value={ticketForm.quantity}
-                      onChange={(e) => setTicketForm({ ...ticketForm, quantity: Number(e.target.value) })}
-                      className={inputClass}>
-                      {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((n) => (
-                        <option key={n} value={n}>{n} {n === 1 ? 'ticket' : 'tickets'} — €{n * 25}</option>
-                      ))}
-                    </select>
+
+                  {/* Tickettypes */}
+                  <div className="space-y-2">
+                    <label className="block text-sm font-medium text-gray-700">Tickets</label>
+
+                    {/* Toegangsticket */}
+                    <div className="flex items-center justify-between rounded-lg border border-gray-200 px-4 py-3">
+                      <div>
+                        <p className="text-sm font-semibold text-gray-900">🎟️ Toegangsticket &mdash; €8</p>
+                        <p className="text-xs text-gray-500">Toegang vanaf 22u30</p>
+                      </div>
+                      <Stepper
+                        value={ticketForm.toegangsticketCount}
+                        onChange={(n) => setTicketForm({ ...ticketForm, toegangsticketCount: n })}
+                      />
+                    </div>
+
+                    {/* Eten & Party */}
+                    <div className="rounded-lg border border-gray-200">
+                      <div className="flex items-center justify-between px-4 py-3">
+                        <div>
+                          <p className="text-sm font-semibold text-gray-900">🍽️ Eten &amp; Party &mdash; €50</p>
+                          <p className="text-xs text-gray-500">Diner + feest vanaf 19u00</p>
+                        </div>
+                        <Stepper
+                          value={ticketForm.etenPartyCount}
+                          onChange={(n) => setTicketForm({
+                            ...ticketForm,
+                            etenPartyCount: n,
+                            vegetarischCount: Math.min(ticketForm.vegetarischCount, n),
+                          })}
+                        />
+                      </div>
+                      {ticketForm.etenPartyCount > 0 && (
+                        <div className="border-t border-gray-100 bg-green-50 px-4 py-3">
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <p className="text-sm font-medium text-green-800">🥗 Waarvan vegetarisch</p>
+                              <p className="text-xs text-green-600">Max. {ticketForm.etenPartyCount}</p>
+                            </div>
+                            <Stepper
+                              value={ticketForm.vegetarischCount}
+                              onChange={(n) => setTicketForm({ ...ticketForm, vegetarischCount: n })}
+                              max={ticketForm.etenPartyCount}
+                            />
+                          </div>
+                        </div>
+                      )}
+                    </div>
                   </div>
+
+                  {/* Drankkaarten */}
+                  {ticketForm.toegangsticketCount + ticketForm.etenPartyCount > 0 && (
+                    <div className="space-y-2">
+                      <label className="block text-sm font-medium text-gray-700">
+                        Drankkaarten <span className="text-gray-400">(optioneel)</span>
+                      </label>
+                      <div className="flex items-center justify-between rounded-lg border border-gray-200 px-4 py-3">
+                        <p className="text-sm font-semibold text-gray-900">🍹 Drankkaart €10</p>
+                        <Stepper
+                          value={ticketForm.drankkaart10Count}
+                          onChange={(n) => setTicketForm({ ...ticketForm, drankkaart10Count: n })}
+                        />
+                      </div>
+                      <div className="flex items-center justify-between rounded-lg border border-gray-200 px-4 py-3">
+                        <p className="text-sm font-semibold text-gray-900">🍹 Drankkaart €20</p>
+                        <Stepper
+                          value={ticketForm.drankkaart20Count}
+                          onChange={(n) => setTicketForm({ ...ticketForm, drankkaart20Count: n })}
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Totaaloverzicht */}
+                  {ticketForm.toegangsticketCount + ticketForm.etenPartyCount > 0 && (
+                    <div className="rounded-lg bg-primary-50 px-4 py-3">
+                      <div className="flex justify-between text-sm font-semibold text-primary-900">
+                        <span>Totaal</span>
+                        <span>€{ticketForm.toegangsticketCount * 8 + ticketForm.etenPartyCount * 50 + ticketForm.drankkaart10Count * 10 + ticketForm.drankkaart20Count * 20}</span>
+                      </div>
+                    </div>
+                  )}
+
                   <div className="flex items-start gap-3">
                     <input id="t-terms" type="checkbox" checked={ticketForm.acceptTerms}
                       onChange={(e) => setTicketForm({ ...ticketForm, acceptTerms: e.target.checked })}
@@ -399,9 +531,12 @@ export default function BalParentalPage() {
                     </label>
                   </div>
                   {ticketError && <div className="rounded-lg bg-red-50 p-3 text-sm text-red-700">{ticketError}</div>}
-                  <button type="submit" disabled={ticketLoading}
-                    className="btn-primary w-full disabled:cursor-not-allowed disabled:opacity-50">
-                    {ticketLoading ? <Spinner /> : `Bestel ${ticketForm.quantity} ${ticketForm.quantity === 1 ? 'ticket' : 'tickets'} — €${ticketForm.quantity * 25}`}
+                  <button
+                    type="submit"
+                    disabled={ticketLoading || ticketForm.toegangsticketCount + ticketForm.etenPartyCount < 1}
+                    className="btn-primary w-full disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    {ticketLoading ? <Spinner /> : 'Betalen'}
                   </button>
                 </form>
               </div>

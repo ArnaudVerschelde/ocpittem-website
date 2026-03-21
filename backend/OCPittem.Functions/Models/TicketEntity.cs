@@ -10,6 +10,8 @@ public class TicketEntity : ITableEntity
     public Azure.ETag ETag { get; set; }
 
     public string QrPayload { get; set; } = string.Empty;
+    public string TicketType { get; set; } = "toegang";        // "toegang" or "etenparty"
+    public bool IsVegetarisch { get; set; }
     public DateTime? ScannedAt { get; set; }
     public string PdfBlobUrl { get; set; } = string.Empty;
 }
