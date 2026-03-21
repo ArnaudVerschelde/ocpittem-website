@@ -88,103 +88,219 @@ function TermsModal({ onClose }: { onClose: () => void }) {
     };
   }, [onClose]);
 
-  return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
-      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
-    >
-      <div className="relative max-h-[80vh] w-full max-w-lg overflow-y-auto rounded-2xl bg-white shadow-2xl">
-        {/* Header */}
-        <div className="sticky top-0 flex items-center justify-between border-b border-gray-100 bg-white px-6 py-4">
-          <h2 className="text-lg font-bold text-gray-900">Algemene voorwaarden</h2>
-          <button
-            onClick={onClose}
-            className="flex h-8 w-8 items-center justify-center rounded-full text-gray-400 hover:bg-gray-100 hover:text-gray-600"
-            aria-label="Sluiten"
-          >
-            <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
+    return (
+        <div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+            onClick={(e) => {
+                if (e.target === e.currentTarget) onClose();
+            }}
+        >
+            <div className="relative max-h-[85vh] w-full max-w-2xl overflow-y-auto rounded-2xl bg-white shadow-2xl">
+                {/* Header */}
+                <div className="sticky top-0 flex items-center justify-between border-b border-gray-100 bg-white px-6 py-4">
+                    <h2 className="text-lg font-bold text-gray-900">Algemene voorwaarden</h2>
+                    <button
+                        onClick={onClose}
+                        className="flex h-8 w-8 items-center justify-center rounded-full text-gray-400 hover:bg-gray-100 hover:text-gray-600"
+                        aria-label="Sluiten"
+                    >
+                        <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                </div>
+
+                {/* Content */}
+                <div className="space-y-5 px-6 py-5 text-sm leading-relaxed text-gray-600">
+                    <p className="rounded-lg bg-blue-50 px-4 py-3 text-xs text-blue-700">
+                        Door een bestelling te plaatsen, verklaart de koper kennis te hebben genomen van deze
+                        algemene voorwaarden en ermee akkoord te gaan.
+                    </p>
+
+                    <div>
+                        <h3 className="font-semibold text-gray-900">1. Organisatie en toepassingsgebied</h3>
+                        <p className="mt-1">
+                            Deze algemene voorwaarden zijn van toepassing op de online aankoop van tickets en
+                            sponsorpakketten voor het evenement <strong>Bal Parental</strong>, georganiseerd door
+                            <strong> Oudercomité met Pit</strong>. Ze gelden voor alle bestellingen die via de
+                            website of een gekoppelde online betaalpagina worden geplaatst en betaald.
+                        </p>
+                    </div>
+
+                    <div>
+                        <h3 className="font-semibold text-gray-900">2. Bestelling en totstandkoming van de overeenkomst</h3>
+                        <p className="mt-1">
+                            Een bestelling is definitief zodra de online betaling succesvol is voltooid en de koper
+                            een bevestigingsmail heeft ontvangen. De koper is verantwoordelijk voor het correct
+                            invullen van de gevraagde gegevens, waaronder naam en e-mailadres.
+                        </p>
+                        <p className="mt-2">
+                            Indien één persoon meerdere tickets bestelt, staat die persoon ervoor in dat de
+                            medebezoekers op de hoogte worden gebracht van deze algemene voorwaarden en van de
+                            praktische info die met de bestelling verband houdt.
+                        </p>
+                    </div>
+
+                    <div>
+                        <h3 className="font-semibold text-gray-900">3. Tickets</h3>
+                        <p className="mt-1">
+                            Na aankoop ontvangt de koper een bevestigingsmail met de bestelde ticket(s), in
+                            elektronische vorm of als PDF-bijlage. Elk ticket bevat een unieke QR-code en is slechts
+                            één keer geldig. Een ticket dat reeds werd gescand of ongeldig blijkt, geeft geen recht
+                            op toegang.
+                        </p>
+                        <p className="mt-2">
+                            De organisatie kan verschillende ticketformules aanbieden, waaronder onder meer een
+                            toegangsticket, een Eten &amp; Party-ticket en optionele drankkaarten. De kenmerken en
+                            inhoud van elk product worden vermeld op de website en/of in het bestelproces.
+                        </p>
+                    </div>
+
+                    <div>
+                        <h3 className="font-semibold text-gray-900">4. Sponsorpakketten</h3>
+                        <p className="mt-1">
+                            Sponsorpakketten worden online aangeboden volgens de beschrijving op de website of in
+                            het bestelproces. Een bestelling van een sponsorpakket is pas definitief na succesvolle
+                            online betaling en bevestiging per e-mail door de organisatie.
+                        </p>
+                        <p className="mt-2">
+                            Indien voor het sponsorpakket logo’s, namen, teksten of ander materiaal nodig zijn, moet
+                            de sponsor die tijdig en in een bruikbaar formaat aanleveren. Laattijdige of onvolledige
+                            aanlevering kan ertoe leiden dat bepaalde sponsorvermeldingen niet of slechts beperkt
+                            kunnen worden uitgevoerd, zonder dat dit automatisch recht geeft op terugbetaling.
+                        </p>
+                        <p className="mt-2">
+                            De organisatie behoudt zich het recht voor een sponsorverzoek of sponsorinhoud te weigeren
+                            indien die niet verenigbaar is met het karakter, de waarden of de wettelijke verplichtingen
+                            van het evenement. Indien een sponsorpakket na betaling door de organisatie wordt geweigerd,
+                            wordt het betaalde bedrag teruggestort.
+                        </p>
+                        <p className="mt-2">
+                            De sponsor verklaart dat hij beschikt over de nodige rechten op alle aangeleverde logo’s,
+                            afbeeldingen, teksten en andere materialen, en vrijwaart de organisatie voor aanspraken
+                            van derden.
+                        </p>
+                    </div>
+
+                    <div>
+                        <h3 className="font-semibold text-gray-900">5. Prijzen en betaling</h3>
+                        <p className="mt-1">
+                            Alle prijzen worden weergegeven in euro. De prijs die op het moment van bestelling op de
+                            website of betaalpagina wordt vermeld, is de prijs die van toepassing is op de bestelling.
+                        </p>
+                        <p className="mt-2">
+                            Betaling van tickets en sponsorpakketten verloopt online via Stripe of een andere door de
+                            organisatie gekozen beveiligde betaalprovider. Oudercomité met Pit bewaart geen volledige
+                            betaalkaartgegevens op eigen servers.
+                        </p>
+                    </div>
+
+                    <div>
+                        <h3 className="font-semibold text-gray-900">6. Annulering, terugbetaling en herroepingsrecht</h3>
+                        <p className="mt-1">
+                            Voor tickets voor het Bal Parental geldt geen herroepingsrecht van 14 dagen, aangezien
+                            het gaat om een vrijetijdsactiviteit op een specifieke datum.
+                        </p>
+                        <p className="mt-2">
+                            Gekochte tickets worden in principe niet terugbetaald of omgeruild, behalve wanneer het
+                            evenement door de organisatie volledig wordt geannuleerd. In dat geval worden kopers via
+                            e-mail geïnformeerd over de verdere regeling.
+                        </p>
+                        <p className="mt-2">
+                            Indien het evenement wordt verplaatst of inhoudelijk wezenlijk wijzigt, zal de organisatie
+                            de kopers en, in voorkomend geval, sponsors zo goed mogelijk informeren over de gevolgen
+                            voor hun bestelling.
+                        </p>
+                        <p className="mt-2">
+                            Voor sponsorpakketten kan annulering enkel in onderling overleg met de organisatie.
+                            Reeds uitgevoerde of geproduceerde sponsorvermeldingen, reservaties of andere gemaakte
+                            kosten kunnen daarbij in rekening worden gebracht.
+                        </p>
+                    </div>
+
+                    <div>
+                        <h3 className="font-semibold text-gray-900">7. Toegang en verloop van het evenement</h3>
+                        <p className="mt-1">
+                            Toegang tot het evenement is enkel mogelijk met een geldig ticket. De organisatie behoudt
+                            zich het recht voor personen de toegang te weigeren of te verwijderen in geval van
+                            fraude, misbruik van tickets, storend gedrag, niet-naleving van veiligheidsinstructies of
+                            andere omstandigheden die een veilig en ordelijk verloop van het evenement in het gedrang
+                            brengen.
+                        </p>
+                    </div>
+
+                    <div>
+                        <h3 className="font-semibold text-gray-900">8. Foto’s en video-opnames</h3>
+                        <p className="mt-1">
+                            Tijdens het evenement kunnen sfeerbeelden, foto’s en video-opnames worden gemaakt voor
+                            verslaggeving en promotie van Bal Parental en Oudercomité met Pit, onder meer via de
+                            website, sociale media en ander communicatie- of promotiemateriaal.
+                        </p>
+                        <p className="mt-2">
+                            Door deel te nemen aan het evenement neemt de bezoeker kennis van het feit dat dergelijke
+                            opnames kunnen plaatsvinden. Voor gerichte, individueel herkenbare portret- of close-up-
+                            beelden wordt, waar dat vereist is, afzonderlijk toestemming gevraagd.
+                        </p>
+                        <p className="mt-2">
+                            Bezoekers die niet herkenbaar in beeld wensen te komen, kunnen dit vooraf of ter plaatse
+                            melden aan de organisatie. De organisatie zal hiermee in de mate van het redelijke
+                            rekening houden.
+                        </p>
+                    </div>
+
+                    <div>
+                        <h3 className="font-semibold text-gray-900">9. Privacy en verwerking van persoonsgegevens</h3>
+                        <p className="mt-1">
+                            Oudercomité met Pit verwerkt persoonsgegevens zoals naam, e-mailadres en bestelgegevens
+                            voor het verwerken van bestellingen, het verzenden van tickets of bevestigingen,
+                            klantencommunicatie, opvolging van sponsorpakketten en het naleven van wettelijke
+                            verplichtingen. Deze verwerking gebeurt op basis van de uitvoering van de overeenkomst
+                            en, waar van toepassing, om te voldoen aan wettelijke verplichtingen.
+                        </p>
+                        <p className="mt-2">
+                            Voor de uitvoering van de bestelling kunnen gegevens worden gedeeld met verwerkers of
+                            dienstverleners die daarbij noodzakelijk betrokken zijn, zoals de betaalprovider en de
+                            e-mail- of ticketverzenddienst. Persoonsgegevens worden niet langer bewaard dan nodig is
+                            voor deze doeleinden of zolang een wettelijke bewaartermijn dit vereist.
+                        </p>
+                        <p className="mt-2">
+                            Betrokkenen hebben, binnen de grenzen van de toepasselijke regelgeving, recht op inzage,
+                            verbetering, beperking of verwijdering van hun persoonsgegevens. Verzoeken of vragen
+                            hierover kunnen worden gericht aan <strong>oudercomitepittem@ocpittem.be</strong>.
+                        </p>
+                    </div>
+
+                    <div>
+                        <h3 className="font-semibold text-gray-900">10. Aansprakelijkheid</h3>
+                        <p className="mt-1">
+                            De organisatie is niet aansprakelijk voor verlies, diefstal of schade aan persoonlijke
+                            bezittingen tijdens het evenement, behalve in geval van bedrog, opzettelijke fout of
+                            wanneer aansprakelijkheid wettelijk niet kan worden uitgesloten.
+                        </p>
+                        <p className="mt-2">
+                            De organisatie is evenmin aansprakelijk voor schade die voortvloeit uit foutief door de
+                            koper ingegeven gegevens, overmacht of technische storingen buiten haar redelijke
+                            controle.
+                        </p>
+                    </div>
+
+                    <div>
+                        <h3 className="font-semibold text-gray-900">11. Contact</h3>
+                        <p className="mt-1">
+                            Voor vragen over tickets, sponsorpakketten, persoonsgegevens of deze voorwaarden kan
+                            contact worden opgenomen via <strong>oudercomitepittem@ocpittem.be</strong>.
+                        </p>
+                    </div>
+                </div>
+
+                <div className="border-t border-gray-100 px-6 py-4">
+                    <button onClick={onClose} className="btn-primary w-full">
+                        Sluiten
+                    </button>
+                </div>
+            </div>
         </div>
-
-        {/* Content */}
-        <div className="space-y-5 px-6 py-5 text-sm leading-relaxed text-gray-600">
-          <p className="rounded-lg bg-yellow-50 px-4 py-3 text-xs text-yellow-700">
-            ⚠️ Dit zijn tijdelijke voorwaarden ter illustratie. De definitieve algemene voorwaarden worden later gepubliceerd.
-          </p>
-
-          <div>
-            <h3 className="font-semibold text-gray-900">1. Ticketaankoop</h3>
-            <p className="mt-1">
-              Tickets voor het Bal Parental zijn persoonlijk en niet overdraagbaar. Na aankoop
-              ontvangt u een bevestigingsmail met uw ticket(s) als PDF-bijlage. Elk ticket bevat
-              een unieke QR-code die bij de ingang wordt gescand.
-            </p>
-          </div>
-
-          <div>
-            <h3 className="font-semibold text-gray-900">2. Betaling</h3>
-            <p className="mt-1">
-              Betaling verloopt via Stripe, een beveiligde betaalprovider. Oudercomité met Pit
-              bewaart geen betalingsgegevens op eigen servers. Alle transacties zijn beveiligd
-              via SSL/TLS-encryptie.
-            </p>
-          </div>
-
-          <div>
-            <h3 className="font-semibold text-gray-900">3. Annulering & terugbetaling</h3>
-            <p className="mt-1">
-              Tickets kunnen niet worden geannuleerd of terugbetaald, tenzij het evenement
-              geannuleerd of uitgesteld wordt door de organisatie. In dat geval worden kopers
-              via e-mail op de hoogte gesteld en worden tickets terugbetaald.
-            </p>
-          </div>
-
-          <div>
-            <h3 className="font-semibold text-gray-900">4. Toegang</h3>
-            <p className="mt-1">
-              Toegang tot het evenement is enkel mogelijk met een geldig, gescand ticket.
-              De organisatie behoudt zich het recht voor personen de toegang te weigeren bij
-              ongepast gedrag of bij een ongeldig ticket.
-            </p>
-          </div>
-
-          <div>
-            <h3 className="font-semibold text-gray-900">5. Privacybeleid</h3>
-            <p className="mt-1">
-              Persoonlijke gegevens (naam, e-mailadres) worden uitsluitend gebruikt voor de
-              verwerking van uw bestelling en worden niet gedeeld met derden. Gegevens worden
-              bewaard conform de AVG/GDPR-regelgeving.
-            </p>
-          </div>
-
-          <div>
-            <h3 className="font-semibold text-gray-900">6. Sponsorpakketten</h3>
-            <p className="mt-1">
-              Sponsoraanvragen worden door het oudercomité behandeld en bevestigd via e-mail.
-              De inbegrepen tickets worden verstuurd na bevestiging van de betaling. Het
-              oudercomité behoudt zich het recht voor het ontwerp van promotiemateriaal te bepalen.
-            </p>
-          </div>
-
-          <div>
-            <h3 className="font-semibold text-gray-900">7. Aansprakelijkheid</h3>
-            <p className="mt-1">
-              Oudercomité met Pit is niet aansprakelijk voor verlies, diefstal of schade aan
-              persoonlijke bezittingen tijdens het evenement. Deelname is op eigen risico.
-            </p>
-          </div>
-        </div>
-
-        <div className="border-t border-gray-100 px-6 py-4">
-          <button onClick={onClose} className="btn-primary w-full">
-            Sluiten
-          </button>
-        </div>
-      </div>
-    </div>
-  );
+    );
 }
 
 // ---------------------------------------------------------------------------
@@ -433,7 +549,7 @@ export default function BalParentalPage() {
                 onClick={() => setActiveTab('sponsor')}
                 className={`flex-1 rounded-lg py-2.5 text-sm font-semibold transition-all ${activeTab === 'sponsor' ? 'bg-white shadow text-gray-900' : 'text-gray-500 hover:text-gray-700'}`}
               >
-                🤝 Sponsor worden
+                🤝 Sponsorpakket bestellen
               </button>
             </div>
 
@@ -553,7 +669,7 @@ export default function BalParentalPage() {
                         className="font-medium text-primary-600 underline hover:text-primary-700">
                         algemene voorwaarden
                       </button>
-                      {' '}en het privacybeleid.
+                      {', inclusief de privacy-informatie.'}
                     </label>
                   </div>
                   {ticketError && <div className="rounded-lg bg-red-50 p-3 text-sm text-red-700">{ticketError}</div>}
@@ -571,9 +687,9 @@ export default function BalParentalPage() {
             {/* Sponsor formulier */}
             {activeTab === 'sponsor' && (
               <div className="mt-4 rounded-2xl bg-white p-8 shadow-xl ring-1 ring-gray-100">
-                <h2 className="text-2xl font-bold text-gray-900">Sponsoraanvraag</h2>
+                <h2 className="text-2xl font-bold text-gray-900">Sponsorpakket bestellen</h2>
                 <p className="mt-2 text-sm text-gray-500">
-                  Kies een pakket hieronder en vul je gegevens in. We nemen zo snel mogelijk contact met je op.
+                  Kies een pakket hieronder en vul je gegevens in. Je wordt doorgestuurd naar een beveiligde betaalpagina.
                 </p>
                 {sponsorSuccess ? (
                   <div className="mt-6 rounded-xl bg-green-50 p-6 text-center">
@@ -639,16 +755,20 @@ export default function BalParentalPage() {
                         className="mt-0.5 h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500" />
                       <label htmlFor="s-terms" className="text-sm text-gray-600">
                         Ik ga akkoord met de{' '}
-                        <button type="button" onClick={() => setShowTerms(true)}
-                          className="font-medium text-primary-600 underline hover:text-primary-700">
-                          algemene voorwaarden
-                        </button>.
+                        <button
+                            type="button"
+                            onClick={() => setShowTerms(true)}
+                            className="font-medium text-primary-600 underline hover:text-primary-700"
+                        >
+                            algemene voorwaarden
+                        </button>
+                        {', inclusief de privacy-informatie.'}
                       </label>
                     </div>
                     {sponsorError && <div className="rounded-lg bg-red-50 p-3 text-sm text-red-700">{sponsorError}</div>}
                     <button type="submit" disabled={sponsorLoading}
                       className="btn-primary w-full disabled:cursor-not-allowed disabled:opacity-50">
-                      {sponsorLoading ? <Spinner /> : 'Aanvraag versturen'}
+                      {sponsorLoading ? <Spinner /> : 'Sponsorpakket betalen'}
                     </button>
                   </form>
                 )}
