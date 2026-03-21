@@ -100,7 +100,7 @@ public class TableStorageService : IStorageService
     public async Task<string> SaveTicketPdfAsync(string orderId, byte[] pdf)
     {
         var container = _blobServiceClient.GetBlobContainerClient(_ticketPdfsContainer);
-        await container.CreateIfNotExistsAsync(PublicAccessType.Blob);
+        await container.CreateIfNotExistsAsync(PublicAccessType.None);
 
         var blobClient = container.GetBlobClient($"{orderId}/tickets.pdf");
         using var stream = new MemoryStream(pdf);
