@@ -31,6 +31,7 @@ public class AppOptions
 {
     public string FrontendUrl { get; init; } = "http://localhost:5173";
     public string ContactEmail { get; init; } = "";
+    public string TicketHmacSecret { get; init; } = "";
 }
 
 public class StorageOptions
@@ -39,4 +40,5 @@ public class StorageOptions
     public string TableNameTickets { get; init; } = "Tickets";
     public string TableNameWebhookEvents { get; init; } = "WebhookEvents";
     public string TableNameSponsors { get; init; } = "SponsorRequests";
+    public string BlobContainerTickets { get; init; } = "ticket-pdfs";
 }

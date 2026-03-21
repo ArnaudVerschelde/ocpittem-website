@@ -4,20 +4,28 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
+using OCPittem.Functions.Services;
 
 namespace OCPittem.Functions.Functions;
 
 public class TicketValidateFunction
 {
+    private readonly AppOptions _appOptions;
+    private readonly IStorageService _storage;
     private readonly ILogger<TicketValidateFunction> _logger;
 
-    public TicketValidateFunction(ILogger<TicketValidateFunction> logger)
+    public TicketValidateFunction(IOptions<AppOptions> appOptions, 
+        IStorageService storage, 
+        ILogger<TicketValidateFunction> logger)
     {
+        _appOptions = appOptions.Value;
+        _storage = storage;
         _logger = logger;
     }
 
     [Function("ValidateTicket")]
-    public IActionResult Run(
+    public async Task<IActionResult> Run(
         [HttpTrigger(AuthorizationLevel.Function, "get", Route = "tickets/validate")] HttpRequest req)
     {
         var code = req.Query["code"].ToString();
@@ -36,8 +44,7 @@ public class TicketValidateFunction
         var ticketId = parts[0];
         var providedSignature = parts[1];
 
-        // Verify HMAC
-        var secret = Encoding.UTF8.GetBytes("ocpittem-ticket-secret-change-me");
+        var secret = Encoding.UTF8.GetBytes(_appOptions.TicketHmacSecret);
         using var hmac = new HMACSHA256(secret);
         var expectedHash = hmac.ComputeHash(Encoding.UTF8.GetBytes(ticketId));
         var expectedSignature = Convert.ToBase64String(expectedHash)[..16];
@@ -48,11 +55,23 @@ public class TicketValidateFunction
             return new OkObjectResult(new { valid = false, error = "Ongeldig ticket." });
         }
 
-        // TODO: Check in Table Storage if ticket exists and is not already scanned
-        // TODO: Mark ScannedAt timestamp
+        var ticket = await _storage.GetTicketByIdAsync(ticketId);
+        if (ticket == null)
+        {
+            _logger.LogWarning("Ticket {TicketId} not found in storage", ticketId);
+            return new OkObjectResult(new { valid = false, error = "Ongeldig ticket." });
+        }
+
+        if (ticket.ScannedAt.HasValue)
+        {
+            _logger.LogWarning("Ticket {TicketId} already scanned at {ScannedAt}", ticketId, ticket.ScannedAt);
+            return new OkObjectResult(new { valid = false, error = $"Ticket al gescand om {ticket.ScannedAt:HH:mm}." });
+        }
+
+        await _storage.MarkTicketScannedAsync(ticket);
 
         _logger.LogInformation("Ticket {TicketId} validated", ticketId);
 
-        return new OkObjectResult(new { valid = true, ticketId });
+        return new OkObjectResult(new { valid = true, ticketId, ticketType = ticket.TicketType });
     }
 }

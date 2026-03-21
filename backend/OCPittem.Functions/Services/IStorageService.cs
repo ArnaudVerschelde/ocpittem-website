@@ -12,4 +12,7 @@ public interface IStorageService
     Task SaveWebhookEventAsync(WebhookEventEntity webhookEvent);
     Task SaveSponsorRequestAsync(SponsorRequestEntity request);
     Task UpsertWebhookEventAsync(WebhookEventEntity webhookEvent);
+    Task<string> SaveTicketPdfAsync(string orderId, byte[] pdf);
+    Task<TicketEntity?> GetTicketByIdAsync(string ticketId);
+    Task MarkTicketScannedAsync(TicketEntity ticket);
 }

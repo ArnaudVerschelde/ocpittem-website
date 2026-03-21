@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using NSubstitute;
 using NSubstitute.ExceptionExtensions;
 using OCPittem.Functions.Functions;
@@ -22,7 +23,8 @@ public class StripeWebhookFunctionTests
 
     public StripeWebhookFunctionTests()
     {
-        _sut = new StripeWebhookFunction(_stripe, _storage, _email, _ticketPdf, _logger);
+        var options = Options.Create(new AppOptions { TicketHmacSecret = "test-hmac-secret" });
+        _sut = new StripeWebhookFunction(_stripe, _storage, _email, _ticketPdf, options, _logger);
     }
 
     [Fact]
@@ -83,6 +85,7 @@ public class StripeWebhookFunctionTests
         _stripe.ConstructWebhookEvent(Arg.Any<string>(), Arg.Any<string>()).Returns(stripeEvent);
         _storage.WebhookEventExistsAsync("evt_1").Returns(false);
         _storage.GetOrderByStripeSessionAsync("sess_123").Returns(order);
+        _storage.SaveTicketPdfAsync(Arg.Any<string>(), Arg.Any<byte[]>()).Returns("https://blob/order-123/tickets.pdf");
         _ticketPdf.GenerateTicketsPdf(
                 Arg.Any<IReadOnlyList<TicketPdfData>>(), Arg.Any<string>(), Arg.Any<string>())
             .Returns(new byte[] { 1, 2, 3 });
@@ -92,10 +95,11 @@ public class StripeWebhookFunctionTests
         Assert.IsType<OkResult>(result);
         Assert.Equal(nameof(OrderStatus.Paid), order.Status);
         await _storage.Received(2).SaveTicketAsync(Arg.Any<TicketEntity>());
+        await _storage.Received(1).SaveTicketPdfAsync(Arg.Any<string>(), Arg.Any<byte[]>());
         await _email.Received(1).SendTicketConfirmationAsync(
             "test@example.com", "Test User",
             Arg.Any<int>(), Arg.Any<int>(), Arg.Any<int>(), Arg.Any<int>(), Arg.Any<int>(),
-            Arg.Any<byte[]>());
+            Arg.Any<IReadOnlyList<TicketPdfData>>(), Arg.Any<byte[]>());
         await _storage.Received(1).UpsertWebhookEventAsync(
             Arg.Is<WebhookEventEntity>(e => e.Result == "processed"));
     }
@@ -122,7 +126,7 @@ public class StripeWebhookFunctionTests
         await _email.DidNotReceive().SendTicketConfirmationAsync(
             Arg.Any<string>(), Arg.Any<string>(),
             Arg.Any<int>(), Arg.Any<int>(), Arg.Any<int>(), Arg.Any<int>(), Arg.Any<int>(),
-            Arg.Any<byte[]>());
+            Arg.Any<IReadOnlyList<TicketPdfData>>(), Arg.Any<byte[]>());
     }
 
     [Fact]

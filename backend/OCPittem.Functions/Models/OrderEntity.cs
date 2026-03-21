@@ -19,5 +19,6 @@ public class OrderEntity : ITableEntity
     public int Drankkaart10Count { get; set; }
     public int Drankkaart20Count { get; set; }
     public string Status { get; set; } = nameof(OrderStatus.Pending);
+    public string PdfBlobUrl { get; set; } = string.Empty;
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 }

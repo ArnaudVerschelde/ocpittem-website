@@ -2,6 +2,7 @@
 using Mailjet.Client.TransactionalEmails;
 using Mailjet.Client.TransactionalEmails.Response;
 using Microsoft.Extensions.Logging;
+using OCPittem.Functions.Models;
 using System.Net;
 
 namespace OCPittem.Functions.Services;
@@ -42,13 +43,14 @@ public class MailjetEmailService : IEmailService
     }
 
     public async Task SendTicketConfirmationAsync(
-        string toEmail, 
+        string toEmail,
         string toName,
-        int toegangstickets, 
-        int etenPartyTickets, 
+        int toegangstickets,
+        int etenPartyTickets,
         int vegetarischCount,
-        int drankkaart10, 
+        int drankkaart10,
         int drankkaart20,
+        IReadOnlyList<TicketPdfData> tickets,
         byte[]? pdfAttachment = null)
     {
         if (!_enabled)
@@ -59,37 +61,68 @@ public class MailjetEmailService : IEmailService
 
         var safeName = WebUtility.HtmlEncode(toName);
 
-        var lines = new System.Text.StringBuilder();
+        var orderLines = new System.Text.StringBuilder();
         if (toegangstickets > 0)
-            lines.AppendLine($"<li><strong>{toegangstickets}x Toegangsticket</strong> (vanaf 22u30) — &euro;{toegangstickets * 8}</li>");
+            orderLines.AppendLine($"<li><strong>{toegangstickets}x Toegangsticket</strong> (vanaf 22u30) &mdash; &euro;{toegangstickets * 8}</li>");
         if (etenPartyTickets > 0)
         {
             var vegStr = vegetarischCount > 0 ? $", waarvan {vegetarischCount} vegetarisch" : "";
-            lines.AppendLine($"<li><strong>{etenPartyTickets}x Eten &amp; Party ticket</strong> (vanaf 19u00{vegStr}) — &euro;{etenPartyTickets * 50}</li>");
+            orderLines.AppendLine($"<li><strong>{etenPartyTickets}x Eten &amp; Party ticket</strong> (vanaf 19u00{vegStr}) &mdash; &euro;{etenPartyTickets * 50}</li>");
         }
         if (drankkaart10 > 0)
-            lines.AppendLine($"<li><strong>{drankkaart10}x Drankkaart &euro;10</strong> — &euro;{drankkaart10 * 10}</li>");
+            orderLines.AppendLine($"<li><strong>{drankkaart10}x Drankkaart &euro;10</strong> &mdash; &euro;{drankkaart10 * 10}</li>");
         if (drankkaart20 > 0)
-            lines.AppendLine($"<li><strong>{drankkaart20}x Drankkaart &euro;20</strong> — &euro;{drankkaart20 * 20}</li>");
+            orderLines.AppendLine($"<li><strong>{drankkaart20}x Drankkaart &euro;20</strong> &mdash; &euro;{drankkaart20 * 20}</li>");
 
         var total = (toegangstickets * 8) + (etenPartyTickets * 50) + (drankkaart10 * 10) + (drankkaart20 * 20);
+
+        var ticketCards = new System.Text.StringBuilder();
+        foreach (var ticket in tickets)
+        {
+            var typeLabel = ticket.TicketType == nameof(TicketKind.EtenParty)
+                ? $"Eten &amp; Party{(ticket.IsVegetarisch ? " (Vegetarisch)" : "")}"
+                : "Toegangsticket";
+            var qrBase64 = QrCodeHelper.GenerateBase64(ticket.QrPayload);
+
+            ticketCards.AppendLine($@"
+                <div style=""border:1px solid #13A2A3;border-radius:6px;padding:16px;margin:12px 0;display:flex;align-items:center;gap:20px;"">
+                    <div>
+                        <p style=""margin:0 0 4px;font-weight:bold;color:#13A2A3;font-size:14px;"">{typeLabel}</p>
+                        <img src=""data:image/png;base64,{qrBase64}"" width=""110"" height=""110"" alt=""QR-code"" style=""display:block;""/>
+                        <p style=""margin:4px 0 0;font-size:10px;color:#888;"">ID: {ticket.TicketId}</p>
+                    </div>
+                </div>");
+        }
+
+        var html = $@"
+            <div style=""font-family:Arial,sans-serif;max-width:600px;margin:0 auto;"">
+                <h2 style=""color:#13A2A3;margin-bottom:4px;"">Bal Parental &mdash; Oudercomité met Pit</h2>
+                <hr style=""border:none;border-top:2px solid #13A2A3;margin-bottom:20px;""/>
+                <p>Beste {safeName},</p>
+                <p>Bedankt voor jouw bestelling voor Bal Parental! Hierbij vind je jouw ticket(s).</p>
+                <p style=""font-size:16px;font-weight:bold;color:#13A2A3;"">Tot op zaterdag 20 juni! 🎉</p>
+                <h3 style=""margin-top:24px;"">Jouw bestelling:</h3>
+                <ul style=""padding-left:20px;"">{orderLines}</ul>
+                <p><strong>Totaal: &euro;{total}</strong></p>
+                <h3 style=""margin-top:24px;"">Jouw ticket(s) met QR-code:</h3>
+                {ticketCards}
+                <p style=""margin-top:20px;color:#555;"">
+                    De volledige PDF met al jouw tickets vind je ook in bijlage.<br/>
+                    Toon de QR-code aan de ingang.
+                </p>
+                <hr style=""border:none;border-top:1px solid #eee;margin-top:24px;""/>
+                <p style=""font-size:11px;color:#aaa;"">Oudercomité met Pit &mdash; Pittem &mdash; ocpittem.be</p>
+            </div>";
 
         var builder = new TransactionalEmailBuilder()
             .WithFrom(new SendContact(_ticketFromEmail, _ticketFromName))
             .WithSubject("Jouw tickets voor Bal Parental — Oudercomité met Pit")
-            .WithHtmlPart($@"
-                <h2>Bedankt voor je bestelling, {safeName}!</h2>
-                <p>Je bestelling voor het Bal Parental is bevestigd. Hieronder een overzicht:</p>
-                <ul>{lines}</ul>
-                <p><strong>Totaal: &euro;{total}</strong></p>
-                <p>In bijlage vind je jouw ticket(s) als PDF met QR-code. Toon deze aan de ingang.</p>
-                <p>Tot dan!</p>
-                <p><em>Oudercomité met Pit — Pittem</em></p>
-            ")
+            .WithHtmlPart(html)
             .WithTo(new SendContact(toEmail, toName));
 
         if (pdfAttachment != null)
-            builder = builder.WithAttachment(new Attachment("tickets.pdf", "application/pdf", Convert.ToBase64String(pdfAttachment)));
+            builder = builder.WithAttachment(
+                new Attachment("JouwBalParentalTickets.pdf", "application/pdf", Convert.ToBase64String(pdfAttachment)));
 
         await Send(builder.Build(), $"ticket confirmation to {toEmail}");
         _logger.LogInformation("Ticket confirmation email sent to {Email}.", toEmail);

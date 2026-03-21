@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using OCPittem.Functions.Models;
 using OCPittem.Functions.Services;
 using Stripe;
@@ -17,6 +18,7 @@ public class StripeWebhookFunction
     private readonly IStorageService _storage;
     private readonly IEmailService _email;
     private readonly ITicketPdfService _ticketPdf;
+    private readonly AppOptions _appOptions;
     private readonly ILogger<StripeWebhookFunction> _logger;
 
     public StripeWebhookFunction(
@@ -24,12 +26,14 @@ public class StripeWebhookFunction
         IStorageService storage,
         IEmailService email,
         ITicketPdfService ticketPdf,
+        IOptions<AppOptions> appOptions,
         ILogger<StripeWebhookFunction> logger)
     {
         _stripe = stripe;
         _storage = storage;
         _email = email;
         _ticketPdf = ticketPdf;
+        _appOptions = appOptions.Value;
         _logger = logger;
     }
 
@@ -190,16 +194,25 @@ public class StripeWebhookFunction
             ? _ticketPdf.GenerateTicketsPdf(pdfTickets, customerName, "Bal Parental 2026")
             : null;
 
+        if (combinedPdf != null)
+        {
+            var blobUrl = await _storage.SaveTicketPdfAsync(orderId, combinedPdf);
+            order.PdfBlobUrl = blobUrl;
+            await _storage.UpdateOrderAsync(order);
+            _logger.LogInformation("Ticket PDF saved to blob for order {OrderId}", orderId);
+        }
+
         if (!string.IsNullOrEmpty(email))
         {
             await _email.SendTicketConfirmationAsync(
-                email, 
+                email,
                 customerName,
-                toegangsticketCount, 
-                etenPartyCount, 
+                toegangsticketCount,
+                etenPartyCount,
                 vegetarischCount,
-                order.Drankkaart10Count, 
+                order.Drankkaart10Count,
                 order.Drankkaart20Count,
+                pdfTickets,
                 combinedPdf);
             _logger.LogInformation("Ticket confirmation email sent to {Email} for order {OrderId}", email, orderId);
         }
@@ -220,11 +233,9 @@ public class StripeWebhookFunction
         }
     }
 
-    private static string GenerateQrPayload(string ticketId)
+    private string GenerateQrPayload(string ticketId)
     {
-        // HMAC signature for QR validation
-        // In production, use a proper secret from configuration
-        var secret = Encoding.UTF8.GetBytes("ocpittem-ticket-secret-change-me");
+        var secret = Encoding.UTF8.GetBytes(_appOptions.TicketHmacSecret);
         using var hmac = new HMACSHA256(secret);
         var hash = hmac.ComputeHash(Encoding.UTF8.GetBytes(ticketId));
         var signature = Convert.ToBase64String(hash)[..16];

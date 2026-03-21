@@ -1,5 +1,7 @@
 using Azure;
 using Azure.Data.Tables;
+using Azure.Storage.Blobs;
+using Azure.Storage.Blobs.Models;
 using OCPittem.Functions.Models;
 
 namespace OCPittem.Functions.Services;
@@ -7,18 +9,22 @@ namespace OCPittem.Functions.Services;
 public class TableStorageService : IStorageService
 {
     private readonly TableServiceClient _serviceClient;
+    private readonly BlobServiceClient _blobServiceClient;
     private readonly string _ordersTable;
     private readonly string _ticketsTable;
     private readonly string _webhookEventsTable;
     private readonly string _sponsorsTable;
+    private readonly string _ticketPdfsContainer;
 
     public TableStorageService(string connectionString, StorageOptions options)
     {
         _serviceClient = new TableServiceClient(connectionString);
+        _blobServiceClient = new BlobServiceClient(connectionString);
         _ordersTable = options.TableNameOrders;
         _ticketsTable = options.TableNameTickets;
         _webhookEventsTable = options.TableNameWebhookEvents;
         _sponsorsTable = options.TableNameSponsors;
+        _ticketPdfsContainer = options.BlobContainerTickets;
     }
 
     private async Task<TableClient> GetTableAsync(string tableName)
@@ -89,5 +95,36 @@ public class TableStorageService : IStorageService
     {
         var table = await GetTableAsync(_webhookEventsTable);
         await table.UpsertEntityAsync(webhookEvent, TableUpdateMode.Replace);
+    }
+
+    public async Task<string> SaveTicketPdfAsync(string orderId, byte[] pdf)
+    {
+        var container = _blobServiceClient.GetBlobContainerClient(_ticketPdfsContainer);
+        await container.CreateIfNotExistsAsync(PublicAccessType.Blob);
+
+        var blobClient = container.GetBlobClient($"{orderId}/tickets.pdf");
+        using var stream = new MemoryStream(pdf);
+        await blobClient.UploadAsync(stream, overwrite: true);
+        return blobClient.Uri.ToString();
+    }
+
+    public async Task<TicketEntity?> GetTicketByIdAsync(string ticketId)
+    {
+        var table = await GetTableAsync(_ticketsTable);
+        var results = table.QueryAsync<TicketEntity>(e => e.RowKey == ticketId);
+
+        await foreach (var entity in results)
+        {
+            return entity;
+        }
+
+        return null;
+    }
+
+    public async Task MarkTicketScannedAsync(TicketEntity ticket)
+    {
+        ticket.ScannedAt = DateTime.UtcNow;
+        var table = await GetTableAsync(_ticketsTable);
+        await table.UpdateEntityAsync(ticket, ticket.ETag, TableUpdateMode.Replace);
     }
 }
