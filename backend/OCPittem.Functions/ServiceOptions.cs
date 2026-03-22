@@ -8,6 +8,9 @@ public class StripeOptions
     public string PriceIdEtenParty { get; init; } = "";
     public string PriceIdDrankkaart10 { get; init; } = "";
     public string PriceIdDrankkaart20 { get; init; } = "";
+    public string PriceIdSponsorBrons { get; init; } = "";
+    public string PriceIdSponsorZilver { get; init; } = "";
+    public string PriceIdSponsorGoud { get; init; } = "";
 }
 
 public class MailjetOptions

@@ -1,9 +1,7 @@
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.Functions.Worker;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 using OCPittem.Functions.Models;
 using OCPittem.Functions.Services;
 
@@ -11,25 +9,20 @@ namespace OCPittem.Functions.Functions;
 
 public class SponsorRequestFunction
 {
+    private readonly IStripeService _stripe;
     private readonly IStorageService _storage;
-    private readonly IEmailService _email;
-    private readonly IOptions<AppOptions> _appOptions;
     private readonly ILogger<SponsorRequestFunction> _logger;
 
-    public SponsorRequestFunction(IStorageService storage, 
-        IEmailService email, 
-        IOptions<AppOptions> appOptions, 
-        ILogger<SponsorRequestFunction> logger)
+    public SponsorRequestFunction(IStripeService stripe, IStorageService storage, ILogger<SponsorRequestFunction> logger)
     {
+        _stripe = stripe;
         _storage = storage;
-        _email = email;
-        _appOptions = appOptions;
         _logger = logger;
     }
 
-    [Function("SponsorRequest")]
+    [Function("SponsorCheckout")]
     public async Task<IActionResult> Run(
-        [HttpTrigger(AuthorizationLevel.Anonymous, "post", Route = "sponsors/request")] HttpRequest req)
+        [HttpTrigger(AuthorizationLevel.Anonymous, "post", Route = "sponsors/checkout")] HttpRequest req)
     {
         SponsorRequest? body;
         try
@@ -50,44 +43,51 @@ public class SponsorRequestFunction
             return new BadRequestObjectResult(new { error = "Vul alle verplichte velden in." });
         }
 
+        if (body.ExtraEtenPartyCount < 0 || body.ExtraVegetarischCount < 0 || body.ExtraDrankkaart20Count < 0)
+            return new BadRequestObjectResult(new { error = "Ongeldige aantallen." });
+
+        if (body.ExtraVegetarischCount > body.ExtraEtenPartyCount)
+            return new BadRequestObjectResult(new { error = "Aantal vegetarische opties mag niet groter zijn dan het aantal extra tickets." });
+
+        var validPackages = new[] { "brons", "zilver", "goud" };
+        if (!validPackages.Contains(body.Package.ToLower()))
+            return new BadRequestObjectResult(new { error = "Ongeldig sponsorpakket." });
+
         var requestId = Guid.NewGuid().ToString();
 
         try
         {
+            var checkout = await _stripe.CreateSponsorCheckoutSessionAsync(
+                requestId, body.Email, body.CompanyName,
+                body.Package, body.ExtraEtenPartyCount, body.ExtraDrankkaart20Count);
+
             var entity = new SponsorRequestEntity
             {
+                PartitionKey = "Sponsor",
                 RowKey = requestId,
+                StripeSessionId = checkout.SessionId,
+                Status = "Pending",
                 CompanyName = body.CompanyName,
                 ContactName = body.ContactName,
                 Email = body.Email,
                 Phone = body.Phone ?? "",
                 Package = body.Package,
                 Message = body.Message ?? "",
+                ExtraEtenPartyCount = body.ExtraEtenPartyCount,
+                ExtraVegetarischCount = body.ExtraVegetarischCount,
+                ExtraDrankkaart20Count = body.ExtraDrankkaart20Count,
             };
 
             await _storage.SaveSponsorRequestAsync(entity);
 
-            // Send confirmation to the sponsor
-            await _email.SendSponsorConfirmationAsync(body.Email, body.CompanyName, body.Package);
+            _logger.LogInformation("Sponsor checkout created for request {RequestId} ({Company}, {Package})",
+                requestId, body.CompanyName, body.Package);
 
-            // Notify the committee
-            var contactEmail = string.IsNullOrEmpty(_appOptions.Value.ContactEmail)
-                ? "oudercomitepittem@gmail.com"
-                : _appOptions.Value.ContactEmail;
-            await _email.SendContactNotificationAsync(
-                body.ContactName,
-                body.Email,
-                $"Sponsoraanvraag: {body.Package} — {body.CompanyName}",
-                $"Bedrijf: {body.CompanyName}\nContactpersoon: {body.ContactName}\nTelefoon: {body.Phone}\nPakket: {body.Package}\n\n{body.Message}",
-                contactEmail);
-
-            _logger.LogInformation("Sponsor request {RequestId} created for {Company}", requestId, body.CompanyName);
-
-            return new OkObjectResult(new SponsorResponse(true));
+            return new OkObjectResult(new SponsorCheckoutResponse(checkout.Url));
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to process sponsor request {RequestId}", requestId);
+            _logger.LogError(ex, "Failed to create sponsor checkout for request {RequestId}", requestId);
             return new StatusCodeResult(StatusCodes.Status500InternalServerError);
         }
     }

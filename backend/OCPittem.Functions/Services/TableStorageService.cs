@@ -145,4 +145,18 @@ public class TableStorageService : IStorageService
             results.Add(entity);
         return results;
     }
+
+    public async Task<SponsorRequestEntity?> GetSponsorRequestByStripeSessionAsync(string sessionId)
+    {
+        var table = await GetTableAsync(_sponsorsTable);
+        await foreach (var entity in table.QueryAsync<SponsorRequestEntity>(e => e.StripeSessionId == sessionId))
+            return entity;
+        return null;
+    }
+
+    public async Task UpdateSponsorRequestAsync(SponsorRequestEntity request)
+    {
+        var table = await GetTableAsync(_sponsorsTable);
+        await table.UpdateEntityAsync(request, request.ETag, TableUpdateMode.Replace);
+    }
 }

@@ -12,6 +12,9 @@ public class StripeService : IStripeService
     private readonly string _priceIdEtenParty;
     private readonly string _priceIdDrankkaart10;
     private readonly string _priceIdDrankkaart20;
+    private readonly string _priceIdSponsorBrons;
+    private readonly string _priceIdSponsorZilver;
+    private readonly string _priceIdSponsorGoud;
     private readonly string _frontendUrl;
 
     public StripeService(StripeOptions options, string frontendUrl)
@@ -22,6 +25,9 @@ public class StripeService : IStripeService
         _priceIdEtenParty = options.PriceIdEtenParty;
         _priceIdDrankkaart10 = options.PriceIdDrankkaart10;
         _priceIdDrankkaart20 = options.PriceIdDrankkaart20;
+        _priceIdSponsorBrons = options.PriceIdSponsorBrons;
+        _priceIdSponsorZilver = options.PriceIdSponsorZilver;
+        _priceIdSponsorGoud = options.PriceIdSponsorGoud;
         _frontendUrl = frontendUrl;
     }
 
@@ -59,6 +65,49 @@ public class StripeService : IStripeService
         var service = new SessionService();
         var session = await service.CreateAsync(options);
         return new StripeCheckoutResult(session.Url!, session.Id);
+    }
+
+    public async Task<StripeCheckoutResult> CreateSponsorCheckoutSessionAsync(
+        string requestId, string email, string companyName,
+        string packageName, int extraEtenPartyCount, int extraDrankkaart20Count)
+    {
+        var packagePriceId = packageName.ToLower() switch
+        {
+            "brons" => _priceIdSponsorBrons,
+            "zilver" => _priceIdSponsorZilver,
+            "goud" => _priceIdSponsorGoud,
+            _ => throw new ArgumentException($"Unknown sponsor package: {packageName}")
+        };
+
+        var lineItems = new List<SessionLineItemOptions>
+        {
+            new SessionLineItemOptions { Price = packagePriceId, Quantity = 1 }
+        };
+
+        if (extraEtenPartyCount > 0)
+            lineItems.Add(new SessionLineItemOptions { Price = _priceIdEtenParty, Quantity = extraEtenPartyCount });
+        if (extraDrankkaart20Count > 0)
+            lineItems.Add(new SessionLineItemOptions { Price = _priceIdDrankkaart20, Quantity = extraDrankkaart20Count });
+
+        var sponsorOptions = new SessionCreateOptions
+        {
+            PaymentMethodTypes = ["card", "bancontact", "ideal"],
+            CustomerEmail = email,
+            LineItems = lineItems,
+            Mode = "payment",
+            SuccessUrl = $"{_frontendUrl}/betaling/success?session_id={{CHECKOUT_SESSION_ID}}",
+            CancelUrl = $"{_frontendUrl}/betaling/cancel",
+            Metadata = new Dictionary<string, string>
+            {
+                { "requestId", requestId },
+                { "customerName", companyName },
+                { "orderType", "sponsor" },
+            },
+        };
+
+        var sponsorService = new SessionService();
+        var sponsorSession = await sponsorService.CreateAsync(sponsorOptions);
+        return new StripeCheckoutResult(sponsorSession.Url!, sponsorSession.Id);
     }
 
     public Stripe.Event ConstructWebhookEvent(string json, string signature)

@@ -121,11 +121,20 @@ public class StripeWebhookFunction
 
         if (session.PaymentStatus != "paid")
         {
-            _logger.LogInformation("Session {SessionId} payment status is {Status}, skipping ticket generation",
+            _logger.LogInformation("Session {SessionId} payment status is {Status}, skipping",
                 session.Id, session.PaymentStatus);
             return;
         }
 
+        var orderType = session.Metadata.GetValueOrDefault("orderType") ?? "ticket";
+        if (orderType == "sponsor")
+            await HandleSponsorCheckoutCompleted(session);
+        else
+            await HandleTicketCheckoutCompleted(session);
+    }
+
+    private async Task HandleTicketCheckoutCompleted(Session session)
+    {
         var orderId = session.Metadata.GetValueOrDefault("orderId") ?? "";
 
         if (string.IsNullOrEmpty(orderId))
@@ -218,18 +227,116 @@ public class StripeWebhookFunction
         }
     }
 
+    private async Task HandleSponsorCheckoutCompleted(Session session)
+    {
+        var requestId = session.Metadata.GetValueOrDefault("requestId") ?? "";
+        if (string.IsNullOrEmpty(requestId))
+        {
+            _logger.LogWarning("No requestId in sponsor session metadata for session {SessionId}", session.Id);
+            return;
+        }
+
+        var sponsor = await _storage.GetSponsorRequestByStripeSessionAsync(session.Id);
+        if (sponsor == null)
+        {
+            _logger.LogWarning("Sponsor request not found for Stripe session {SessionId}.", session.Id);
+            return;
+        }
+
+        sponsor.Status = "Paid";
+        var email = session.CustomerEmail ?? sponsor.Email;
+        var companyName = session.Metadata.GetValueOrDefault("customerName") ?? sponsor.CompanyName;
+
+        var includedTickets = sponsor.Package.ToLower() switch
+        {
+            "brons" => 2, "zilver" => 4, "goud" => 6, _ => 0
+        };
+
+        var pdfTickets = new List<TicketPdfData>();
+
+        for (int i = 0; i < includedTickets; i++)
+        {
+            var ticketId = Guid.NewGuid().ToString();
+            var qrPayload = GenerateQrPayload(ticketId);
+            var ticket = new TicketEntity
+            {
+                PartitionKey = requestId, RowKey = ticketId,
+                QrPayload = qrPayload, TicketType = nameof(TicketKind.EtenParty), IsVegetarisch = false,
+            };
+            await _storage.SaveTicketAsync(ticket);
+            pdfTickets.Add(new TicketPdfData(ticketId, qrPayload, nameof(TicketKind.EtenParty), false));
+        }
+
+        for (int i = 0; i < sponsor.ExtraEtenPartyCount; i++)
+        {
+            var ticketId = Guid.NewGuid().ToString();
+            var qrPayload = GenerateQrPayload(ticketId);
+            var isVeg = i < sponsor.ExtraVegetarischCount;
+            var ticket = new TicketEntity
+            {
+                PartitionKey = requestId, RowKey = ticketId,
+                QrPayload = qrPayload, TicketType = nameof(TicketKind.EtenParty), IsVegetarisch = isVeg,
+            };
+            await _storage.SaveTicketAsync(ticket);
+            pdfTickets.Add(new TicketPdfData(ticketId, qrPayload, nameof(TicketKind.EtenParty), isVeg));
+        }
+
+        byte[]? combinedPdf = pdfTickets.Count > 0
+            ? _ticketPdf.GenerateTicketsPdf(pdfTickets, companyName, "Bal Parental 2026")
+            : null;
+
+        if (combinedPdf != null)
+        {
+            var blobUrl = await _storage.SaveTicketPdfAsync(requestId, combinedPdf);
+            sponsor.PdfBlobUrl = blobUrl;
+            _logger.LogInformation("Sponsor PDF saved to blob for request {RequestId}", requestId);
+        }
+
+        await _storage.UpdateSponsorRequestAsync(sponsor);
+
+        if (!string.IsNullOrEmpty(email))
+        {
+            await _email.SendSponsorPaymentConfirmationAsync(
+                email, companyName, sponsor.Package,
+                sponsor.ExtraEtenPartyCount, sponsor.ExtraVegetarischCount, sponsor.ExtraDrankkaart20Count,
+                pdfTickets, combinedPdf);
+            _logger.LogInformation("Sponsor payment confirmation sent to {Email} for request {RequestId}", email, requestId);
+        }
+
+        var contactEmail = string.IsNullOrEmpty(_appOptions.ContactEmail)
+            ? "oudercomitepittem@gmail.com"
+            : _appOptions.ContactEmail;
+        await _email.SendContactNotificationAsync(
+            companyName, email,
+            $"Sponsorpakket betaald: {sponsor.Package} \u2014 {companyName}",
+            $"Bedrijf: {companyName}\nContactpersoon: {sponsor.ContactName}\nPakket: {sponsor.Package}\nExtra Eten & Party: {sponsor.ExtraEtenPartyCount}\nExtra Drankkaarten \u20ac20: {sponsor.ExtraDrankkaart20Count}\n\n{sponsor.Message}",
+            contactEmail);
+    }
+
     private async Task HandlePaymentFailed(Event stripeEvent)
     {
         if (stripeEvent.Data.Object is not Session session) return;
 
-        var orderId = session.Metadata.GetValueOrDefault("orderId") ?? "";
-        _logger.LogWarning("Payment failed for session {SessionId}, order {OrderId}", session.Id, orderId);
+        var orderType = session.Metadata.GetValueOrDefault("orderType") ?? "ticket";
+        _logger.LogWarning("Payment failed for session {SessionId}, type {OrderType}", session.Id, orderType);
 
-        var order = await _storage.GetOrderByStripeSessionAsync(session.Id);
-        if (order != null)
+        if (orderType == "sponsor")
         {
-            order.Status = nameof(OrderStatus.Failed);
-            await _storage.UpdateOrderAsync(order);
+            var sponsor = await _storage.GetSponsorRequestByStripeSessionAsync(session.Id);
+            if (sponsor != null)
+            {
+                sponsor.Status = "Failed";
+                await _storage.UpdateSponsorRequestAsync(sponsor);
+            }
+        }
+        else
+        {
+            var order = await _storage.GetOrderByStripeSessionAsync(session.Id);
+            if (order != null)
+            {
+                order.Status = nameof(OrderStatus.Failed);
+                await _storage.UpdateOrderAsync(order);
+            }
         }
     }
 

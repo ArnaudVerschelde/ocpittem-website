@@ -41,6 +41,9 @@ param stripePriceIdToegangsticket string = 'price_xxx'
 param stripePriceIdEtenParty string = 'price_xxx'
 param stripePriceIdDrankkaart10 string = 'price_xxx'
 param stripePriceIdDrankkaart20 string = 'price_xxx'
+param stripePriceIdSponsorBrons string = 'price_xxx'
+param stripePriceIdSponsorZilver string = 'price_xxx'
+param stripePriceIdSponsorGoud string = 'price_xxx'
 
 // ---- Table names ----
 param tableNameOrders string = 'Orders'
@@ -226,6 +229,9 @@ resource functionApp 'Microsoft.Web/sites@2023-12-01' = {
         { name: 'Stripe__PriceIdEtenParty', value: stripePriceIdEtenParty }
         { name: 'Stripe__PriceIdDrankkaart10', value: stripePriceIdDrankkaart10 }
         { name: 'Stripe__PriceIdDrankkaart20', value: stripePriceIdDrankkaart20 }
+        { name: 'Stripe__PriceIdSponsorBrons', value: stripePriceIdSponsorBrons }
+        { name: 'Stripe__PriceIdSponsorZilver', value: stripePriceIdSponsorZilver }
+        { name: 'Stripe__PriceIdSponsorGoud', value: stripePriceIdSponsorGoud }
         { name: 'Mailjet__FromEmail', value: mailjetFromEmail }
         { name: 'Mailjet__FromName', value: mailjetFromName }
         { name: 'Mailjet__ContactFromEmail', value: mailjetContactFromEmail }

@@ -254,6 +254,34 @@ public class MailjetEmailService : IEmailService
                         <td style=""padding:6px 12px;"">Totaal aanvragen</td>
                         <td style=""padding:6px 12px;font-weight:bold;"">{stats.TotalSponsorRequests}</td>
                     </tr>
+                    <tr>
+                        <td style=""padding:6px 12px;"">Betaald</td>
+                        <td style=""padding:6px 12px;font-weight:bold;color:#16a34a;"">{stats.PaidSponsorOrders}</td>
+                    </tr>
+                    <tr style=""background:#f0fafa;"">
+                        <td style=""padding:6px 12px;"">🥉 Brons (&euro;100)</td>
+                        <td style=""padding:6px 12px;font-weight:bold;"">{stats.TotalSponsorBrons}</td>
+                    </tr>
+                    <tr>
+                        <td style=""padding:6px 12px;"">🥈 Zilver (&euro;250)</td>
+                        <td style=""padding:6px 12px;font-weight:bold;"">{stats.TotalSponsorZilver}</td>
+                    </tr>
+                    <tr style=""background:#f0fafa;"">
+                        <td style=""padding:6px 12px;"">🥇 Goud (&euro;400)</td>
+                        <td style=""padding:6px 12px;font-weight:bold;"">{stats.TotalSponsorGoud}</td>
+                    </tr>
+                    <tr>
+                        <td style=""padding:6px 12px;"">Extra Eten &amp; Party tickets</td>
+                        <td style=""padding:6px 12px;font-weight:bold;"">{stats.TotalSponsorExtraEtenParty}</td>
+                    </tr>
+                    <tr style=""background:#f0fafa;"">
+                        <td style=""padding:6px 12px;"">Extra Drankkaarten &euro;20</td>
+                        <td style=""padding:6px 12px;font-weight:bold;"">{stats.TotalSponsorExtraDrankkaart20}</td>
+                    </tr>
+                    <tr style=""border-top:2px solid #13A2A3;"">
+                        <td style=""padding:8px 12px;font-weight:bold;"">Totale sponsoromzet (betaald)</td>
+                        <td style=""padding:8px 12px;font-weight:bold;color:#13A2A3;font-size:16px;"">&euro;{stats.TotalSponsorRevenue:F0}</td>
+                    </tr>
                 </table>
 
                 <p style=""margin-top:24px;color:#555;font-size:13px;"">
@@ -297,5 +325,94 @@ public class MailjetEmailService : IEmailService
             _logger.LogError("Mailjet failed sending ({Context}). Status={Status}. Error={Error}", context, first.Status, err);
             throw new InvalidOperationException($"Mailjet send failed: {err}");
         }
+    }
+
+    public async Task SendSponsorPaymentConfirmationAsync(
+        string toEmail,
+        string companyName,
+        string packageName,
+        int extraEtenParty,
+        int extraVegetarisch,
+        int extraDrankkaart20,
+        IReadOnlyList<TicketPdfData> tickets,
+        byte[]? pdfAttachment = null)
+    {
+        if (!_enabled)
+        {
+            _logger.LogInformation("Email disabled. Would send sponsor payment confirmation to {Email}.", toEmail);
+            return;
+        }
+
+        var safeCompany = WebUtility.HtmlEncode(companyName);
+        var safePackage = WebUtility.HtmlEncode(char.ToUpper(packageName[0]) + packageName[1..].ToLower());
+
+        var packagePrice = packageName.ToLower() switch
+        {
+            "brons" => 100, "zilver" => 250, "goud" => 400, _ => 0
+        };
+        var includedTickets = packageName.ToLower() switch
+        {
+            "brons" => 2, "zilver" => 4, "goud" => 6, _ => 0
+        };
+
+        var orderLines = new System.Text.StringBuilder();
+        orderLines.AppendLine($"<li><strong>Pakket {safePackage}</strong> ({includedTickets} tickets inbegrepen) &mdash; &euro;{packagePrice}</li>");
+        if (extraEtenParty > 0)
+        {
+            var vegStr = extraVegetarisch > 0 ? $", waarvan {extraVegetarisch} vegetarisch" : "";
+            orderLines.AppendLine($"<li><strong>{extraEtenParty}x extra Eten &amp; Party ticket</strong>{vegStr} &mdash; &euro;{extraEtenParty * 50}</li>");
+        }
+        if (extraDrankkaart20 > 0)
+            orderLines.AppendLine($"<li><strong>{extraDrankkaart20}x Drankkaart &euro;20</strong> &mdash; &euro;{extraDrankkaart20 * 20}</li>");
+
+        var total = packagePrice + extraEtenParty * 50 + extraDrankkaart20 * 20;
+
+        var ticketCards = new System.Text.StringBuilder();
+        foreach (var ticket in tickets)
+        {
+            var typeLabel = ticket.IsVegetarisch ? "Eten &amp; Party (Vegetarisch)" : "Eten &amp; Party";
+            var qrBase64 = QrCodeHelper.GenerateBase64(ticket.QrPayload);
+            ticketCards.AppendLine($@"
+                <div style=""border:1px solid #13A2A3;border-radius:6px;padding:16px;margin:12px 0;display:flex;align-items:center;gap:20px;"">
+                    <div>
+                        <p style=""margin:0 0 4px;font-weight:bold;color:#13A2A3;font-size:14px;"">{typeLabel}</p>
+                        <img src=""data:image/png;base64,{qrBase64}"" width=""110"" height=""110"" alt=""QR-code"" style=""display:block;""/>
+                        <p style=""margin:4px 0 0;font-size:10px;color:#888;"">ID: {ticket.TicketId}</p>
+                    </div>
+                </div>");
+        }
+
+        var html = $@"
+            <div style=""font-family:Arial,sans-serif;max-width:600px;margin:0 auto;"">
+                <h2 style=""color:#13A2A3;margin-bottom:4px;"">Bal Parental &mdash; Oudercomité met Pit</h2>
+                <hr style=""border:none;border-top:2px solid #13A2A3;margin-bottom:20px;""/>
+                <p>Beste {safeCompany},</p>
+                <p>Hartelijk bedankt voor uw steun aan het Bal Parental als <strong>{safePackage}</strong>-sponsor! Uw betaling is ontvangen.</p>
+                <p style=""font-size:16px;font-weight:bold;color:#13A2A3;"">Tot op zaterdag 20 juni! 🎉</p>
+                <h3 style=""margin-top:24px;"">Uw bestelling:</h3>
+                <ul style=""padding-left:20px;"">{orderLines}</ul>
+                <p><strong>Totaal: &euro;{total}</strong></p>
+                <h3 style=""margin-top:24px;"">Uw ticket(s) met QR-code:</h3>
+                {ticketCards}
+                <p style=""margin-top:20px;color:#555;"">
+                    De volledige PDF met alle tickets vindt u ook in bijlage.<br/>
+                    Toon de QR-code aan de ingang.
+                </p>
+                <hr style=""border:none;border-top:1px solid #eee;margin-top:24px;""/>
+                <p style=""font-size:11px;color:#aaa;"">Oudercomité met Pit &mdash; Pittem &mdash; ocpittem.be</p>
+            </div>";
+
+        var builder = new TransactionalEmailBuilder()
+            .WithFrom(new SendContact(_ticketFromEmail, _ticketFromName))
+            .WithSubject($"Sponsorpakket {safePackage} bevestigd — Bal Parental")
+            .WithHtmlPart(html)
+            .WithTo(new SendContact(toEmail, companyName));
+
+        if (pdfAttachment != null)
+            builder = builder.WithAttachment(
+                new Attachment("JouwBalParentalTickets.pdf", "application/pdf", Convert.ToBase64String(pdfAttachment)));
+
+        await Send(builder.Build(), $"sponsor payment confirmation to {toEmail}");
+        _logger.LogInformation("Sponsor payment confirmation sent to {Email} ({Company}).", toEmail, companyName);
     }
 }

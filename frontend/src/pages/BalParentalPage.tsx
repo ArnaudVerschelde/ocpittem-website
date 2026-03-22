@@ -12,7 +12,7 @@ const sponsorPackages = [
     id: 'brons',
     label: 'Brons',
     emoji: '🥉',
-    price: 150,
+    price: 100,
     color: {
       border: 'border-amber-400',
       bg: 'bg-amber-50',
@@ -381,6 +381,9 @@ interface SponsorForm {
   phone: string;
   package: string;
   message: string;
+  extraEtenPartyCount: number;
+  extraVegetarischCount: number;
+  extraDrankkaart20Count: number;
   acceptTerms: boolean;
 }
 
@@ -399,10 +402,10 @@ export default function BalParentalPage() {
   const [ticketError, setTicketError] = useState('');
 
   // Sponsor form
-  const [sponsorForm, setSponsorForm] = useState<SponsorForm>({ companyName: '', contactName: '', email: '', phone: '', package: 'zilver', message: '', acceptTerms: false });
+  const [sponsorForm, setSponsorForm] = useState<SponsorForm>({ companyName: '', contactName: '', email: '', phone: '', package: 'zilver', message: '', extraEtenPartyCount: 0, extraVegetarischCount: 0, extraDrankkaart20Count: 0, acceptTerms: false });
   const [sponsorLoading, setSponsorLoading] = useState(false);
   const [sponsorError, setSponsorError] = useState('');
-  const [sponsorSuccess, setSponsorSuccess] = useState(false);
+  const [sponsorSuccess] = useState(false);
 
   const handleTicketSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -441,12 +444,11 @@ export default function BalParentalPage() {
   const handleSponsorSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setSponsorError('');
-    setSponsorSuccess(false);
     if (!sponsorForm.acceptTerms) { setSponsorError('Je moet de algemene voorwaarden accepteren.'); return; }
     setSponsorLoading(true);
     try {
       const apiBase = import.meta.env.VITE_API_BASE_URL || '/api';
-      const res = await fetch(`${apiBase}/sponsors/request`, {
+      const res = await fetch(`${apiBase}/sponsors/checkout`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -456,11 +458,16 @@ export default function BalParentalPage() {
           phone: sponsorForm.phone,
           package: sponsorForm.package,
           message: sponsorForm.message,
+          extraEtenPartyCount: sponsorForm.extraEtenPartyCount,
+          extraVegetarischCount: sponsorForm.extraVegetarischCount,
+          extraDrankkaart20Count: sponsorForm.extraDrankkaart20Count,
         }),
       });
       if (!res.ok) throw new Error();
-      setSponsorSuccess(true);
-      setSponsorForm({ companyName: '', contactName: '', email: '', phone: '', package: 'zilver', message: '', acceptTerms: false });
+      const data = await res.json();
+      const checkoutUrl = data.checkoutUrl || data.url;
+      if (checkoutUrl) window.location.href = checkoutUrl;
+      else throw new Error('No checkout url in response');
     } catch {
       setSponsorError('Er ging iets mis. Probeer het later opnieuw.');
     } finally {
@@ -753,6 +760,87 @@ export default function BalParentalPage() {
                         onChange={(e) => setSponsorForm({ ...sponsorForm, message: e.target.value })}
                         className={inputClass} placeholder="Eventuele opmerkingen of vragen..." />
                     </div>
+
+                    {/* Extra tickets */}
+                    <div className="space-y-2">
+                      <label className="block text-sm font-medium text-gray-700">
+                        Extra tickets <span className="text-gray-400">(optioneel)</span>
+                      </label>
+                      <div className="rounded-lg border border-gray-200">
+                        <div className="flex items-center justify-between px-4 py-3">
+                          <div>
+                            <p className="text-sm font-semibold text-gray-900">🍽️ Eten &amp; Party</p>
+                            <p className="text-xs text-gray-500">Diner + feest vanaf 19u00 · €50 per persoon</p>
+                            <p className="text-xs text-gray-400">Vegetarische optie per ticket mogelijk</p>
+                          </div>
+                          <Stepper
+                            value={sponsorForm.extraEtenPartyCount}
+                            onChange={(n) => setSponsorForm({
+                              ...sponsorForm,
+                              extraEtenPartyCount: n,
+                              extraVegetarischCount: Math.min(sponsorForm.extraVegetarischCount, n),
+                            })}
+                          />
+                        </div>
+                        {sponsorForm.extraEtenPartyCount > 0 && (
+                          <div className="border-t border-gray-100 bg-green-50 px-4 py-3">
+                            <div className="flex items-center justify-between">
+                              <div>
+                                <p className="text-sm font-medium text-green-800">🥗 Aantal vegetarische diners</p>
+                                <p className="text-xs text-green-600">Max. {sponsorForm.extraEtenPartyCount}</p>
+                              </div>
+                              <Stepper
+                                value={sponsorForm.extraVegetarischCount}
+                                onChange={(n) => setSponsorForm({ ...sponsorForm, extraVegetarischCount: n })}
+                                max={sponsorForm.extraEtenPartyCount}
+                              />
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                      <div className="flex items-center justify-between rounded-lg border border-gray-200 px-4 py-3">
+                        <div>
+                          <p className="text-sm font-semibold text-gray-900">🍹 Drankkaart €20</p>
+                          <p className="text-xs text-gray-400">(optioneel)</p>
+                        </div>
+                        <Stepper
+                          value={sponsorForm.extraDrankkaart20Count}
+                          onChange={(n) => setSponsorForm({ ...sponsorForm, extraDrankkaart20Count: n })}
+                        />
+                      </div>
+                    </div>
+
+                    {/* Prijsoverzicht */}
+                    {(() => {
+                      const pkg = sponsorPackages.find(p => p.id === sponsorForm.package);
+                      const pkgPrice = pkg?.price ?? 0;
+                      const total = pkgPrice + sponsorForm.extraEtenPartyCount * 50 + sponsorForm.extraDrankkaart20Count * 20;
+                      return (
+                        <div className="rounded-lg bg-primary-50 px-4 py-3 space-y-1">
+                          <div className="flex justify-between text-xs text-primary-700">
+                            <span>Pakket {pkg?.label} ({pkg?.tickets} tickets inbegrepen)</span>
+                            <span>€{pkgPrice}</span>
+                          </div>
+                          {sponsorForm.extraEtenPartyCount > 0 && (
+                            <div className="flex justify-between text-xs text-primary-700">
+                              <span>{sponsorForm.extraEtenPartyCount}x Eten &amp; Party</span>
+                              <span>€{sponsorForm.extraEtenPartyCount * 50}</span>
+                            </div>
+                          )}
+                          {sponsorForm.extraDrankkaart20Count > 0 && (
+                            <div className="flex justify-between text-xs text-primary-700">
+                              <span>{sponsorForm.extraDrankkaart20Count}x Drankkaart €20</span>
+                              <span>€{sponsorForm.extraDrankkaart20Count * 20}</span>
+                            </div>
+                          )}
+                          <div className="flex justify-between text-sm font-semibold text-primary-900 pt-1 border-t border-primary-200">
+                            <span>Totaal</span>
+                            <span>€{total}</span>
+                          </div>
+                        </div>
+                      );
+                    })()}
+
                     <div className="flex items-start gap-3">
                       <input id="s-terms" type="checkbox" checked={sponsorForm.acceptTerms}
                         onChange={(e) => setSponsorForm({ ...sponsorForm, acceptTerms: e.target.checked })}
@@ -835,7 +923,7 @@ export default function BalParentalPage() {
 
                 <button
                   type="button"
-                  onClick={() => { setActiveTab('sponsor'); setSponsorForm((f) => ({ ...f, package: pkg.id })); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+                  onClick={() => { setActiveTab('sponsor'); setSponsorForm((f) => ({ ...f, package: pkg.id, extraEtenPartyCount: 0, extraVegetarischCount: 0, extraDrankkaart20Count: 0 })); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
                   className={`mt-8 w-full rounded-lg py-3 text-sm font-semibold transition-all ${pkg.color.button}`}
                 >
                   Kies {pkg.label}

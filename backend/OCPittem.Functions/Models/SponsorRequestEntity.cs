@@ -9,11 +9,17 @@ public class SponsorRequestEntity : ITableEntity
     public DateTimeOffset? Timestamp { get; set; }
     public Azure.ETag ETag { get; set; }
 
+    public string StripeSessionId { get; set; } = string.Empty;
+    public string Status { get; set; } = "Pending";
     public string CompanyName { get; set; } = string.Empty;
     public string ContactName { get; set; } = string.Empty;
     public string Email { get; set; } = string.Empty;
     public string Phone { get; set; } = string.Empty;
     public string Package { get; set; } = string.Empty;
     public string Message { get; set; } = string.Empty;
+    public int ExtraEtenPartyCount { get; set; }
+    public int ExtraVegetarischCount { get; set; }
+    public int ExtraDrankkaart20Count { get; set; }
+    public string PdfBlobUrl { get; set; } = string.Empty;
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 }

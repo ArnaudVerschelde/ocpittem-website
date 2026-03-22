@@ -16,6 +16,15 @@ namespace OCPittem.Functions.Services
             byte[]? pdfAttachment = null);
         Task SendContactNotificationAsync(string fromName, string fromEmail, string subject, string message, string contactEmail);
         Task SendSponsorConfirmationAsync(string toEmail, string companyName, string packageName);
+        Task SendSponsorPaymentConfirmationAsync(
+            string toEmail,
+            string companyName,
+            string packageName,
+            int extraEtenParty,
+            int extraVegetarisch,
+            int extraDrankkaart20,
+            IReadOnlyList<TicketPdfData> tickets,
+            byte[]? pdfAttachment = null);
         Task SendDailyReportAsync(IReadOnlyList<string> recipients, byte[] excelBytes, DailyReportStats stats, DateTime reportDate);
     }
 }

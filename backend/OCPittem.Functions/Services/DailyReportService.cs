@@ -40,6 +40,8 @@ public class DailyReportService : IDailyReportService
 
         var paidOrders = orders.Where(o => o.Status == nameof(OrderStatus.Paid)).ToList();
 
+        var paidSponsors = sponsors.Where(s => s.Status == "Paid").ToList();
+
         var stats = new DailyReportStats(
             TotalOrders: orders.Count,
             PaidOrders: paidOrders.Count,
@@ -51,7 +53,15 @@ public class DailyReportService : IDailyReportService
             TotalRevenue: paidOrders.Sum(o =>
                 (decimal)(o.ToegangsticketCount * 8 + o.EtenPartyCount * 50 +
                           o.Drankkaart10Count * 10 + o.Drankkaart20Count * 20)),
-            TotalSponsorRequests: sponsors.Count);
+            TotalSponsorRequests: sponsors.Count,
+            PaidSponsorOrders: paidSponsors.Count,
+            TotalSponsorBrons: paidSponsors.Count(s => s.Package.Equals("brons", StringComparison.OrdinalIgnoreCase)),
+            TotalSponsorZilver: paidSponsors.Count(s => s.Package.Equals("zilver", StringComparison.OrdinalIgnoreCase)),
+            TotalSponsorGoud: paidSponsors.Count(s => s.Package.Equals("goud", StringComparison.OrdinalIgnoreCase)),
+            TotalSponsorExtraEtenParty: paidSponsors.Sum(s => s.ExtraEtenPartyCount),
+            TotalSponsorExtraVegetarisch: paidSponsors.Sum(s => s.ExtraVegetarischCount),
+            TotalSponsorExtraDrankkaart20: paidSponsors.Sum(s => s.ExtraDrankkaart20Count),
+            TotalSponsorRevenue: paidSponsors.Sum(s => SponsorPackagePrice(s.Package) + s.ExtraEtenPartyCount * 50m + s.ExtraDrankkaart20Count * 20m));
 
         var excelBytes = BuildExcel(orders, sponsors, reportDate);
 
@@ -142,11 +152,16 @@ public class DailyReportService : IDailyReportService
         ws.Column(3).Width = 30;
     }
 
+    private static decimal SponsorPackagePrice(string package) => package.ToLower() switch
+    {
+        "brons" => 100m, "zilver" => 250m, "goud" => 400m, _ => 0m
+    };
+
     private static void BuildSponsorsSheet(XLWorkbook workbook, IReadOnlyList<SponsorRequestEntity> sponsors)
     {
         var ws = workbook.Worksheets.Add("Sponsoren");
 
-        string[] headers = ["#", "Bedrijf", "Contactpersoon", "E-mail", "Telefoon", "Pakket", "Bericht", "Aangevraagd op (UTC)"];
+        string[] headers = ["#", "Bedrijf", "Contactpersoon", "E-mail", "Telefoon", "Pakket", "Status", "Extra E&P", "Extra Veg.", "Extra Drank \u20ac20", "Totaal (\u20ac)", "Bericht", "Aangevraagd op (UTC)"];
         for (int col = 1; col <= headers.Length; col++)
         {
             var cell = ws.Cell(1, col);
@@ -162,23 +177,48 @@ public class DailyReportService : IDailyReportService
         int row = 2;
         foreach (var sponsor in sponsors.OrderBy(s => s.CreatedAt))
         {
+            var total = (double)(SponsorPackagePrice(sponsor.Package) + sponsor.ExtraEtenPartyCount * 50m + sponsor.ExtraDrankkaart20Count * 20m);
+
             ws.Cell(row, 1).Value = row - 1;
             ws.Cell(row, 2).Value = sponsor.CompanyName;
             ws.Cell(row, 3).Value = sponsor.ContactName;
             ws.Cell(row, 4).Value = sponsor.Email;
             ws.Cell(row, 5).Value = sponsor.Phone;
             ws.Cell(row, 6).Value = sponsor.Package;
-            ws.Cell(row, 7).Value = sponsor.Message;
-            ws.Cell(row, 8).Value = sponsor.CreatedAt.ToString("dd/MM/yyyy HH:mm");
+            ws.Cell(row, 7).Value = sponsor.Status;
+            ws.Cell(row, 8).Value = sponsor.ExtraEtenPartyCount;
+            ws.Cell(row, 9).Value = sponsor.ExtraVegetarischCount;
+            ws.Cell(row, 10).Value = sponsor.ExtraDrankkaart20Count;
+            ws.Cell(row, 11).Value = total;
+            ws.Cell(row, 12).Value = sponsor.Message;
+            ws.Cell(row, 13).Value = sponsor.CreatedAt.ToString("dd/MM/yyyy HH:mm");
 
-            if (row % 2 == 0)
-                ws.Row(row).Style.Fill.BackgroundColor = XLColor.FromHtml("#F0FAFA");
+            var rowFill = sponsor.Status switch
+            {
+                "Paid" => XLColor.FromHtml("#ECFDF5"),
+                "Failed" => XLColor.FromHtml("#FEF2F2"),
+                _ => XLColor.FromHtml("#FFFBEB")
+            };
+            ws.Row(row).Style.Fill.BackgroundColor = rowFill;
 
             row++;
         }
 
+        if (row > 2)
+        {
+            var totalsRow = row;
+            ws.Cell(totalsRow, 1).Value = "TOTAAL (betaald)";
+            ws.Range(totalsRow, 1, totalsRow, 7).Merge();
+            ws.Cell(totalsRow, 8).FormulaA1 = $"=SUMIF(G2:G{row - 1},\"Paid\",H2:H{row - 1})";
+            ws.Cell(totalsRow, 9).FormulaA1 = $"=SUMIF(G2:G{row - 1},\"Paid\",I2:I{row - 1})";
+            ws.Cell(totalsRow, 10).FormulaA1 = $"=SUMIF(G2:G{row - 1},\"Paid\",J2:J{row - 1})";
+            ws.Cell(totalsRow, 11).FormulaA1 = $"=SUMIF(G2:G{row - 1},\"Paid\",K2:K{row - 1})";
+            ws.Row(totalsRow).Style.Font.Bold = true;
+            ws.Row(totalsRow).Style.Fill.BackgroundColor = XLColor.FromHtml("#E0F7F7");
+        }
+
         ws.Columns().AdjustToContents();
         ws.Column(4).Width = 30;
-        ws.Column(7).Width = 40;
+        ws.Column(12).Width = 40;
     }
 }

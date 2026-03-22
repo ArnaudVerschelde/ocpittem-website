@@ -17,4 +17,6 @@ public interface IStorageService
     Task MarkTicketScannedAsync(TicketEntity ticket);
     Task<IReadOnlyList<OrderEntity>> GetAllOrdersAsync();
     Task<IReadOnlyList<SponsorRequestEntity>> GetAllSponsorRequestsAsync();
+    Task<SponsorRequestEntity?> GetSponsorRequestByStripeSessionAsync(string sessionId);
+    Task UpdateSponsorRequestAsync(SponsorRequestEntity request);
 }
