@@ -249,7 +249,7 @@ public class StripeWebhookFunction
 
         var includedTickets = sponsor.Package.ToLower() switch
         {
-            "brons" => 2, "zilver" => 4, "goud" => 6, _ => 0
+            "zilver" => 2, "goud" => 4, _ => 0
         };
 
         var pdfTickets = new List<TicketPdfData>();

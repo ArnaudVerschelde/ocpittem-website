@@ -20,11 +20,15 @@ const sponsorPackages = [
       button: 'bg-amber-500 hover:bg-amber-600 text-white',
       ring: 'ring-amber-300',
     },
-    tickets: 2,
-    perks: [
-      '2 tickets inbegrepen',
-      'Naamsvermelding op de affiche',
-      'Vermelding op onze sociale media',
+    tickets: 0,
+    features: [
+      { text: 'Logo op de schermen', included: true },
+      { text: 'Vermelding op sociale media', included: true },
+      { text: 'Logo gelinkt aan ons evenement', included: false },
+      { text: 'Projectie op de avond', included: false },
+      { text: 'Verlengde projectie (+2 sec)', included: false },
+      { text: 'Tickets & menu inbegrepen', included: false },
+      { text: 'Drankkaarten inbegrepen', included: false },
     ],
   },
   {
@@ -39,20 +43,22 @@ const sponsorPackages = [
       button: 'bg-gray-600 hover:bg-gray-700 text-white',
       ring: 'ring-gray-300',
     },
-    tickets: 4,
-    perks: [
-      '4 tickets inbegrepen',
-      'Logo op de affiche',
-      'Logo op de banner ter plaatse',
-      'Vermelding op onze sociale media',
-      'Vermelding op de website',
+    tickets: 2,
+    features: [
+      { text: 'Logo op de schermen', included: true },
+      { text: 'Vermelding op sociale media', included: true },
+      { text: 'Logo gelinkt aan ons evenement', included: true },
+      { text: 'Projectie op de avond', included: true },
+      { text: 'Verlengde projectie (+2 sec)', included: false },
+      { text: '2 Eten & Party tickets', included: true },
+      { text: '€40 drankkaarten', included: true },
     ],
   },
   {
     id: 'goud',
     label: 'Goud',
     emoji: '🥇',
-    price: 400,
+    price: 500,
     popular: true,
     color: {
       border: 'border-yellow-400',
@@ -61,15 +67,15 @@ const sponsorPackages = [
       button: 'bg-yellow-500 hover:bg-yellow-600 text-white',
       ring: 'ring-yellow-300',
     },
-    tickets: 6,
-    perks: [
-      '6 tickets inbegrepen',
-      'Groot logo op de affiche',
-      'Groot logo op de banner ter plaatse',
-      'Vermelding als hoofdsponsor',
-      'Vermelding op onze sociale media',
-      'Prominente vermelding op de website',
-      'Persoonlijke bedanking op het evenement',
+    tickets: 4,
+    features: [
+      { text: 'Logo op de schermen', included: true },
+      { text: 'Vermelding op sociale media', included: true },
+      { text: 'Logo gelinkt aan ons evenement', included: true },
+      { text: 'Projectie op de avond', included: true },
+      { text: 'Verlengde projectie (+2 sec)', included: true },
+      { text: '4 Eten & Party tickets', included: true },
+      { text: '€80 drankkaarten', included: true },
     ],
   },
 ];
@@ -906,17 +912,23 @@ export default function BalParentalPage() {
                     <span className="text-3xl font-extrabold text-gray-900">€{pkg.price}</span>
                   </div>
                   <span className={`mt-2 inline-block rounded-full px-3 py-1 text-xs font-semibold ${pkg.color.badge}`}>
-                    {pkg.tickets} tickets inbegrepen
+                    {pkg.tickets > 0 ? `${pkg.tickets} tickets + menu` : 'Logo & sociale media'}
                   </span>
                 </div>
 
-                <ul className="mt-6 flex-1 space-y-3">
-                  {pkg.perks.map((perk) => (
-                    <li key={perk} className="flex items-start gap-2 text-sm text-gray-600">
-                      <svg className="mt-0.5 h-4 w-4 flex-shrink-0 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-                      </svg>
-                      {perk}
+                <ul className="mt-6 flex-1 space-y-2.5">
+                  {pkg.features.map((feature) => (
+                    <li key={feature.text} className={`flex items-start gap-2 text-sm ${feature.included ? 'text-gray-700' : 'text-gray-300'}`}>
+                      {feature.included ? (
+                        <svg className="mt-0.5 h-4 w-4 flex-shrink-0 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                        </svg>
+                      ) : (
+                        <svg className="mt-0.5 h-4 w-4 flex-shrink-0 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                      )}
+                      {feature.text}
                     </li>
                   ))}
                 </ul>

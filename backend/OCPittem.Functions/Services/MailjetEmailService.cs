@@ -267,7 +267,7 @@ public class MailjetEmailService : IEmailService
                         <td style=""padding:6px 12px;font-weight:bold;"">{stats.TotalSponsorZilver}</td>
                     </tr>
                     <tr style=""background:#f0fafa;"">
-                        <td style=""padding:6px 12px;"">🥇 Goud (&euro;400)</td>
+                        <td style=""padding:6px 12px;"">🥇 Goud (&euro;500)</td>
                         <td style=""padding:6px 12px;font-weight:bold;"">{stats.TotalSponsorGoud}</td>
                     </tr>
                     <tr>
@@ -348,11 +348,11 @@ public class MailjetEmailService : IEmailService
 
         var packagePrice = packageName.ToLower() switch
         {
-            "brons" => 100, "zilver" => 250, "goud" => 400, _ => 0
+            "brons" => 100, "zilver" => 250, "goud" => 500, _ => 0
         };
         var includedTickets = packageName.ToLower() switch
         {
-            "brons" => 2, "zilver" => 4, "goud" => 6, _ => 0
+            "zilver" => 2, "goud" => 4, _ => 0
         };
 
         var orderLines = new System.Text.StringBuilder();

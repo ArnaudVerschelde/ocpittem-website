@@ -154,7 +154,7 @@ public class DailyReportService : IDailyReportService
 
     private static decimal SponsorPackagePrice(string package) => package.ToLower() switch
     {
-        "brons" => 100m, "zilver" => 250m, "goud" => 400m, _ => 0m
+        "brons" => 100m, "zilver" => 250m, "goud" => 500m, _ => 0m
     };
 
     private static void BuildSponsorsSheet(XLWorkbook workbook, IReadOnlyList<SponsorRequestEntity> sponsors)
