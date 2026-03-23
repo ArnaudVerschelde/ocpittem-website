@@ -903,19 +903,19 @@ export default function BalParentalPage() {
                           ❌ Nee
                         </button>
                       </div>
-                      {sponsorForm.sponsorAttends && (
-                        <div className="flex items-center justify-between rounded-lg border border-gray-200 px-4 py-3">
-                          <div>
-                            <p className="text-sm font-semibold text-gray-900">Aantal effectieve aanwezigen</p>
+                      <div className="flex items-center justify-between rounded-lg border border-gray-200 px-4 py-3">
+                        <div>
+                          <p className="text-sm font-semibold text-gray-900">Aantal effectieve aanwezigen</p>
+                          {sponsorForm.sponsorAttends && (
                             <p className="text-xs text-gray-500">Inclusief uzelf</p>
-                          </div>
-                          <Stepper
-                            value={sponsorForm.sponsorAttendeesCount}
-                            onChange={(n) => setSponsorForm({ ...sponsorForm, sponsorAttendeesCount: n })}
-                            min={1}
-                          />
+                          )}
                         </div>
-                      )}
+                        <Stepper
+                          value={sponsorForm.sponsorAttendeesCount}
+                          onChange={(n) => setSponsorForm({ ...sponsorForm, sponsorAttendeesCount: n })}
+                          min={sponsorForm.sponsorAttends ? 1 : 0}
+                        />
+                      </div>
                     </div>
 
                     {/* Extra tickets */}
