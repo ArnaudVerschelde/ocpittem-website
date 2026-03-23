@@ -7,6 +7,7 @@ public sealed record SponsorRequest(
     string Phone,
     string Package,
     string Message,
+    string EnterpriseNumber,
     int ExtraEtenPartyCount = 0,
     int ExtraVegetarischCount = 0,
     int ExtraDrankkaart20Count = 0,

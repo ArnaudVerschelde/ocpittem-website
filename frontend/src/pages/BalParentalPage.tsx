@@ -366,6 +366,20 @@ function Stepper({
 }
 
 // ---------------------------------------------------------------------------
+// Belgian enterprise number validation
+// ---------------------------------------------------------------------------
+
+function validateEnterpriseNumber(value: string): boolean {
+  const digits = value.replace(/[^0-9]/g, '');
+  if (digits.length !== 10) return false;
+  if (digits[0] !== '0' && digits[0] !== '1') return false;
+  const prefix = parseInt(digits.substring(0, 8), 10);
+  const check  = parseInt(digits.substring(8), 10);
+  const expected = prefix % 97 === 0 ? 97 : 97 - (prefix % 97);
+  return check === expected;
+}
+
+// ---------------------------------------------------------------------------
 // Page
 // ---------------------------------------------------------------------------
 
@@ -383,6 +397,7 @@ interface TicketForm {
 interface SponsorForm {
   companyName: string;
   contactName: string;
+  enterpriseNumber: string;
   email: string;
   phone: string;
   package: string;
@@ -409,9 +424,10 @@ export default function BalParentalPage() {
   const [ticketError, setTicketError] = useState('');
 
   // Sponsor form
-  const [sponsorForm, setSponsorForm] = useState<SponsorForm>({ companyName: '', contactName: '', email: '', phone: '', package: 'zilver', message: '', extraEtenPartyCount: 0, extraVegetarischCount: 0, extraDrankkaart20Count: 0, includedVegetarischCount: 0, acceptTerms: false });
+  const [sponsorForm, setSponsorForm] = useState<SponsorForm>({ companyName: '', contactName: '', enterpriseNumber: '', email: '', phone: '', package: 'zilver', message: '', extraEtenPartyCount: 0, extraVegetarischCount: 0, extraDrankkaart20Count: 0, includedVegetarischCount: 0, acceptTerms: false });
   const [sponsorLoading, setSponsorLoading] = useState(false);
   const [sponsorError, setSponsorError] = useState('');
+  const [enterpriseNumberError, setEnterpriseNumberError] = useState('');
   const [sponsorSuccess] = useState(false);
 
   const handleTicketSubmit = async (e: FormEvent) => {
@@ -452,6 +468,10 @@ export default function BalParentalPage() {
     e.preventDefault();
     setSponsorError('');
     if (!sponsorForm.acceptTerms) { setSponsorError('Je moet de algemene voorwaarden accepteren.'); return; }
+    if (!validateEnterpriseNumber(sponsorForm.enterpriseNumber)) {
+      setSponsorError('Ongeldig Belgisch ondernemingsnummer. Controleer het nummer en probeer opnieuw.');
+      return;
+    }
     setSponsorLoading(true);
     try {
       const apiBase = import.meta.env.VITE_API_BASE_URL || '/api';
@@ -465,6 +485,7 @@ export default function BalParentalPage() {
           phone: sponsorForm.phone,
           package: sponsorForm.package,
           message: sponsorForm.message,
+          enterpriseNumber: sponsorForm.enterpriseNumber,
           extraEtenPartyCount: sponsorForm.extraEtenPartyCount,
           extraVegetarischCount: sponsorForm.extraVegetarischCount,
           extraDrankkaart20Count: sponsorForm.extraDrankkaart20Count,
@@ -771,6 +792,32 @@ export default function BalParentalPage() {
                           onChange={(e) => setSponsorForm({ ...sponsorForm, contactName: e.target.value })}
                           className={inputClass} placeholder="Voor- en achternaam" />
                       </div>
+                    </div>
+                    <div>
+                      <label htmlFor="s-enterprise" className="block text-sm font-medium text-gray-700">
+                        Ondernemingsnummer
+                      </label>
+                      <input
+                        id="s-enterprise"
+                        type="text"
+                        required
+                        value={sponsorForm.enterpriseNumber}
+                        onChange={(e) => {
+                          setSponsorForm({ ...sponsorForm, enterpriseNumber: e.target.value });
+                          setEnterpriseNumberError('');
+                        }}
+                        onBlur={() => {
+                          if (sponsorForm.enterpriseNumber && !validateEnterpriseNumber(sponsorForm.enterpriseNumber))
+                            setEnterpriseNumberError('Ongeldig Belgisch ondernemingsnummer. Verwacht formaat: 0xxx.xxx.xxx');
+                          else
+                            setEnterpriseNumberError('');
+                        }}
+                        className={`${inputClass} ${enterpriseNumberError ? 'border-red-400 focus:border-red-500 focus:ring-red-200' : ''}`}
+                        placeholder="0xxx.xxx.xxx"
+                      />
+                      {enterpriseNumberError && (
+                        <p className="mt-1 text-xs text-red-600">{enterpriseNumberError}</p>
+                      )}
                     </div>
                     <div className="grid gap-4 sm:grid-cols-2">
                       <div>

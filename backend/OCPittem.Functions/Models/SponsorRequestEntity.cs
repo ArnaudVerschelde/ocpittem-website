@@ -17,6 +17,7 @@ public class SponsorRequestEntity : ITableEntity
     public string Phone { get; set; } = string.Empty;
     public string Package { get; set; } = string.Empty;
     public string Message { get; set; } = string.Empty;
+    public string EnterpriseNumber { get; set; } = string.Empty;
     public int ExtraEtenPartyCount { get; set; }
     public int ExtraVegetarischCount { get; set; }
     public int ExtraDrankkaart20Count { get; set; }

@@ -4,6 +4,7 @@ using Microsoft.Azure.Functions.Worker;
 using Microsoft.Extensions.Logging;
 using OCPittem.Functions.Models;
 using OCPittem.Functions.Services;
+using OCPittem.Functions.Validators;
 
 namespace OCPittem.Functions.Functions;
 
@@ -38,10 +39,14 @@ public class SponsorRequestFunction
             || string.IsNullOrWhiteSpace(body.CompanyName)
             || string.IsNullOrWhiteSpace(body.ContactName)
             || string.IsNullOrWhiteSpace(body.Email)
-            || string.IsNullOrWhiteSpace(body.Package))
+            || string.IsNullOrWhiteSpace(body.Package)
+            || string.IsNullOrWhiteSpace(body.EnterpriseNumber))
         {
             return new BadRequestObjectResult(new { error = "Vul alle verplichte velden in." });
         }
+
+        if (!BelgianEnterpriseNumberValidator.IsValid(body.EnterpriseNumber))
+            return new BadRequestObjectResult(new { error = "Ongeldig Belgisch ondernemingsnummer." });
 
         if (body.ExtraEtenPartyCount < 0 || body.ExtraVegetarischCount < 0 || body.ExtraDrankkaart20Count < 0 || body.IncludedVegetarischCount < 0)
             return new BadRequestObjectResult(new { error = "Ongeldige aantallen." });
@@ -77,6 +82,7 @@ public class SponsorRequestFunction
                 Phone = body.Phone ?? "",
                 Package = body.Package,
                 Message = body.Message ?? "",
+                EnterpriseNumber = BelgianEnterpriseNumberValidator.Normalize(body.EnterpriseNumber),
                 ExtraEtenPartyCount = body.ExtraEtenPartyCount,
                 ExtraVegetarischCount = body.ExtraVegetarischCount,
                 ExtraDrankkaart20Count = body.ExtraDrankkaart20Count,
