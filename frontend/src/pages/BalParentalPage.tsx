@@ -390,6 +390,7 @@ interface SponsorForm {
   extraEtenPartyCount: number;
   extraVegetarischCount: number;
   extraDrankkaart20Count: number;
+  includedVegetarischCount: number;
   acceptTerms: boolean;
 }
 
@@ -408,7 +409,7 @@ export default function BalParentalPage() {
   const [ticketError, setTicketError] = useState('');
 
   // Sponsor form
-  const [sponsorForm, setSponsorForm] = useState<SponsorForm>({ companyName: '', contactName: '', email: '', phone: '', package: 'zilver', message: '', extraEtenPartyCount: 0, extraVegetarischCount: 0, extraDrankkaart20Count: 0, acceptTerms: false });
+  const [sponsorForm, setSponsorForm] = useState<SponsorForm>({ companyName: '', contactName: '', email: '', phone: '', package: 'zilver', message: '', extraEtenPartyCount: 0, extraVegetarischCount: 0, extraDrankkaart20Count: 0, includedVegetarischCount: 0, acceptTerms: false });
   const [sponsorLoading, setSponsorLoading] = useState(false);
   const [sponsorError, setSponsorError] = useState('');
   const [sponsorSuccess] = useState(false);
@@ -467,6 +468,7 @@ export default function BalParentalPage() {
           extraEtenPartyCount: sponsorForm.extraEtenPartyCount,
           extraVegetarischCount: sponsorForm.extraVegetarischCount,
           extraDrankkaart20Count: sponsorForm.extraDrankkaart20Count,
+          includedVegetarischCount: sponsorForm.includedVegetarischCount,
         }),
       });
       if (!res.ok) throw new Error();
@@ -723,7 +725,7 @@ export default function BalParentalPage() {
                       <div className="mt-2 grid grid-cols-3 gap-2">
                         {sponsorPackages.map((pkg) => (
                           <button key={pkg.id} type="button"
-                            onClick={() => setSponsorForm({ ...sponsorForm, package: pkg.id })}
+                            onClick={() => setSponsorForm({ ...sponsorForm, package: pkg.id, includedVegetarischCount: 0 })}
                             className={`rounded-lg border-2 p-3 text-center text-sm font-semibold transition-all ${sponsorForm.package === pkg.id ? `${pkg.color.border} ${pkg.color.bg} ring-2 ${pkg.color.ring}` : 'border-gray-200 hover:border-gray-300'}`}>
                             <span className="block text-xl">{pkg.emoji}</span>
                             <span className="block mt-1">{pkg.label}</span>
@@ -732,6 +734,30 @@ export default function BalParentalPage() {
                         ))}
                       </div>
                     </div>
+
+                    {/* Vegetarische optie voor inbegrepen tickets */}
+                    {(() => {
+                      const selectedPkg = sponsorPackages.find(p => p.id === sponsorForm.package);
+                      if (!selectedPkg || selectedPkg.tickets === 0) return null;
+                      return (
+                        <div className="rounded-lg border border-green-200 bg-green-50 px-4 py-3">
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <p className="text-sm font-medium text-green-800">🥗 Vegetarische diners (inbegrepen tickets)</p>
+                              <p className="text-xs text-green-600">
+                                Hoeveel van de {selectedPkg.tickets} inbegrepen Eten &amp; Party tickets zijn vegetarisch?
+                              </p>
+                            </div>
+                            <Stepper
+                              value={sponsorForm.includedVegetarischCount}
+                              onChange={(n) => setSponsorForm({ ...sponsorForm, includedVegetarischCount: n })}
+                              max={selectedPkg.tickets}
+                            />
+                          </div>
+                        </div>
+                      );
+                    })()}
+
                     <div className="grid gap-4 sm:grid-cols-2">
                       <div>
                         <label htmlFor="s-company" className="block text-sm font-medium text-gray-700">Bedrijfsnaam</label>
@@ -935,7 +961,7 @@ export default function BalParentalPage() {
 
                 <button
                   type="button"
-                  onClick={() => { setActiveTab('sponsor'); setSponsorForm((f) => ({ ...f, package: pkg.id, extraEtenPartyCount: 0, extraVegetarischCount: 0, extraDrankkaart20Count: 0 })); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+                  onClick={() => { setActiveTab('sponsor'); setSponsorForm((f) => ({ ...f, package: pkg.id, includedVegetarischCount: 0, extraEtenPartyCount: 0, extraVegetarischCount: 0, extraDrankkaart20Count: 0 })); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
                   className={`mt-8 w-full rounded-lg py-3 text-sm font-semibold transition-all ${pkg.color.button}`}
                 >
                   Kies {pkg.label}

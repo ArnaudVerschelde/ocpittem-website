@@ -334,6 +334,7 @@ public class MailjetEmailService : IEmailService
         int extraEtenParty,
         int extraVegetarisch,
         int extraDrankkaart20,
+        int includedVegetarisch,
         IReadOnlyList<TicketPdfData> tickets,
         byte[]? pdfAttachment = null)
     {
@@ -356,7 +357,8 @@ public class MailjetEmailService : IEmailService
         };
 
         var orderLines = new System.Text.StringBuilder();
-        orderLines.AppendLine($"<li><strong>Pakket {safePackage}</strong> ({includedTickets} tickets inbegrepen) &mdash; &euro;{packagePrice}</li>");
+        var includedVegStr = includedVegetarisch > 0 ? $", waarvan {includedVegetarisch} vegetarisch" : "";
+        orderLines.AppendLine($"<li><strong>Pakket {safePackage}</strong> ({includedTickets} tickets inbegrepen{includedVegStr}) &mdash; &euro;{packagePrice}</li>");
         if (extraEtenParty > 0)
         {
             var vegStr = extraVegetarisch > 0 ? $", waarvan {extraVegetarisch} vegetarisch" : "";

@@ -20,6 +20,7 @@ public class SponsorRequestEntity : ITableEntity
     public int ExtraEtenPartyCount { get; set; }
     public int ExtraVegetarischCount { get; set; }
     public int ExtraDrankkaart20Count { get; set; }
+    public int IncludedVegetarischCount { get; set; }
     public string PdfBlobUrl { get; set; } = string.Empty;
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 }

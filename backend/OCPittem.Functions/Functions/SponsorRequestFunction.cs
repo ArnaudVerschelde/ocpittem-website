@@ -43,11 +43,15 @@ public class SponsorRequestFunction
             return new BadRequestObjectResult(new { error = "Vul alle verplichte velden in." });
         }
 
-        if (body.ExtraEtenPartyCount < 0 || body.ExtraVegetarischCount < 0 || body.ExtraDrankkaart20Count < 0)
+        if (body.ExtraEtenPartyCount < 0 || body.ExtraVegetarischCount < 0 || body.ExtraDrankkaart20Count < 0 || body.IncludedVegetarischCount < 0)
             return new BadRequestObjectResult(new { error = "Ongeldige aantallen." });
 
         if (body.ExtraVegetarischCount > body.ExtraEtenPartyCount)
             return new BadRequestObjectResult(new { error = "Aantal vegetarische opties mag niet groter zijn dan het aantal extra tickets." });
+
+        var includedTicketCount = body.Package.ToLower() switch { "zilver" => 2, "goud" => 4, _ => 0 };
+        if (body.IncludedVegetarischCount > includedTicketCount)
+            return new BadRequestObjectResult(new { error = "Aantal vegetarische opties mag niet groter zijn dan het aantal inbegrepen tickets." });
 
         var validPackages = new[] { "brons", "zilver", "goud" };
         if (!validPackages.Contains(body.Package.ToLower()))
@@ -76,6 +80,7 @@ public class SponsorRequestFunction
                 ExtraEtenPartyCount = body.ExtraEtenPartyCount,
                 ExtraVegetarischCount = body.ExtraVegetarischCount,
                 ExtraDrankkaart20Count = body.ExtraDrankkaart20Count,
+                IncludedVegetarischCount = body.IncludedVegetarischCount,
             };
 
             await _storage.SaveSponsorRequestAsync(entity);

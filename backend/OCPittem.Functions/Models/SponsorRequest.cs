@@ -9,4 +9,5 @@ public sealed record SponsorRequest(
     string Message,
     int ExtraEtenPartyCount = 0,
     int ExtraVegetarischCount = 0,
-    int ExtraDrankkaart20Count = 0);
+    int ExtraDrankkaart20Count = 0,
+    int IncludedVegetarischCount = 0);

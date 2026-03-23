@@ -23,6 +23,7 @@ namespace OCPittem.Functions.Services
             int extraEtenParty,
             int extraVegetarisch,
             int extraDrankkaart20,
+            int includedVegetarisch,
             IReadOnlyList<TicketPdfData> tickets,
             byte[]? pdfAttachment = null);
         Task SendDailyReportAsync(IReadOnlyList<string> recipients, byte[] excelBytes, DailyReportStats stats, DateTime reportDate);

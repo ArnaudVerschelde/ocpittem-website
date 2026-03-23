@@ -258,13 +258,14 @@ public class StripeWebhookFunction
         {
             var ticketId = Guid.NewGuid().ToString();
             var qrPayload = GenerateQrPayload(ticketId);
+            var isVeg = i < sponsor.IncludedVegetarischCount;
             var ticket = new TicketEntity
             {
                 PartitionKey = requestId, RowKey = ticketId,
-                QrPayload = qrPayload, TicketType = nameof(TicketKind.EtenParty), IsVegetarisch = false,
+                QrPayload = qrPayload, TicketType = nameof(TicketKind.EtenParty), IsVegetarisch = isVeg,
             };
             await _storage.SaveTicketAsync(ticket);
-            pdfTickets.Add(new TicketPdfData(ticketId, qrPayload, nameof(TicketKind.EtenParty), false));
+            pdfTickets.Add(new TicketPdfData(ticketId, qrPayload, nameof(TicketKind.EtenParty), isVeg));
         }
 
         for (int i = 0; i < sponsor.ExtraEtenPartyCount; i++)
@@ -299,6 +300,7 @@ public class StripeWebhookFunction
             await _email.SendSponsorPaymentConfirmationAsync(
                 email, companyName, sponsor.Package,
                 sponsor.ExtraEtenPartyCount, sponsor.ExtraVegetarischCount, sponsor.ExtraDrankkaart20Count,
+                sponsor.IncludedVegetarischCount,
                 pdfTickets, combinedPdf);
             _logger.LogInformation("Sponsor payment confirmation sent to {Email} for request {RequestId}", email, requestId);
         }
