@@ -16,4 +16,5 @@ public sealed record SponsorRequest(
     int ExtraDrankkaart20Count = 0,
     int IncludedVegetarischCount = 0,
     bool SponsorAttends = false,
-    int SponsorAttendeesCount = 0);
+    int SponsorAttendeesCount = 0,
+    string LogoUrl = "");

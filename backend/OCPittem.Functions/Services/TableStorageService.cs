@@ -15,6 +15,7 @@ public class TableStorageService : IStorageService
     private readonly string _webhookEventsTable;
     private readonly string _sponsorsTable;
     private readonly string _ticketPdfsContainer;
+    private readonly string _sponsorLogosContainer;
 
     public TableStorageService(string connectionString, StorageOptions options)
     {
@@ -25,6 +26,7 @@ public class TableStorageService : IStorageService
         _webhookEventsTable = options.TableNameWebhookEvents;
         _sponsorsTable = options.TableNameSponsors;
         _ticketPdfsContainer = options.BlobContainerTickets;
+        _sponsorLogosContainer = options.BlobContainerSponsorLogos;
     }
 
     private async Task<TableClient> GetTableAsync(string tableName)
@@ -158,5 +160,16 @@ public class TableStorageService : IStorageService
     {
         var table = await GetTableAsync(_sponsorsTable);
         await table.UpdateEntityAsync(request, request.ETag, TableUpdateMode.Replace);
+    }
+
+    public async Task<string> SaveSponsorLogoAsync(string logoId, Stream stream, string contentType, string extension)
+    {
+        var container = _blobServiceClient.GetBlobContainerClient(_sponsorLogosContainer);
+        await container.CreateIfNotExistsAsync(PublicAccessType.Blob);
+
+        var blobClient = container.GetBlobClient($"{logoId}{extension}");
+        var headers = new BlobHttpHeaders { ContentType = contentType };
+        await blobClient.UploadAsync(stream, new BlobUploadOptions { HttpHeaders = headers });
+        return blobClient.Uri.ToString();
     }
 }

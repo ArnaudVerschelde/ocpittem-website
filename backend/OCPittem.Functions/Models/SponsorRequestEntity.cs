@@ -28,6 +28,7 @@ public class SponsorRequestEntity : ITableEntity
     public int IncludedVegetarischCount { get; set; }
     public bool SponsorAttends { get; set; }
     public int SponsorAttendeesCount { get; set; }
+    public string LogoUrl { get; set; } = string.Empty;
     public string PdfBlobUrl { get; set; } = string.Empty;
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 }

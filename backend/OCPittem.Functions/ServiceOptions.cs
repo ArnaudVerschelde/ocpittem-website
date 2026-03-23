@@ -48,4 +48,5 @@ public class StorageOptions
     public string TableNameWebhookEvents { get; init; } = "WebhookEvents";
     public string TableNameSponsors { get; init; } = "SponsorRequests";
     public string BlobContainerTickets { get; init; } = "ticket-pdfs";
+    public string BlobContainerSponsorLogos { get; init; } = "sponsor-logos";
 }

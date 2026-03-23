@@ -161,7 +161,7 @@ public class DailyReportService : IDailyReportService
     {
         var ws = workbook.Worksheets.Add("Sponsoren");
 
-        string[] headers = ["#", "Bedrijf", "Contactpersoon", "E-mail", "Telefoon", "Pakket", "Status", "Extra E&P", "Extra Veg.", "Extra Drank \u20ac20", "Totaal (\u20ac)", "Ondernemingsnr.", "Straat", "Nr.", "Postcode", "Gemeente", "Aanwezig", "Aantal aanwezigen", "Aangevraagd op (UTC)"];
+        string[] headers = ["#", "Bedrijf", "Contactpersoon", "E-mail", "Telefoon", "Pakket", "Status", "Extra E&P", "Extra Veg.", "Extra Drank \u20ac20", "Totaal (\u20ac)", "Inbegrepen veg.", "Ondernemingsnr.", "Straat", "Nr.", "Postcode", "Gemeente", "Aanwezig", "Aantal aanwezigen", "Aangevraagd op (UTC)", "Logo"];
         for (int col = 1; col <= headers.Length; col++)
         {
             var cell = ws.Cell(1, col);
@@ -190,14 +190,22 @@ public class DailyReportService : IDailyReportService
             ws.Cell(row, 9).Value = sponsor.ExtraVegetarischCount;
             ws.Cell(row, 10).Value = sponsor.ExtraDrankkaart20Count;
             ws.Cell(row, 11).Value = total;
-            ws.Cell(row, 12).Value = sponsor.EnterpriseNumber;
-            ws.Cell(row, 13).Value = sponsor.Street;
-            ws.Cell(row, 14).Value = sponsor.HouseNumber;
-            ws.Cell(row, 15).Value = sponsor.PostalCode;
-            ws.Cell(row, 16).Value = sponsor.City;
-            ws.Cell(row, 17).Value = sponsor.SponsorAttends ? "Ja" : "Nee";
-            ws.Cell(row, 18).Value = sponsor.SponsorAttendeesCount;
-            ws.Cell(row, 19).Value = sponsor.CreatedAt.ToString("dd/MM/yyyy HH:mm");
+            ws.Cell(row, 12).Value = sponsor.IncludedVegetarischCount;
+            ws.Cell(row, 13).Value = sponsor.EnterpriseNumber;
+            ws.Cell(row, 14).Value = sponsor.Street;
+            ws.Cell(row, 15).Value = sponsor.HouseNumber;
+            ws.Cell(row, 16).Value = sponsor.PostalCode;
+            ws.Cell(row, 17).Value = sponsor.City;
+            ws.Cell(row, 18).Value = sponsor.SponsorAttends ? "Ja" : "Nee";
+            ws.Cell(row, 19).Value = sponsor.SponsorAttendeesCount;
+            ws.Cell(row, 20).Value = sponsor.CreatedAt.ToString("dd/MM/yyyy HH:mm");
+            if (!string.IsNullOrEmpty(sponsor.LogoUrl))
+            {
+                ws.Cell(row, 21).Value = "Bekijk logo";
+                ws.Cell(row, 21).SetHyperlink(new XLHyperlink(sponsor.LogoUrl));
+                ws.Cell(row, 21).Style.Font.FontColor = XLColor.Blue;
+                ws.Cell(row, 21).Style.Font.Underline = XLFontUnderlineValues.Single;
+            }
 
             var rowFill = sponsor.Status switch
             {
@@ -225,6 +233,6 @@ public class DailyReportService : IDailyReportService
 
         ws.Columns().AdjustToContents();
         ws.Column(4).Width = 30;
-        ws.Column(12).Width = 40;
+        ws.Column(13).Width = 40;
     }
 }

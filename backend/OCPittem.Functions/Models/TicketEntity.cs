@@ -13,5 +13,4 @@ public class TicketEntity : ITableEntity
     public string TicketType { get; set; } = nameof(TicketKind.Toegang);  // "Toegang" or "EtenParty"
     public bool IsVegetarisch { get; set; }
     public DateTime? ScannedAt { get; set; }
-    public string PdfBlobUrl { get; set; } = string.Empty;
 }

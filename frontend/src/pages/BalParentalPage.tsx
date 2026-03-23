@@ -434,6 +434,8 @@ export default function BalParentalPage() {
   const [sponsorError, setSponsorError] = useState('');
   const [enterpriseNumberError, setEnterpriseNumberError] = useState('');
   const [sponsorSuccess] = useState(false);
+  const [logoFile, setLogoFile] = useState<File | null>(null);
+  const [logoError, setLogoError] = useState('');
 
   const handleTicketSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -484,6 +486,21 @@ export default function BalParentalPage() {
     setSponsorLoading(true);
     try {
       const apiBase = import.meta.env.VITE_API_BASE_URL || '/api';
+
+      let logoUrl = '';
+      if (logoFile) {
+        const formData = new FormData();
+        formData.append('logo', logoFile);
+        const uploadRes = await fetch(`${apiBase}/sponsors/upload-logo`, { method: 'POST', body: formData });
+        if (!uploadRes.ok) {
+          const uploadData = await uploadRes.json().catch(() => ({}));
+          setSponsorError(uploadData.error || 'Logo upload mislukt. Probeer het later opnieuw.');
+          return;
+        }
+        const uploadData = await uploadRes.json();
+        logoUrl = uploadData.logoUrl || '';
+      }
+
       const res = await fetch(`${apiBase}/sponsors/checkout`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -504,6 +521,7 @@ export default function BalParentalPage() {
           includedVegetarischCount: sponsorForm.includedVegetarischCount,
           sponsorAttends: sponsorForm.sponsorAttends,
           sponsorAttendeesCount: sponsorForm.sponsorAttends ? sponsorForm.sponsorAttendeesCount : 0,
+          logoUrl,
         }),
       });
       if (!res.ok) throw new Error();
@@ -873,6 +891,54 @@ export default function BalParentalPage() {
                         <input id="s-city" type="text" required value={sponsorForm.city}
                           onChange={(e) => setSponsorForm({ ...sponsorForm, city: e.target.value })}
                           className={inputClass} placeholder="Pittem" />
+                      </div>
+                    </div>
+
+                    {/* Logo upload */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">
+                        Bedrijfslogo <span className="text-gray-400">(optioneel, max. 5 MB)</span>
+                      </label>
+                      <div className="mt-1">
+                        <label
+                          htmlFor="s-logo"
+                          className="flex cursor-pointer items-center gap-3 rounded-lg border border-dashed border-gray-300 px-4 py-3 text-sm text-gray-500 hover:border-primary-400 hover:text-primary-600 transition-colors"
+                        >
+                          <svg className="h-5 w-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
+                          </svg>
+                          <span className="truncate">{logoFile ? logoFile.name : 'Klik om een afbeelding te kiezen'}</span>
+                          {logoFile && (
+                            <button
+                              type="button"
+                              onClick={(e) => { e.preventDefault(); setLogoFile(null); setLogoError(''); }}
+                              className="ml-auto flex-shrink-0 text-gray-400 hover:text-red-500"
+                              aria-label="Logo verwijderen"
+                            >
+                              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                              </svg>
+                            </button>
+                          )}
+                        </label>
+                        <input
+                          id="s-logo"
+                          type="file"
+                          accept="image/*"
+                          className="sr-only"
+                          onChange={(e) => {
+                            const file = e.target.files?.[0] ?? null;
+                            if (file && file.size > 5 * 1024 * 1024) {
+                              setLogoError('Bestand te groot. Maximum 5 MB toegestaan.');
+                              setLogoFile(null);
+                            } else {
+                              setLogoError('');
+                              setLogoFile(file);
+                            }
+                            e.target.value = '';
+                          }}
+                        />
+                        {logoError && <p className="mt-1 text-xs text-red-600">{logoError}</p>}
                       </div>
                     </div>
 

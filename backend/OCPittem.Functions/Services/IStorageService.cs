@@ -19,4 +19,5 @@ public interface IStorageService
     Task<IReadOnlyList<SponsorRequestEntity>> GetAllSponsorRequestsAsync();
     Task<SponsorRequestEntity?> GetSponsorRequestByStripeSessionAsync(string sessionId);
     Task UpdateSponsorRequestAsync(SponsorRequestEntity request);
+    Task<string> SaveSponsorLogoAsync(string logoId, Stream stream, string contentType, string extension);
 }

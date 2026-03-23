@@ -100,6 +100,7 @@ public class SponsorRequestFunction
                 IncludedVegetarischCount = body.IncludedVegetarischCount,
                 SponsorAttends = body.SponsorAttends,
                 SponsorAttendeesCount = body.SponsorAttends ? body.SponsorAttendeesCount : 0,
+                LogoUrl = body.LogoUrl ?? "",
             };
 
             await _storage.SaveSponsorRequestAsync(entity);
