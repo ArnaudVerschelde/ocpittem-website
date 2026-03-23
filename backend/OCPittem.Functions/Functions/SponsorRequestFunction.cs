@@ -40,13 +40,20 @@ public class SponsorRequestFunction
             || string.IsNullOrWhiteSpace(body.ContactName)
             || string.IsNullOrWhiteSpace(body.Email)
             || string.IsNullOrWhiteSpace(body.Package)
-            || string.IsNullOrWhiteSpace(body.EnterpriseNumber))
+            || string.IsNullOrWhiteSpace(body.EnterpriseNumber)
+            || string.IsNullOrWhiteSpace(body.Street)
+            || string.IsNullOrWhiteSpace(body.HouseNumber)
+            || string.IsNullOrWhiteSpace(body.PostalCode)
+            || string.IsNullOrWhiteSpace(body.City))
         {
             return new BadRequestObjectResult(new { error = "Vul alle verplichte velden in." });
         }
 
         if (!BelgianEnterpriseNumberValidator.IsValid(body.EnterpriseNumber))
             return new BadRequestObjectResult(new { error = "Ongeldig Belgisch ondernemingsnummer." });
+
+        if (!System.Text.RegularExpressions.Regex.IsMatch(body.PostalCode.Trim(), @"^\d{4}$"))
+            return new BadRequestObjectResult(new { error = "Ongeldige Belgische postcode (4 cijfers verwacht)." });
 
         if (body.ExtraEtenPartyCount < 0 || body.ExtraVegetarischCount < 0 || body.ExtraDrankkaart20Count < 0 || body.IncludedVegetarischCount < 0)
             return new BadRequestObjectResult(new { error = "Ongeldige aantallen." });
@@ -81,12 +88,18 @@ public class SponsorRequestFunction
                 Email = body.Email,
                 Phone = body.Phone ?? "",
                 Package = body.Package,
-                Message = body.Message ?? "",
+                Message = "",
                 EnterpriseNumber = BelgianEnterpriseNumberValidator.Normalize(body.EnterpriseNumber),
+                Street = body.Street.Trim(),
+                HouseNumber = body.HouseNumber.Trim(),
+                PostalCode = body.PostalCode.Trim(),
+                City = body.City.Trim(),
                 ExtraEtenPartyCount = body.ExtraEtenPartyCount,
                 ExtraVegetarischCount = body.ExtraVegetarischCount,
                 ExtraDrankkaart20Count = body.ExtraDrankkaart20Count,
                 IncludedVegetarischCount = body.IncludedVegetarischCount,
+                SponsorAttends = body.SponsorAttends,
+                SponsorAttendeesCount = body.SponsorAttends ? body.SponsorAttendeesCount : 0,
             };
 
             await _storage.SaveSponsorRequestAsync(entity);

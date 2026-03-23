@@ -38,13 +38,16 @@ public class SponsorRequestFunctionTests
     {
         var req = HttpRequestHelper.CreateJsonRequest(new
         {
-            companyName     = "TestBV",
-            contactName     = "Jan Janssen",
-            email           = "jan@testbv.be",
-            phone           = "0471234567",
-            package         = "zilver",
-            message         = "Interesse in sponsoring",
+            companyName      = "TestBV",
+            contactName      = "Jan Janssen",
+            email            = "jan@testbv.be",
+            phone            = "0471234567",
+            package          = "zilver",
             enterpriseNumber = ValidEnterpriseNumber,
+            street           = "Teststraat",
+            houseNumber      = "12",
+            postalCode       = "8740",
+            city             = "Pittem",
         });
 
         var result = await _sut.Run(req);
@@ -61,6 +64,8 @@ public class SponsorRequestFunctionTests
                 e.Email            == "jan@testbv.be" &&
                 e.Package          == "zilver" &&
                 e.EnterpriseNumber == "0403.227.515" &&
+                e.Street           == "Teststraat" &&
+                e.PostalCode       == "8740" &&
                 e.Status           == "Pending"));
     }
 
@@ -74,8 +79,11 @@ public class SponsorRequestFunctionTests
             email            = "jan@testbv.be",
             phone            = "",
             package          = "goud",
-            message          = "",
             enterpriseNumber = ValidEnterpriseNumber,
+            street           = "Teststraat",
+            houseNumber      = "1",
+            postalCode       = "8740",
+            city             = "Pittem",
         });
 
         var result = await _sut.Run(req);
@@ -105,8 +113,55 @@ public class SponsorRequestFunctionTests
             email,
             phone            = "",
             package,
-            message          = "",
             enterpriseNumber = enterprise,
+            street           = "Teststraat",
+            houseNumber      = "1",
+            postalCode       = "8740",
+            city             = "Pittem",
+        });
+
+        var result = await _sut.Run(req);
+
+        Assert.IsType<BadRequestObjectResult>(result);
+    }
+
+    [Fact]
+    public async Task Run_MissingAddressField_ReturnsBadRequest()
+    {
+        var req = HttpRequestHelper.CreateJsonRequest(new
+        {
+            companyName      = "TestBV",
+            contactName      = "Jan",
+            email            = "jan@testbv.be",
+            phone            = "",
+            package          = "zilver",
+            enterpriseNumber = ValidEnterpriseNumber,
+            street           = "",        // missing
+            houseNumber      = "1",
+            postalCode       = "8740",
+            city             = "Pittem",
+        });
+
+        var result = await _sut.Run(req);
+
+        Assert.IsType<BadRequestObjectResult>(result);
+    }
+
+    [Fact]
+    public async Task Run_InvalidPostalCode_ReturnsBadRequest()
+    {
+        var req = HttpRequestHelper.CreateJsonRequest(new
+        {
+            companyName      = "TestBV",
+            contactName      = "Jan",
+            email            = "jan@testbv.be",
+            phone            = "",
+            package          = "zilver",
+            enterpriseNumber = ValidEnterpriseNumber,
+            street           = "Teststraat",
+            houseNumber      = "1",
+            postalCode       = "ABC",     // invalid
+            city             = "Pittem",
         });
 
         var result = await _sut.Run(req);
@@ -132,8 +187,11 @@ public class SponsorRequestFunctionTests
             email            = "jan@testbv.be",
             phone            = "",
             package          = "zilver",
-            message          = "",
             enterpriseNumber = enterprise,
+            street           = "Teststraat",
+            houseNumber      = "1",
+            postalCode       = "8740",
+            city             = "Pittem",
         });
 
         var result = await _sut.Run(req);
@@ -155,8 +213,11 @@ public class SponsorRequestFunctionTests
             email            = "jan@testbv.be",
             phone            = "",
             package          = "platinum",
-            message          = "",
             enterpriseNumber = ValidEnterpriseNumber,
+            street           = "Teststraat",
+            houseNumber      = "1",
+            postalCode       = "8740",
+            city             = "Pittem",
         });
 
         var result = await _sut.Run(req);
@@ -188,8 +249,11 @@ public class SponsorRequestFunctionTests
             email            = "jan@testbv.be",
             phone            = "",
             package          = "zilver",
-            message          = "",
             enterpriseNumber = ValidEnterpriseNumber,
+            street           = "Teststraat",
+            houseNumber      = "1",
+            postalCode       = "8740",
+            city             = "Pittem",
         });
 
         _stripe.CreateSponsorCheckoutSessionAsync(

@@ -398,14 +398,19 @@ interface SponsorForm {
   companyName: string;
   contactName: string;
   enterpriseNumber: string;
+  street: string;
+  houseNumber: string;
+  postalCode: string;
+  city: string;
   email: string;
   phone: string;
   package: string;
-  message: string;
   extraEtenPartyCount: number;
   extraVegetarischCount: number;
   extraDrankkaart20Count: number;
   includedVegetarischCount: number;
+  sponsorAttends: boolean;
+  sponsorAttendeesCount: number;
   acceptTerms: boolean;
 }
 
@@ -424,7 +429,7 @@ export default function BalParentalPage() {
   const [ticketError, setTicketError] = useState('');
 
   // Sponsor form
-  const [sponsorForm, setSponsorForm] = useState<SponsorForm>({ companyName: '', contactName: '', enterpriseNumber: '', email: '', phone: '', package: 'zilver', message: '', extraEtenPartyCount: 0, extraVegetarischCount: 0, extraDrankkaart20Count: 0, includedVegetarischCount: 0, acceptTerms: false });
+  const [sponsorForm, setSponsorForm] = useState<SponsorForm>({ companyName: '', contactName: '', enterpriseNumber: '', street: '', houseNumber: '', postalCode: '', city: '', email: '', phone: '', package: 'zilver', extraEtenPartyCount: 0, extraVegetarischCount: 0, extraDrankkaart20Count: 0, includedVegetarischCount: 0, sponsorAttends: false, sponsorAttendeesCount: 0, acceptTerms: false });
   const [sponsorLoading, setSponsorLoading] = useState(false);
   const [sponsorError, setSponsorError] = useState('');
   const [enterpriseNumberError, setEnterpriseNumberError] = useState('');
@@ -472,6 +477,10 @@ export default function BalParentalPage() {
       setSponsorError('Ongeldig Belgisch ondernemingsnummer. Controleer het nummer en probeer opnieuw.');
       return;
     }
+    if (!/^\d{4}$/.test(sponsorForm.postalCode.trim())) {
+      setSponsorError('Ongeldige postcode. Voer een Belgische postcode van 4 cijfers in.');
+      return;
+    }
     setSponsorLoading(true);
     try {
       const apiBase = import.meta.env.VITE_API_BASE_URL || '/api';
@@ -484,12 +493,17 @@ export default function BalParentalPage() {
           email: sponsorForm.email,
           phone: sponsorForm.phone,
           package: sponsorForm.package,
-          message: sponsorForm.message,
           enterpriseNumber: sponsorForm.enterpriseNumber,
+          street: sponsorForm.street,
+          houseNumber: sponsorForm.houseNumber,
+          postalCode: sponsorForm.postalCode,
+          city: sponsorForm.city,
           extraEtenPartyCount: sponsorForm.extraEtenPartyCount,
           extraVegetarischCount: sponsorForm.extraVegetarischCount,
           extraDrankkaart20Count: sponsorForm.extraDrankkaart20Count,
           includedVegetarischCount: sponsorForm.includedVegetarischCount,
+          sponsorAttends: sponsorForm.sponsorAttends,
+          sponsorAttendeesCount: sponsorForm.sponsorAttends ? sponsorForm.sponsorAttendeesCount : 0,
         }),
       });
       if (!res.ok) throw new Error();
@@ -833,11 +847,75 @@ export default function BalParentalPage() {
                           className={inputClass} placeholder="+32 4xx xx xx xx" />
                       </div>
                     </div>
-                    <div>
-                      <label htmlFor="s-msg" className="block text-sm font-medium text-gray-700">Bericht <span className="text-gray-400">(optioneel)</span></label>
-                      <textarea id="s-msg" rows={3} value={sponsorForm.message}
-                        onChange={(e) => setSponsorForm({ ...sponsorForm, message: e.target.value })}
-                        className={inputClass} placeholder="Eventuele opmerkingen of vragen..." />
+                    <div className="grid gap-4 sm:grid-cols-3">
+                      <div className="sm:col-span-2">
+                        <label htmlFor="s-street" className="block text-sm font-medium text-gray-700">Straat</label>
+                        <input id="s-street" type="text" required value={sponsorForm.street}
+                          onChange={(e) => setSponsorForm({ ...sponsorForm, street: e.target.value })}
+                          className={inputClass} placeholder="Kerkstraat" />
+                      </div>
+                      <div>
+                        <label htmlFor="s-housenr" className="block text-sm font-medium text-gray-700">Nr.</label>
+                        <input id="s-housenr" type="text" required value={sponsorForm.houseNumber}
+                          onChange={(e) => setSponsorForm({ ...sponsorForm, houseNumber: e.target.value })}
+                          className={inputClass} placeholder="12" />
+                      </div>
+                    </div>
+                    <div className="grid gap-4 sm:grid-cols-3">
+                      <div>
+                        <label htmlFor="s-postal" className="block text-sm font-medium text-gray-700">Postcode</label>
+                        <input id="s-postal" type="text" required value={sponsorForm.postalCode}
+                          onChange={(e) => setSponsorForm({ ...sponsorForm, postalCode: e.target.value })}
+                          className={inputClass} placeholder="8740" maxLength={4} />
+                      </div>
+                      <div className="sm:col-span-2">
+                        <label htmlFor="s-city" className="block text-sm font-medium text-gray-700">Gemeente</label>
+                        <input id="s-city" type="text" required value={sponsorForm.city}
+                          onChange={(e) => setSponsorForm({ ...sponsorForm, city: e.target.value })}
+                          className={inputClass} placeholder="Pittem" />
+                      </div>
+                    </div>
+
+                    {/* Aanwezigheid sponsor */}
+                    <div className="space-y-2">
+                      <label className="block text-sm font-medium text-gray-700">Zal u zelf aanwezig zijn op het evenement?</label>
+                      <div className="flex gap-2">
+                        <button
+                          type="button"
+                          onClick={() => setSponsorForm({ ...sponsorForm, sponsorAttends: true, sponsorAttendeesCount: Math.max(1, sponsorForm.sponsorAttendeesCount) })}
+                          className={`flex-1 rounded-lg border-2 py-2.5 text-sm font-semibold transition-all ${
+                            sponsorForm.sponsorAttends
+                              ? 'border-primary-500 bg-primary-50 text-primary-800'
+                              : 'border-gray-200 text-gray-500 hover:border-gray-300'
+                          }`}
+                        >
+                          ✅ Ja
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setSponsorForm({ ...sponsorForm, sponsorAttends: false, sponsorAttendeesCount: 0 })}
+                          className={`flex-1 rounded-lg border-2 py-2.5 text-sm font-semibold transition-all ${
+                            !sponsorForm.sponsorAttends
+                              ? 'border-primary-500 bg-primary-50 text-primary-800'
+                              : 'border-gray-200 text-gray-500 hover:border-gray-300'
+                          }`}
+                        >
+                          ❌ Nee
+                        </button>
+                      </div>
+                      {sponsorForm.sponsorAttends && (
+                        <div className="flex items-center justify-between rounded-lg border border-gray-200 px-4 py-3">
+                          <div>
+                            <p className="text-sm font-semibold text-gray-900">Aantal effectieve aanwezigen</p>
+                            <p className="text-xs text-gray-500">Inclusief uzelf</p>
+                          </div>
+                          <Stepper
+                            value={sponsorForm.sponsorAttendeesCount}
+                            onChange={(n) => setSponsorForm({ ...sponsorForm, sponsorAttendeesCount: n })}
+                            min={1}
+                          />
+                        </div>
+                      )}
                     </div>
 
                     {/* Extra tickets */}
@@ -1008,7 +1086,7 @@ export default function BalParentalPage() {
 
                 <button
                   type="button"
-                  onClick={() => { setActiveTab('sponsor'); setSponsorForm((f) => ({ ...f, package: pkg.id, includedVegetarischCount: 0, extraEtenPartyCount: 0, extraVegetarischCount: 0, extraDrankkaart20Count: 0 })); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+                  onClick={() => { setActiveTab('sponsor'); setSponsorForm((f) => ({ ...f, package: pkg.id, includedVegetarischCount: 0, extraEtenPartyCount: 0, extraVegetarischCount: 0, extraDrankkaart20Count: 0, sponsorAttends: false, sponsorAttendeesCount: 0 })); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
                   className={`mt-8 w-full rounded-lg py-3 text-sm font-semibold transition-all ${pkg.color.button}`}
                 >
                   Kies {pkg.label}

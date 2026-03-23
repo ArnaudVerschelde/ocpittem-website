@@ -161,7 +161,7 @@ public class DailyReportService : IDailyReportService
     {
         var ws = workbook.Worksheets.Add("Sponsoren");
 
-        string[] headers = ["#", "Bedrijf", "Contactpersoon", "E-mail", "Telefoon", "Pakket", "Status", "Extra E&P", "Extra Veg.", "Extra Drank \u20ac20", "Totaal (\u20ac)", "Bericht", "Aangevraagd op (UTC)"];
+        string[] headers = ["#", "Bedrijf", "Contactpersoon", "E-mail", "Telefoon", "Pakket", "Status", "Extra E&P", "Extra Veg.", "Extra Drank \u20ac20", "Totaal (\u20ac)", "Ondernemingsnr.", "Straat", "Nr.", "Postcode", "Gemeente", "Aanwezig", "Aantal aanwezigen", "Aangevraagd op (UTC)"];
         for (int col = 1; col <= headers.Length; col++)
         {
             var cell = ws.Cell(1, col);
@@ -190,8 +190,14 @@ public class DailyReportService : IDailyReportService
             ws.Cell(row, 9).Value = sponsor.ExtraVegetarischCount;
             ws.Cell(row, 10).Value = sponsor.ExtraDrankkaart20Count;
             ws.Cell(row, 11).Value = total;
-            ws.Cell(row, 12).Value = sponsor.Message;
-            ws.Cell(row, 13).Value = sponsor.CreatedAt.ToString("dd/MM/yyyy HH:mm");
+            ws.Cell(row, 12).Value = sponsor.EnterpriseNumber;
+            ws.Cell(row, 13).Value = sponsor.Street;
+            ws.Cell(row, 14).Value = sponsor.HouseNumber;
+            ws.Cell(row, 15).Value = sponsor.PostalCode;
+            ws.Cell(row, 16).Value = sponsor.City;
+            ws.Cell(row, 17).Value = sponsor.SponsorAttends ? "Ja" : "Nee";
+            ws.Cell(row, 18).Value = sponsor.SponsorAttendeesCount;
+            ws.Cell(row, 19).Value = sponsor.CreatedAt.ToString("dd/MM/yyyy HH:mm");
 
             var rowFill = sponsor.Status switch
             {

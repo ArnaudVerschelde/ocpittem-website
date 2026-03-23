@@ -311,7 +311,7 @@ public class StripeWebhookFunction
         await _email.SendContactNotificationAsync(
             companyName, email,
             $"Sponsorpakket betaald: {sponsor.Package} \u2014 {companyName}",
-            $"Bedrijf: {companyName}\nOndernemingsnummer: {sponsor.EnterpriseNumber}\nContactpersoon: {sponsor.ContactName}\nPakket: {sponsor.Package}\nExtra Eten & Party: {sponsor.ExtraEtenPartyCount}\nExtra Drankkaarten \u20ac20: {sponsor.ExtraDrankkaart20Count}\n\n{sponsor.Message}",
+            $"Bedrijf: {companyName}\nOndernemingsnummer: {sponsor.EnterpriseNumber}\nAdres: {sponsor.Street} {sponsor.HouseNumber}, {sponsor.PostalCode} {sponsor.City}\nContactpersoon: {sponsor.ContactName}\nPakket: {sponsor.Package}\nExtra Eten & Party: {sponsor.ExtraEtenPartyCount}\nExtra Drankkaarten \u20ac20: {sponsor.ExtraDrankkaart20Count}\nSponsor aanwezig: {(sponsor.SponsorAttends ? "Ja" : "Nee")}\nAantal aanwezigen: {sponsor.SponsorAttendeesCount}",
             contactEmail);
     }
 
