@@ -2,6 +2,7 @@ using Azure;
 using Azure.Data.Tables;
 using Azure.Storage.Blobs;
 using Azure.Storage.Blobs.Models;
+using Azure.Storage.Sas;
 using OCPittem.Functions.Models;
 
 namespace OCPittem.Functions.Services;
@@ -165,11 +166,13 @@ public class TableStorageService : IStorageService
     public async Task<string> SaveSponsorLogoAsync(string logoId, Stream stream, string contentType, string extension)
     {
         var container = _blobServiceClient.GetBlobContainerClient(_sponsorLogosContainer);
-        await container.CreateIfNotExistsAsync(PublicAccessType.Blob);
+        await container.CreateIfNotExistsAsync(PublicAccessType.None);
 
         var blobClient = container.GetBlobClient($"{logoId}{extension}");
         var headers = new BlobHttpHeaders { ContentType = contentType };
         await blobClient.UploadAsync(stream, new BlobUploadOptions { HttpHeaders = headers });
-        return blobClient.Uri.ToString();
+
+        var sasUri = blobClient.GenerateSasUri(BlobSasPermissions.Read, DateTimeOffset.UtcNow.AddYears(5));
+        return sasUri.ToString();
     }
 }
