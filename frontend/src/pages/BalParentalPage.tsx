@@ -556,8 +556,8 @@ export default function BalParentalPage() {
             <dl className="mt-8 space-y-6">
               {[
                 { label: '📅 Datum', value: 'zaterdag 20 juni 2026' },
-                { label: '📍 Locatie', value: 'Pittem — locatie wordt later bekendgemaakt' },
-                { label: '🎵 Muziek', value: 'DJ — wordt later bekendgemaakt' },
+                { label: '📍 Locatie', value: 'De Magneet - Egemstraat 49 - Pittem' },
+                { label: '🎵 Muziek', value: 'DJ Feliz Dachtek - DJ Dennis Cartier' },
               ].map((item) => (
                 <div key={item.label} className="flex gap-4">
                   <dt className="w-28 flex-shrink-0 text-sm font-semibold text-gray-900">{item.label}</dt>
@@ -778,7 +778,12 @@ export default function BalParentalPage() {
                       <div className="mt-2 grid grid-cols-3 gap-2">
                         {sponsorPackages.map((pkg) => (
                           <button key={pkg.id} type="button"
-                            onClick={() => setSponsorForm({ ...sponsorForm, package: pkg.id, includedVegetarischCount: 0 })}
+                            onClick={() => setSponsorForm({
+                              ...sponsorForm,
+                              package: pkg.id,
+                              includedVegetarischCount: 0,
+                              ...(pkg.id === 'brons' ? { sponsorAttends: false, sponsorAttendeesCount: 0, extraEtenPartyCount: 0, extraVegetarischCount: 0, extraDrankkaart20Count: 0 } : {}),
+                            })}
                             className={`rounded-lg border-2 p-3 text-center text-sm font-semibold transition-all ${sponsorForm.package === pkg.id ? `${pkg.color.border} ${pkg.color.bg} ring-2 ${pkg.color.ring}` : 'border-gray-200 hover:border-gray-300'}`}>
                             <span className="block text-xl">{pkg.emoji}</span>
                             <span className="block mt-1">{pkg.label}</span>
@@ -943,6 +948,7 @@ export default function BalParentalPage() {
                     </div>
 
                     {/* Aanwezigheid sponsor */}
+                    {sponsorForm.package !== 'brons' && (
                     <div className="space-y-2">
                       <label className="block text-sm font-medium text-gray-700">Zal u zelf aanwezig zijn op het evenement?</label>
                       <div className="flex gap-2">
@@ -983,8 +989,10 @@ export default function BalParentalPage() {
                         />
                       </div>
                     </div>
+                    )}
 
                     {/* Extra tickets */}
+                    {sponsorForm.package !== 'brons' && (
                     <div className="space-y-2">
                       <label className="block text-sm font-medium text-gray-700">
                         Extra tickets <span className="text-gray-400">(optioneel)</span>
@@ -1032,6 +1040,7 @@ export default function BalParentalPage() {
                         />
                       </div>
                     </div>
+                    )}
 
                     {/* Prijsoverzicht */}
                     {(() => {
@@ -1063,6 +1072,11 @@ export default function BalParentalPage() {
                         </div>
                       );
                     })()}
+
+                    <p className="text-center text-xs text-gray-500">
+                      Heb je nog vragen?{' '}
+                      <a href="mailto:balparental@ocpittem.be" className="text-primary-600 underline hover:text-primary-700">balparental@ocpittem.be</a>
+                    </p>
 
                     <div className="flex items-start gap-3">
                       <input id="s-terms" type="checkbox" checked={sponsorForm.acceptTerms}
