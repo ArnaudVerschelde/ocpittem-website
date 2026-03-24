@@ -557,7 +557,7 @@ export default function BalParentalPage() {
               {[
                 { label: '📅 Datum', value: 'zaterdag 20 juni 2026' },
                 { label: '📍 Locatie', value: 'De Magneet - Egemstraat 49 - Pittem' },
-                { label: '🎵 Muziek', value: 'DJ Feliz Dachtek - DJ Dennis Cartier' },
+                { label: '🎵 Muziek', value: 'DJ Feliz - DJ Dennis Cartier' },
               ].map((item) => (
                 <div key={item.label} className="flex gap-4">
                   <dt className="w-28 flex-shrink-0 text-sm font-semibold text-gray-900">{item.label}</dt>
