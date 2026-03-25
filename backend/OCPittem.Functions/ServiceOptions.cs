@@ -49,4 +49,5 @@ public class StorageOptions
     public string TableNameSponsors { get; init; } = "SponsorRequests";
     public string BlobContainerTickets { get; init; } = "ticket-pdfs";
     public string BlobContainerSponsorLogos { get; init; } = "sponsor-logos";
+    public string BlobContainerSponsorAttestations { get; init; } = "sponsor-attestations";
 }

@@ -18,13 +18,14 @@ public class StripeWebhookFunctionTests
     private readonly IStorageService _storage = Substitute.For<IStorageService>();
     private readonly IEmailService _email = Substitute.For<IEmailService>();
     private readonly ITicketPdfService _ticketPdf = Substitute.For<ITicketPdfService>();
+    private readonly ISponsorAttestationService _attestation = Substitute.For<ISponsorAttestationService>();
     private readonly ILogger<StripeWebhookFunction> _logger = Substitute.For<ILogger<StripeWebhookFunction>>();
     private readonly StripeWebhookFunction _sut;
 
     public StripeWebhookFunctionTests()
     {
         var options = Options.Create(new AppOptions { TicketHmacSecret = "test-hmac-secret" });
-        _sut = new StripeWebhookFunction(_stripe, _storage, _email, _ticketPdf, options, _logger);
+        _sut = new StripeWebhookFunction(_stripe, _storage, _email, _ticketPdf, _attestation, options, _logger);
     }
 
     [Fact]

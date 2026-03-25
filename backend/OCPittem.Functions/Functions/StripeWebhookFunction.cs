@@ -18,6 +18,7 @@ public class StripeWebhookFunction
     private readonly IStorageService _storage;
     private readonly IEmailService _email;
     private readonly ITicketPdfService _ticketPdf;
+    private readonly ISponsorAttestationService _attestation;
     private readonly AppOptions _appOptions;
     private readonly ILogger<StripeWebhookFunction> _logger;
 
@@ -26,6 +27,7 @@ public class StripeWebhookFunction
         IStorageService storage,
         IEmailService email,
         ITicketPdfService ticketPdf,
+        ISponsorAttestationService attestation,
         IOptions<AppOptions> appOptions,
         ILogger<StripeWebhookFunction> logger)
     {
@@ -33,6 +35,7 @@ public class StripeWebhookFunction
         _storage = storage;
         _email = email;
         _ticketPdf = ticketPdf;
+        _attestation = attestation;
         _appOptions = appOptions.Value;
         _logger = logger;
     }
@@ -293,6 +296,25 @@ public class StripeWebhookFunction
             _logger.LogInformation("Sponsor PDF saved to blob for request {RequestId}", requestId);
         }
 
+        var packagePrice = sponsor.Package.ToLower() switch { "brons" => 100m, "zilver" => 250m, "goud" => 500m, _ => 0m };
+        var total = packagePrice + sponsor.ExtraEtenPartyCount * 50m + sponsor.ExtraDrankkaart20Count * 20m;
+
+        byte[]? attestPdf = null;
+        try
+        {
+            attestPdf = await _attestation.GenerateAttestationAsync(
+                sponsor.CompanyName, sponsor.Street, sponsor.HouseNumber,
+                sponsor.PostalCode, sponsor.City, sponsor.EnterpriseNumber,
+                total, DateTime.UtcNow);
+            var attestUrl = await _storage.SaveSponsorAttestationAsync(requestId, attestPdf);
+            sponsor.AttestationBlobUrl = attestUrl;
+            _logger.LogInformation("Sponsor attestation saved to blob for request {RequestId}", requestId);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to generate/save attestation for request {RequestId}", requestId);
+        }
+
         await _storage.UpdateSponsorRequestAsync(sponsor);
 
         if (!string.IsNullOrEmpty(email))
@@ -301,7 +323,7 @@ public class StripeWebhookFunction
                 email, companyName, sponsor.Package,
                 sponsor.ExtraEtenPartyCount, sponsor.ExtraVegetarischCount, sponsor.ExtraDrankkaart20Count,
                 sponsor.IncludedVegetarischCount,
-                pdfTickets, combinedPdf);
+                pdfTickets, combinedPdf, attestPdf);
             _logger.LogInformation("Sponsor payment confirmation sent to {Email} for request {RequestId}", email, requestId);
         }
 

@@ -17,6 +17,7 @@ public class TableStorageService : IStorageService
     private readonly string _sponsorsTable;
     private readonly string _ticketPdfsContainer;
     private readonly string _sponsorLogosContainer;
+    private readonly string _sponsorAttestationsContainer;
 
     public TableStorageService(string connectionString, StorageOptions options)
     {
@@ -28,6 +29,7 @@ public class TableStorageService : IStorageService
         _sponsorsTable = options.TableNameSponsors;
         _ticketPdfsContainer = options.BlobContainerTickets;
         _sponsorLogosContainer = options.BlobContainerSponsorLogos;
+        _sponsorAttestationsContainer = options.BlobContainerSponsorAttestations;
     }
 
     private async Task<TableClient> GetTableAsync(string tableName)
@@ -170,6 +172,20 @@ public class TableStorageService : IStorageService
 
         var blobClient = container.GetBlobClient($"{logoId}{extension}");
         var headers = new BlobHttpHeaders { ContentType = contentType };
+        await blobClient.UploadAsync(stream, new BlobUploadOptions { HttpHeaders = headers });
+
+        var sasUri = blobClient.GenerateSasUri(BlobSasPermissions.Read, DateTimeOffset.UtcNow.AddYears(5));
+        return sasUri.ToString();
+    }
+
+    public async Task<string> SaveSponsorAttestationAsync(string requestId, byte[] pdf)
+    {
+        var container = _blobServiceClient.GetBlobContainerClient(_sponsorAttestationsContainer);
+        await container.CreateIfNotExistsAsync(PublicAccessType.None);
+
+        var blobClient = container.GetBlobClient($"{requestId}/sponsorattest.pdf");
+        var headers = new BlobHttpHeaders { ContentType = "application/pdf" };
+        using var stream = new MemoryStream(pdf);
         await blobClient.UploadAsync(stream, new BlobUploadOptions { HttpHeaders = headers });
 
         var sasUri = blobClient.GenerateSasUri(BlobSasPermissions.Read, DateTimeOffset.UtcNow.AddYears(5));

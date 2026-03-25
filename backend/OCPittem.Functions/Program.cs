@@ -40,7 +40,10 @@ var host = new HostBuilder()
             return new MailjetEmailService(mailjet, email.Enabled, logger);
         });
 
+        services.AddHttpClient();
         services.AddSingleton<ITicketPdfService, TicketPdfService>();
+        services.AddSingleton<ISponsorAttestationService>(sp =>
+            new SponsorAttestationService(sp.GetRequiredService<IHttpClientFactory>()));
         services.AddSingleton<IDailyReportService, DailyReportService>();
     })
     .Build();

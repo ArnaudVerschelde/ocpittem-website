@@ -336,7 +336,8 @@ public class MailjetEmailService : IEmailService
         int extraDrankkaart20,
         int includedVegetarisch,
         IReadOnlyList<TicketPdfData> tickets,
-        byte[]? pdfAttachment = null)
+        byte[]? pdfAttachment = null,
+        byte[]? attestationPdf = null)
     {
         if (!_enabled)
         {
@@ -368,6 +369,9 @@ public class MailjetEmailService : IEmailService
             orderLines.AppendLine($"<li><strong>{extraDrankkaart20}x Drankkaart &euro;20</strong> &mdash; &euro;{extraDrankkaart20 * 20}</li>");
 
         var total = packagePrice + extraEtenParty * 50 + extraDrankkaart20 * 20;
+        var attestationNote = attestationPdf != null
+            ? "<br/>Uw sponsorattest voor de boekhouding vindt u eveneens als bijlage."
+            : "";
 
         var ticketCards = new System.Text.StringBuilder();
         foreach (var ticket in tickets)
@@ -398,7 +402,7 @@ public class MailjetEmailService : IEmailService
                 {ticketCards}
                 <p style=""margin-top:20px;color:#555;"">
                     De volledige PDF met alle tickets vindt u ook in bijlage.<br/>
-                    Toon de QR-code aan de ingang.
+                    Toon de QR-code aan de ingang.{attestationNote}
                 </p>
                 <hr style=""border:none;border-top:1px solid #eee;margin-top:24px;""/>
                 <p style=""font-size:11px;color:#aaa;"">Oudercomité met Pit &mdash; Pittem &mdash; ocpittem.be</p>
@@ -413,6 +417,10 @@ public class MailjetEmailService : IEmailService
         if (pdfAttachment != null)
             builder = builder.WithAttachment(
                 new Attachment("JouwBalParentalTickets.pdf", "application/pdf", Convert.ToBase64String(pdfAttachment)));
+
+        if (attestationPdf != null)
+            builder = builder.WithAttachment(
+                new Attachment("Sponsorattest-BalParental2026.pdf", "application/pdf", Convert.ToBase64String(attestationPdf)));
 
         await Send(builder.Build(), $"sponsor payment confirmation to {toEmail}");
         _logger.LogInformation("Sponsor payment confirmation sent to {Email} ({Company}).", toEmail, companyName);

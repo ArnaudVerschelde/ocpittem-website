@@ -20,4 +20,5 @@ public interface IStorageService
     Task<SponsorRequestEntity?> GetSponsorRequestByStripeSessionAsync(string sessionId);
     Task UpdateSponsorRequestAsync(SponsorRequestEntity request);
     Task<string> SaveSponsorLogoAsync(string logoId, Stream stream, string contentType, string extension);
+    Task<string> SaveSponsorAttestationAsync(string requestId, byte[] pdf);
 }
