@@ -1,4 +1,7 @@
+using Azure.Identity;
+using Azure.Storage.Blobs;
 using Microsoft.Azure.Functions.Worker;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -17,6 +20,7 @@ var host = new HostBuilder()
         services.Configure<EmailOptions>(config.GetSection("Email"));
         services.Configure<AppOptions>(config.GetSection("App"));
         services.Configure<StorageOptions>(config.GetSection("Storage"));
+        services.Configure<SponsorAttestationOptions>(config.GetSection("SponsorAttestation"));
 
         services.AddSingleton<IStorageService>(sp =>
         {
@@ -40,10 +44,20 @@ var host = new HostBuilder()
             return new MailjetEmailService(mailjet, email.Enabled, logger);
         });
 
-        services.AddHttpClient();
         services.AddSingleton<ITicketPdfService, TicketPdfService>();
         services.AddSingleton<ISponsorAttestationService>(sp =>
-            new SponsorAttestationService(sp.GetRequiredService<IHttpClientFactory>()));
+        {
+            var opts = sp.GetRequiredService<IOptions<SponsorAttestationOptions>>();
+            var logger = sp.GetRequiredService<ILogger<SponsorAttestationService>>();
+            var connectionString = config.GetConnectionString("StorageAccount") ?? config["AzureWebJobsStorage"];
+            var blobServiceClient = !string.IsNullOrWhiteSpace(connectionString)
+                ? new BlobServiceClient(connectionString)
+                : new BlobServiceClient(
+                    new Uri(opts.Value.BlobServiceUri
+                        ?? throw new InvalidOperationException("Geen storage connection string of BlobServiceUri gevonden voor SponsorAttestationService.")),
+                    new DefaultAzureCredential());
+            return new SponsorAttestationService(blobServiceClient, opts, logger);
+        });
         services.AddSingleton<IDailyReportService, DailyReportService>();
     })
     .Build();

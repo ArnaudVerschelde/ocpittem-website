@@ -1,5 +1,10 @@
-using System.Net;
+using Azure;
+using Azure.Storage.Blobs;
+using Azure.Storage.Blobs.Models;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using NSubstitute;
+using OCPittem.Functions;
 using OCPittem.Functions.Services;
 using OCPittem.Functions.Tests.Helpers;
 
@@ -7,14 +12,64 @@ namespace OCPittem.Functions.Tests.Services;
 
 public class SponsorAttestationServiceTests
 {
-    // A real PNG image (generated via QrCodeHelper) so QuestPDF can decode it
     private static readonly byte[] FakeSignatureBytes = QrCodeHelper.GeneratePng("signature-placeholder", pixelsPerModule: 2);
 
-    private static ISponsorAttestationService CreateSut(HttpMessageHandler handler)
+    private static ISponsorAttestationService CreateSut(BlobServiceClient blobServiceClient)
     {
-        var factory = Substitute.For<IHttpClientFactory>();
-        factory.CreateClient(Arg.Any<string>()).Returns(new HttpClient(handler));
-        return new SponsorAttestationService(factory);
+        var options = Options.Create(new SponsorAttestationOptions());
+        var logger = Substitute.For<ILogger<SponsorAttestationService>>();
+        return new SponsorAttestationService(blobServiceClient, options, logger);
+    }
+
+    private static BlobServiceClient BlobServiceWithSignature()
+    {
+        var blobClient = Substitute.For<BlobClient>();
+
+        var existsResponse = Substitute.For<Response<bool>>();
+        existsResponse.Value.Returns(true);
+        blobClient.ExistsAsync(Arg.Any<CancellationToken>()).Returns(existsResponse);
+
+        var content = BinaryData.FromBytes(FakeSignatureBytes);
+        var downloadResult = BlobsModelFactory.BlobDownloadResult(content: content);
+        var downloadResponse = Substitute.For<Response<BlobDownloadResult>>();
+        downloadResponse.Value.Returns(downloadResult);
+        blobClient.DownloadContentAsync(Arg.Any<CancellationToken>()).Returns(downloadResponse);
+
+        var containerClient = Substitute.For<BlobContainerClient>();
+        containerClient.GetBlobClient(Arg.Any<string>()).Returns(blobClient);
+
+        var serviceClient = Substitute.For<BlobServiceClient>();
+        serviceClient.GetBlobContainerClient(Arg.Any<string>()).Returns(containerClient);
+        return serviceClient;
+    }
+
+    private static BlobServiceClient BlobServiceBlobNotFound()
+    {
+        var blobClient = Substitute.For<BlobClient>();
+        var existsResponse = Substitute.For<Response<bool>>();
+        existsResponse.Value.Returns(false);
+        blobClient.ExistsAsync(Arg.Any<CancellationToken>()).Returns(existsResponse);
+
+        var containerClient = Substitute.For<BlobContainerClient>();
+        containerClient.GetBlobClient(Arg.Any<string>()).Returns(blobClient);
+
+        var serviceClient = Substitute.For<BlobServiceClient>();
+        serviceClient.GetBlobContainerClient(Arg.Any<string>()).Returns(containerClient);
+        return serviceClient;
+    }
+
+    private static BlobServiceClient BlobServiceThatThrows()
+    {
+        var blobClient = Substitute.For<BlobClient>();
+        blobClient.ExistsAsync(Arg.Any<CancellationToken>())
+            .Returns(Task.FromException<Response<bool>>(new RequestFailedException("Network error")));
+
+        var containerClient = Substitute.For<BlobContainerClient>();
+        containerClient.GetBlobClient(Arg.Any<string>()).Returns(blobClient);
+
+        var serviceClient = Substitute.For<BlobServiceClient>();
+        serviceClient.GetBlobContainerClient(Arg.Any<string>()).Returns(containerClient);
+        return serviceClient;
     }
 
     private static Task<byte[]> GenerateSample(ISponsorAttestationService sut) =>
@@ -31,13 +86,7 @@ public class SponsorAttestationServiceTests
     [Fact]
     public async Task GenerateAttestationAsync_SignatureAvailable_ReturnsNonEmptyPdf()
     {
-        var handler = new FakeHttpMessageHandler(_ =>
-            new HttpResponseMessage(HttpStatusCode.OK)
-            {
-                Content = new ByteArrayContent(FakeSignatureBytes)
-            });
-
-        var sut = CreateSut(handler);
+        var sut = CreateSut(BlobServiceWithSignature());
         var result = await GenerateSample(sut);
 
         Assert.NotNull(result);
@@ -47,10 +96,7 @@ public class SponsorAttestationServiceTests
     [Fact]
     public async Task GenerateAttestationAsync_SignatureDownloadFails_StillReturnsPdf()
     {
-        var handler = new FakeHttpMessageHandler(_ =>
-            new HttpResponseMessage(HttpStatusCode.NotFound));
-
-        var sut = CreateSut(handler);
+        var sut = CreateSut(BlobServiceBlobNotFound());
         var result = await GenerateSample(sut);
 
         Assert.NotNull(result);
@@ -58,11 +104,9 @@ public class SponsorAttestationServiceTests
     }
 
     [Fact]
-    public async Task GenerateAttestationAsync_HttpClientThrows_StillReturnsPdf()
+    public async Task GenerateAttestationAsync_BlobClientThrows_StillReturnsPdf()
     {
-        var handler = new FakeHttpMessageHandler(_ => throw new HttpRequestException("Network error"));
-
-        var sut = CreateSut(handler);
+        var sut = CreateSut(BlobServiceThatThrows());
         var result = await GenerateSample(sut);
 
         Assert.NotNull(result);
@@ -72,13 +116,7 @@ public class SponsorAttestationServiceTests
     [Fact]
     public async Task GenerateAttestationAsync_ReturnsPdfMagicBytes()
     {
-        var handler = new FakeHttpMessageHandler(_ =>
-            new HttpResponseMessage(HttpStatusCode.OK)
-            {
-                Content = new ByteArrayContent(FakeSignatureBytes)
-            });
-
-        var sut = CreateSut(handler);
+        var sut = CreateSut(BlobServiceWithSignature());
         var result = await GenerateSample(sut);
 
         Assert.Equal((byte)'%', result[0]);

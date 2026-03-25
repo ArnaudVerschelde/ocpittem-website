@@ -121,4 +121,36 @@ public class DailyReportServiceTests
             Arg.Any<DailyReportStats>(),
             Arg.Any<DateTime>());
     }
+
+    [Fact]
+    public async Task SendDailyReportAsync_PaidSponsors_CalculatesSponsorStatsCorrectly()
+    {
+        var sponsors = new List<SponsorRequestEntity>
+        {
+            new() { Status = "Paid", Package = "goud", ExtraEtenPartyCount = 2, ExtraVegetarischCount = 1, ExtraDrankkaart20Count = 1 },
+            new() { Status = "Paid", Package = "brons", ExtraEtenPartyCount = 0, ExtraVegetarischCount = 0, ExtraDrankkaart20Count = 0 },
+            new() { Status = "Pending", Package = "zilver" },
+        };
+        _storage.GetAllOrdersAsync().Returns(new List<OrderEntity>());
+        _storage.GetAllSponsorRequestsAsync().Returns(sponsors);
+
+        var sut = CreateSut("test@example.com");
+        await sut.SendDailyReportAsync();
+
+        // Revenue: goud(500) + 2*50 + 1*20 = 620 | brons(100) = 100 | total = 720
+        await _email.Received(1).SendDailyReportAsync(
+            Arg.Any<IReadOnlyList<string>>(),
+            Arg.Any<byte[]>(),
+            Arg.Is<DailyReportStats>(s =>
+                s.TotalSponsorRequests == 3 &&
+                s.PaidSponsorOrders == 2 &&
+                s.TotalSponsorBrons == 1 &&
+                s.TotalSponsorZilver == 0 &&
+                s.TotalSponsorGoud == 1 &&
+                s.TotalSponsorExtraEtenParty == 2 &&
+                s.TotalSponsorExtraVegetarisch == 1 &&
+                s.TotalSponsorExtraDrankkaart20 == 1 &&
+                s.TotalSponsorRevenue == 720m),
+            Arg.Any<DateTime>());
+    }
 }

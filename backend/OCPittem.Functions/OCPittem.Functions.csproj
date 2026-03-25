@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
     <AzureFunctionsVersion>v4</AzureFunctionsVersion>
@@ -8,6 +8,7 @@
   </PropertyGroup>
   <ItemGroup>
     <FrameworkReference Include="Microsoft.AspNetCore.App" />
+    <PackageReference Include="Azure.Identity" Version="1.19.0" />
     <PackageReference Include="ClosedXML" Version="0.102.3" />
     <PackageReference Include="Mailjet.Api" Version="4.0.0" />
     <PackageReference Include="Microsoft.Azure.Functions.Worker" Version="1.23.0" />

@@ -51,3 +51,10 @@ public class StorageOptions
     public string BlobContainerSponsorLogos { get; init; } = "sponsor-logos";
     public string BlobContainerSponsorAttestations { get; init; } = "sponsor-attestations";
 }
+
+public class SponsorAttestationOptions
+{
+    public string SignatureContainerName { get; init; } = "document-assets";
+    public string SignatureBlobName { get; init; } = "sponsorattest-2026.png";
+    public string? BlobServiceUri { get; init; }
+}
