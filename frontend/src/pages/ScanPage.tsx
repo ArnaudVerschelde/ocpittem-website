@@ -40,6 +40,8 @@ export default function ScanPage() {
           setState('loading');
           await scanner.stop().catch(() => {});
           scannerRef.current = null;
+          const readerEl = document.getElementById(READER_ID);
+          if (readerEl) readerEl.innerHTML = '';
 
           try {
             const res = await api.validateTicket(decodedText);
