@@ -7,7 +7,6 @@ namespace OCPittem.Functions.Services;
 
 public class SponsorAttestationService : ISponsorAttestationService
 {
-    private const string BrandColor = "#13A2A3";
     private const string Activity = "BAL PARENTAL 2026";
     private const string SignatureImageUrl = "https://stocpittem2026.blob.core.windows.net/document-assets/sponsorattest-2026.png";
 
@@ -57,7 +56,6 @@ public class SponsorAttestationService : ISponsorAttestationService
         }
 
         var dateLabel = $"{date.Day} {DutchMonths[date.Month - 1]} {date.Year}";
-        var addressLine = $"{street} {houseNumber}, {postalCode} {city}";
         var vatNumber = $"BE {enterpriseNumber}";
         var amountFormatted = "€ " + amount.ToString("F2", CultureInfo.InvariantCulture).Replace(".", ",");
 
@@ -66,74 +64,68 @@ public class SponsorAttestationService : ISponsorAttestationService
             container.Page(page =>
             {
                 page.Size(PageSizes.A4);
-                page.Margin(50);
+                page.MarginVertical(60);
+                page.MarginHorizontal(70);
                 page.DefaultTextStyle(x => x.FontSize(11));
 
-                page.Header().Column(header =>
+                page.Content().Column(content =>
                 {
-                    header.Item().Row(row =>
+                    // 1. Briefhoofd — organisatieadres linksboven
+                    content.Item().Text(t =>
                     {
+                        t.Line("Oudercomité met Pit!").Bold().FontSize(12);
+                        t.Line("p/a Basisschool PIT");
+                        t.Line("Koolskampstraat 4");
+                        t.Line("8740 Pittem");
+                    });
+
+                    // 2. Datum rechts uitgelijnd
+                    content.Item().PaddingTop(20).AlignRight()
+                        .Text($"Pittem, {dateLabel}");
+
+                    // 3. Titel
+                    content.Item().PaddingTop(28).AlignCenter()
+                        .Text("ONTVANGSTBEWIJS SPONSORING/PUBLICITEIT")
+                        .Bold().Underline();
+
+                    // 4. Inleidende zin
+                    content.Item().PaddingTop(24).Text(
+                        "Ondergetekende, De Neve Jolien, voorzitter van het Oudercomité met Pit, " +
+                        "verklaart hierbij te hebben ontvangen:");
+
+                    // 5. Bedrag
+                    content.Item().PaddingTop(20).Text(t =>
+                    {
+                        t.Span("Producten ter waarde van/een bedrag van:   ");
+                        t.Span(amountFormatted).Bold();
+                    });
+
+                    // 6. Van: — bedrijfsgegevens
+                    content.Item().PaddingTop(6).Row(row =>
+                    {
+                        row.ConstantItem(50).PaddingTop(2).Text("Van:").Bold();
                         row.RelativeItem().Column(col =>
                         {
-                            col.Item().Text("Oudercomité met Pit").FontSize(20).Bold().FontColor(BrandColor);
-                            col.Item().Text("Pittem").FontSize(10).FontColor(Colors.Grey.Darken1);
+                            col.Item().Text(companyName).Bold();
+                            col.Item().Text($"{street} {houseNumber}, {postalCode} {city}");
+                            col.Item().Text(vatNumber);
                         });
                     });
-                    header.Item().PaddingTop(8).Height(2).Background(BrandColor);
-                });
 
-                page.Content().PaddingTop(30).Column(content =>
-                {
-                    content.Item().AlignCenter()
-                        .Text("SPONSORATTEST 2026")
-                        .FontSize(18).Bold().FontColor(BrandColor);
+                    // 7. Slottekst
+                    content.Item().PaddingTop(20).Text(
+                        $"als sponsoring voor {Activity}, georganiseerd door het Oudercomité met Pit " +
+                        "op datum van 20 juni 2026.");
+                    content.Item().PaddingTop(10).Text(
+                        "In ruil wordt het logo/advertentie van de firma getoond tijdens het evenement.");
 
-                    content.Item().PaddingTop(24).Text(t =>
-                    {
-                        t.Span("Oudercomité met Pit").Bold();
-                        t.Span(" bevestigt hiermee dat onderstaande sponsor een financiële bijdrage heeft geleverd voor volgende activiteit:");
-                    });
-
-                    content.Item().PaddingTop(24).Table(table =>
-                    {
-                        table.ColumnsDefinition(columns =>
-                        {
-                            columns.ConstantColumn(150);
-                            columns.RelativeColumn();
-                        });
-
-                        void Row(string label, string value, bool shaded = false)
-                        {
-                            var bg = shaded ? "#f0fafa" : "#ffffff";
-                            table.Cell().Background(bg).Padding(8).Text(label).Bold();
-                            table.Cell().Background(bg).Padding(8).Text(value);
-                        }
-
-                        Row("Activiteit:", Activity, true);
-                        Row("Datum:", dateLabel);
-                        Row("Naam sponsor:", companyName, true);
-                        Row("Adres:", addressLine);
-                        Row("BTW nr:", vatNumber, true);
-                        Row("Bedrag:", amountFormatted);
-                    });
-
-                    content.Item().PaddingTop(36).Text($"Opgemaakt te Pittem op {dateLabel}.");
-
-                    content.Item().PaddingTop(40).Text("Namens Oudercomité met Pit,").Italic();
-
+                    // 8. Handtekening — afbeelding of stippellijn
                     if (signatureBytes != null)
-                        content.Item().PaddingTop(8).MaxWidth(180).Image(signatureBytes);
+                        content.Item().PaddingTop(60).MaxWidth(220).Image(signatureBytes);
                     else
-                        content.Item().PaddingTop(60).Width(200).Height(1).Background(Colors.Grey.Darken2);
+                        content.Item().PaddingTop(60).Text("…………………………………………………..").FontSize(12);
 
-                    content.Item().PaddingTop(8).Text("Het bestuur").Bold();
-                });
-
-                page.Footer().Column(footer =>
-                {
-                    footer.Item().Height(1).Background(Colors.Grey.Lighten2);
-                    footer.Item().PaddingTop(6).AlignCenter()
-                        .Text("ocpittem.be").FontSize(9).FontColor(Colors.Grey.Medium);
+                    content.Item().PaddingTop(4).Text("namens het Oudercomité met Pit");
                 });
             });
         });
