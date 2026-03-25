@@ -103,6 +103,32 @@ export default function ScanPage() {
     );
   }
 
+  if (state === 'result' && result) {
+    return (
+      <div
+        className={`flex min-h-screen flex-col items-center justify-center p-8 ${
+          result.valid ? 'bg-green-500' : 'bg-red-500'
+        }`}
+      >
+        <div className="mb-4 text-8xl">{result.valid ? '✅' : '❌'}</div>
+        {result.valid ? (
+          <>
+            <p className="text-3xl font-bold text-white">Geldig ticket</p>
+            <p className="mt-3 text-xl text-white/90">
+              {result.ticketType === 'Toegang' ? '🎉 Toegang' : '🍽️ Eten & Party'}
+            </p>
+          </>
+        ) : (
+          <>
+            <p className="text-3xl font-bold text-white">Ongeldig</p>
+            <p className="mt-3 text-center text-lg text-white/90">{result.error}</p>
+          </>
+        )}
+        <p className="mt-10 text-sm text-white/50">Volgende scan over {RESULT_DISPLAY_MS / 1000}s…</p>
+      </div>
+    );
+  }
+
   return (
     <div className="relative flex min-h-screen flex-col bg-gray-900">
       <div className="shrink-0 px-4 py-4 text-center">
@@ -119,30 +145,6 @@ export default function ScanPage() {
           {state === 'loading' && '⏳ Valideren...'}
         </p>
       </div>
-
-      {state === 'result' && result && (
-        <div
-          className={`fixed inset-0 z-50 flex flex-col items-center justify-center p-8 ${
-            result.valid ? 'bg-green-500' : 'bg-red-500'
-          }`}
-        >
-          <div className="mb-4 text-8xl">{result.valid ? '✅' : '❌'}</div>
-          {result.valid ? (
-            <>
-              <p className="text-3xl font-bold text-white">Geldig ticket</p>
-              <p className="mt-3 text-xl text-white/90">
-                {result.ticketType === 'Toegang' ? '🎉 Toegang' : '🍽️ Eten & Party'}
-              </p>
-            </>
-          ) : (
-            <>
-              <p className="text-3xl font-bold text-white">Ongeldig</p>
-              <p className="mt-3 text-center text-lg text-white/90">{result.error}</p>
-            </>
-          )}
-          <p className="mt-10 text-sm text-white/50">Volgende scan over {RESULT_DISPLAY_MS / 1000}s…</p>
-        </div>
-      )}
     </div>
   );
 }
