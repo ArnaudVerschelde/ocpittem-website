@@ -40,6 +40,7 @@ export default function ScanPage() {
     const scannerRef = useRef<Html5Qrcode | null>(null);
     const processingRef = useRef(false);
     const restartTimerRef = useRef<number | null>(null);
+    const unmountedRef = useRef(false);
 
     async function stopScanner(instance?: Html5Qrcode | null) {
         const scanner = instance ?? scannerRef.current;
@@ -62,11 +63,28 @@ export default function ScanPage() {
         }
     }
 
+    function scheduleRescan() {
+        if (restartTimerRef.current) {
+            window.clearTimeout(restartTimerRef.current);
+        }
+
+        restartTimerRef.current = window.setTimeout(() => {
+            if (!unmountedRef.current) {
+                setState('scanning');
+            }
+        }, RESULT_DISPLAY_MS);
+    }
+
     useEffect(() => {
+        unmountedRef.current = false;
+
         return () => {
+            unmountedRef.current = true;
+
             if (restartTimerRef.current) {
                 window.clearTimeout(restartTimerRef.current);
             }
+
             void stopScanner();
         };
     }, []);
@@ -74,7 +92,6 @@ export default function ScanPage() {
     useEffect(() => {
         if (state !== 'scanning') return;
 
-        let cancelled = false;
         processingRef.current = false;
         setResult(null);
 
@@ -101,7 +118,8 @@ export default function ScanPage() {
                         console.log('QR scanned:', decodedText);
 
                         await stopScanner(scanner);
-                        if (cancelled) return;
+
+                        if (unmountedRef.current) return;
 
                         setState('loading');
 
@@ -115,60 +133,52 @@ export default function ScanPage() {
 
                             console.log('Validation response:', res);
 
-                            if (!cancelled) {
-                                setResult(res);
-                            }
+                            if (unmountedRef.current) return;
+
+                            setResult(res);
                         } catch (err) {
                             console.error('Validation failed:', err);
 
-                            if (!cancelled) {
-                                const message =
-                                    err instanceof Error
-                                        ? err.message
-                                        : 'Verbindingsfout. Probeer opnieuw.';
+                            if (unmountedRef.current) return;
 
-                                setResult({
-                                    valid: false,
-                                    error: message,
-                                });
-                            }
+                            const message =
+                                err instanceof Error
+                                    ? err.message
+                                    : 'Verbindingsfout. Probeer opnieuw.';
+
+                            setResult({
+                                valid: false,
+                                error: message,
+                            });
                         }
 
-                        if (cancelled) return;
+                        if (unmountedRef.current) return;
 
                         setState('result');
-
-                        if (restartTimerRef.current) {
-                            window.clearTimeout(restartTimerRef.current);
-                        }
-
-                        restartTimerRef.current = window.setTimeout(() => {
-                            setState('scanning');
-                        }, RESULT_DISPLAY_MS);
+                        scheduleRescan();
                     },
-                    (errorMessage) => {
-                        // Niet elke scan failure is echt een fout, dus enkel loggen indien nuttig
-                        // console.debug('Scan attempt:', errorMessage);
+                    () => {
+                        // scan failures tijdens zoeken negeren
                     },
                 );
             } catch (err) {
                 console.error('Scanner start failed:', err);
                 scannerRef.current = null;
 
-                if (!cancelled) {
-                    setResult({
-                        valid: false,
-                        error: 'Camera kon niet gestart worden. Controleer cameratoegang en probeer opnieuw.',
-                    });
-                    setState('result');
-                }
+                if (unmountedRef.current) return;
+
+                setResult({
+                    valid: false,
+                    error: 'Camera kon niet gestart worden. Controleer cameratoegang en probeer opnieuw.',
+                });
+                setState('result');
+                scheduleRescan();
             }
         };
 
         void startScanner();
 
         return () => {
-            cancelled = true;
             void stopScanner();
         };
     }, [state]);
