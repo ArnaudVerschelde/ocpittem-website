@@ -24,6 +24,8 @@ export default function ScanPage() {
     if (state !== 'scanning') return;
 
     processingRef.current = false;
+    const readerEl = document.getElementById(READER_ID);
+    if (readerEl) readerEl.innerHTML = '';
     const scanner = new Html5Qrcode(READER_ID);
     scannerRef.current = scanner;
 
@@ -118,7 +120,7 @@ export default function ScanPage() {
 
       {state === 'result' && result && (
         <div
-          className={`absolute inset-0 flex flex-col items-center justify-center p-8 ${
+          className={`fixed inset-0 z-50 flex flex-col items-center justify-center p-8 ${
             result.valid ? 'bg-green-500' : 'bg-red-500'
           }`}
         >
