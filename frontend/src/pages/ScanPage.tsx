@@ -5,11 +5,30 @@ import { api, ValidateTicketResponse } from '../services/api';
 const SCAN_PIN = import.meta.env.VITE_SCAN_PIN as string | undefined;
 const READER_ID = 'qr-reader';
 const RESULT_DISPLAY_MS = 3000;
+const VALIDATE_TIMEOUT_MS = 8000;
 
 type ScanState = 'pin' | 'scanning' | 'loading' | 'result';
 
 function isPinRequired() {
     return !!SCAN_PIN && sessionStorage.getItem('scan-unlocked') !== '1';
+}
+
+function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
+    return new Promise<T>((resolve, reject) => {
+        const timeoutId = window.setTimeout(() => {
+            reject(new Error('Timeout: validatie duurde te lang.'));
+        }, ms);
+
+        promise
+            .then((value) => {
+                window.clearTimeout(timeoutId);
+                resolve(value);
+            })
+            .catch((error) => {
+                window.clearTimeout(timeoutId);
+                reject(error);
+            });
+    });
 }
 
 export default function ScanPage() {
@@ -26,21 +45,20 @@ export default function ScanPage() {
         const scanner = instance ?? scannerRef.current;
         if (!scanner) return;
 
-        // meteen nullen zodat cleanup of volgende renders hem niet nog eens stoppen
         if (scannerRef.current === scanner) {
             scannerRef.current = null;
         }
 
         try {
             await scanner.stop();
-        } catch {
-            // negeren: kan al gestopt zijn of nog niet volledig gestart
+        } catch (err) {
+            console.warn('scanner.stop failed or scanner already stopped', err);
         }
 
         try {
             scanner.clear();
-        } catch {
-            // clear kan falen als de lib al deels opgeruimd is
+        } catch (err) {
+            console.warn('scanner.clear failed', err);
         }
     }
 
@@ -63,6 +81,8 @@ export default function ScanPage() {
         const startScanner = async () => {
             if (scannerRef.current) return;
 
+            console.log('Starting scanner');
+
             const scanner = new Html5Qrcode(READER_ID);
             scannerRef.current = scanner;
 
@@ -78,22 +98,38 @@ export default function ScanPage() {
                         if (processingRef.current) return;
                         processingRef.current = true;
 
-                        // Eerst scanner echt stoppen, pas daarna state wijzigen
+                        console.log('QR scanned:', decodedText);
+
                         await stopScanner(scanner);
                         if (cancelled) return;
 
                         setState('loading');
 
                         try {
-                            const res = await api.validateTicket(decodedText);
+                            console.log('Starting ticket validation');
+
+                            const res = await withTimeout(
+                                api.validateTicket(decodedText),
+                                VALIDATE_TIMEOUT_MS,
+                            );
+
+                            console.log('Validation response:', res);
+
                             if (!cancelled) {
                                 setResult(res);
                             }
-                        } catch {
+                        } catch (err) {
+                            console.error('Validation failed:', err);
+
                             if (!cancelled) {
+                                const message =
+                                    err instanceof Error
+                                        ? err.message
+                                        : 'Verbindingsfout. Probeer opnieuw.';
+
                                 setResult({
                                     valid: false,
-                                    error: 'Verbindingsfout. Probeer opnieuw.',
+                                    error: message,
                                 });
                             }
                         }
@@ -110,12 +146,13 @@ export default function ScanPage() {
                             setState('scanning');
                         }, RESULT_DISPLAY_MS);
                     },
-                    () => {
-                        // scan failures tijdens zoeken negeren
+                    (errorMessage) => {
+                        // Niet elke scan failure is echt een fout, dus enkel loggen indien nuttig
+                        // console.debug('Scan attempt:', errorMessage);
                     },
                 );
             } catch (err) {
-                console.error('Scanner start failed', err);
+                console.error('Scanner start failed:', err);
                 scannerRef.current = null;
 
                 if (!cancelled) {
@@ -139,6 +176,7 @@ export default function ScanPage() {
     function handlePinSubmit() {
         if (pin === SCAN_PIN) {
             sessionStorage.setItem('scan-unlocked', '1');
+            setPinError(false);
             setState('scanning');
         } else {
             setPinError(true);
@@ -189,6 +227,7 @@ export default function ScanPage() {
             <div className="flex min-h-screen flex-col items-center justify-center bg-gray-900 p-8">
                 <div className="text-5xl">⏳</div>
                 <p className="mt-4 text-lg text-white">Ticket valideren...</p>
+                <p className="mt-2 text-sm text-gray-400">Even wachten</p>
             </div>
         );
     }
@@ -211,7 +250,9 @@ export default function ScanPage() {
                 ) : (
                     <>
                         <p className="text-3xl font-bold text-white">Ongeldig</p>
-                        <p className="mt-3 text-center text-lg text-white/90">{result.error}</p>
+                        <p className="mt-3 text-center text-lg text-white/90">
+                            {result.error ?? 'Onbekende fout'}
+                        </p>
                     </>
                 )}
 
