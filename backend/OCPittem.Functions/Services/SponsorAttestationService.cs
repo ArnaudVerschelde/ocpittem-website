@@ -15,8 +15,18 @@ public class SponsorAttestationService : ISponsorAttestationService
 
     private static readonly string[] DutchMonths =
     [
-        "januari", "februari", "maart", "april", "mei", "juni",
-        "juli", "augustus", "september", "oktober", "november", "december"
+        "januari", 
+        "februari", 
+        "maart", 
+        "april", 
+        "mei", 
+        "juni",
+        "juli", 
+        "augustus", 
+        "september", 
+        "oktober", 
+        "november", 
+        "december"
     ];
 
     public SponsorAttestationService(IHttpClientFactory httpClientFactory)
