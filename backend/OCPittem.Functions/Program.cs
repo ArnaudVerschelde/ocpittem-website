@@ -45,6 +45,8 @@ var host = new HostBuilder()
         });
 
         services.AddSingleton<ITicketPdfService, TicketPdfService>();
+        services.AddHttpClient();
+        services.AddSingleton<ISponsorLogoPackageService, SponsorLogoPackageService>();
         services.AddSingleton<ISponsorAttestationService>(sp =>
         {
             var opts = sp.GetRequiredService<IOptions<SponsorAttestationOptions>>();
