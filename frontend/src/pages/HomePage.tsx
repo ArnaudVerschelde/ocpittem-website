@@ -36,6 +36,42 @@ export default function HomePage() {
         </div>
       </div>
 
+      {/* Bal Parental promo */}
+      <div className="relative overflow-hidden bg-gradient-to-br from-[#120018] via-[#2d0057] to-[#3b0764]">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(139,92,246,0.30),transparent_40%),radial-gradient(circle_at_bottom_left,rgba(236,72,153,0.20),transparent_40%)]" />
+        <div className="relative mx-auto max-w-7xl px-4 py-14 sm:px-6 lg:px-8">
+          <div className="flex flex-col items-center gap-6 text-center lg:flex-row lg:text-left">
+            <div className="flex-1">
+              <span className="inline-flex rounded-full border border-fuchsia-400/40 bg-white/10 px-3 py-1 text-xs font-semibold tracking-wide text-fuchsia-200">
+                ✨ Zaterdag 20 juni 2026
+              </span>
+              <h2 className="mt-3 text-3xl font-extrabold tracking-tight text-white sm:text-4xl">
+                Bal{' '}
+                <span className="text-fuchsia-300">Parental</span>
+              </h2>
+              <p className="mt-3 max-w-xl text-base text-purple-100/80">
+                Een onvergetelijke avond vol muziek en gezelligheid in De Magneet Pittem.
+                Tickets en sponsorpakketten zijn nu beschikbaar!
+              </p>
+            </div>
+            <div className="flex flex-shrink-0 flex-col gap-3 sm:flex-row">
+              <Link
+                to="/bal-parental#bestellen"
+                className="inline-flex items-center justify-center rounded-full bg-gradient-to-r from-pink-500 to-violet-500 px-6 py-3 text-sm font-bold text-white shadow-lg shadow-fuchsia-900/40 transition hover:scale-[1.02]"
+              >
+                🎟️ Tickets kopen
+              </Link>
+              <Link
+                to="/bal-parental"
+                className="inline-flex items-center justify-center rounded-full border border-fuchsia-300/40 bg-white/10 px-6 py-3 text-sm font-semibold text-fuchsia-100 backdrop-blur transition hover:bg-white/15"
+              >
+                Meer info
+              </Link>
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* Kort overzicht */}
       <Section>
         <div className="text-center">
