@@ -9,7 +9,7 @@ const events = [
     title: 'Bal Parental 2026',
     date: 'zaterdag 20 juni 2026',
     description:
-      'Ons jaarlijks ouderbal! Een fantastische avond met muziek, drank en gezelligheid. Tickets zijn binnenkort online beschikbaar.',
+      'Ons jaarlijks ouderbal! Een fantastische avond met muziek, drank en gezelligheid.',
     cta: { label: 'Tickets & info', to: '/bal-parental' },
     color: 'primary',
   },
