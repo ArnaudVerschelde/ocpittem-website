@@ -49,7 +49,7 @@ public class StripeService : IStripeService
 
         var options = new SessionCreateOptions
         {
-            PaymentMethodTypes = ["card", "bancontact", "ideal"],
+            PaymentMethodTypes = ["card", "bancontact"],
             CustomerEmail = email,
             LineItems = lineItems,
             Mode = "payment",
@@ -91,7 +91,7 @@ public class StripeService : IStripeService
 
         var sponsorOptions = new SessionCreateOptions
         {
-            PaymentMethodTypes = ["card", "bancontact", "ideal"],
+            PaymentMethodTypes = ["card", "bancontact"],
             CustomerEmail = email,
             LineItems = lineItems,
             Mode = "payment",
