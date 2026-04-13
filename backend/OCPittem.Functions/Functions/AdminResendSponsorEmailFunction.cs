@@ -37,6 +37,9 @@ public class AdminResendSponsorEmailFunction
         if (string.IsNullOrWhiteSpace(requestId))
             return new BadRequestObjectResult(new { error = "Query parameter 'requestId' is required." });
 
+        var overrideEmail = req.Query["overrideEmail"].ToString();
+        var isTestMode = !string.IsNullOrWhiteSpace(overrideEmail);
+
         var sponsor = await _storage.GetSponsorRequestByIdAsync(requestId);
         if (sponsor == null)
             return new NotFoundObjectResult(new { error = $"Sponsor request '{requestId}' not found." });
@@ -52,15 +55,19 @@ public class AdminResendSponsorEmailFunction
         var pdfBytes = await TryDownloadAsync(sponsor.PdfBlobUrl);
         var attestBytes = await TryDownloadAsync(sponsor.AttestationBlobUrl);
 
+        var recipientEmail = isTestMode ? overrideEmail : sponsor.Email;
+
         await _email.SendSponsorPaymentConfirmationAsync(
-            sponsor.Email, sponsor.CompanyName, sponsor.Package,
+            recipientEmail, sponsor.CompanyName, sponsor.Package,
             sponsor.ExtraEtenPartyCount, sponsor.ExtraVegetarischCount, sponsor.ExtraDrankkaart20Count,
             sponsor.IncludedVegetarischCount,
             tickets, pdfBytes, attestBytes);
 
-        var contactEmail = string.IsNullOrEmpty(_appOptions.ContactEmail)
-            ? "oudercomitepittem@gmail.com"
-            : _appOptions.ContactEmail;
+        var contactEmail = isTestMode
+            ? overrideEmail
+            : string.IsNullOrEmpty(_appOptions.ContactEmail)
+                ? "oudercomitepittem@gmail.com"
+                : _appOptions.ContactEmail;
 
         await _email.SendContactNotificationAsync(
             sponsor.CompanyName, sponsor.Email,
@@ -68,8 +75,17 @@ public class AdminResendSponsorEmailFunction
             $"Bedrijf: {sponsor.CompanyName}\nOndernemingsnummer: {sponsor.EnterpriseNumber}\nAdres: {sponsor.Street} {sponsor.HouseNumber}, {sponsor.PostalCode} {sponsor.City}\nContactpersoon: {sponsor.ContactName}\nPakket: {sponsor.Package}\nExtra Eten & Party: {sponsor.ExtraEtenPartyCount}\nExtra Drankkaarten \u20ac20: {sponsor.ExtraDrankkaart20Count}\nSponsor aanwezig: {(sponsor.SponsorAttends ? "Ja" : "Nee")}\nAantal aanwezigen: {sponsor.SponsorAttendeesCount}",
             contactEmail);
 
-        _logger.LogInformation("Admin resent sponsor emails for request {RequestId} ({Company})", requestId, sponsor.CompanyName);
-        return new OkObjectResult(new { message = $"Emails successfully resent for {sponsor.CompanyName}." });
+        if (isTestMode)
+            _logger.LogInformation("Admin resent sponsor emails for request {RequestId} ({Company}) in TEST MODE to {Override}", requestId, sponsor.CompanyName, overrideEmail);
+        else
+            _logger.LogInformation("Admin resent sponsor emails for request {RequestId} ({Company})", requestId, sponsor.CompanyName);
+
+        return new OkObjectResult(new
+        {
+            message = $"Emails successfully resent for {sponsor.CompanyName}.",
+            recipient = recipientEmail,
+            testMode = isTestMode
+        });
     }
 
     private async Task<byte[]?> TryDownloadAsync(string? url)

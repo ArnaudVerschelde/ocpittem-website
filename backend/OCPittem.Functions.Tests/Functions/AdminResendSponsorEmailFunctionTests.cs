@@ -52,6 +52,13 @@ public class AdminResendSponsorEmailFunctionTests
         return context.Request;
     }
 
+    private static HttpRequest PostRequestWithOverrideEmail(string requestId, string overrideEmail)
+    {
+        var context = new DefaultHttpContext();
+        context.Request.QueryString = new QueryString($"?requestId={requestId}&overrideEmail={overrideEmail}");
+        return context.Request;
+    }
+
     [Fact]
     public async Task Run_SponsorNotFound_ReturnsNotFound()
     {
@@ -174,5 +181,71 @@ public class AdminResendSponsorEmailFunctionTests
                 list[0].TicketId == "t1" && !list[0].IsVegetarisch &&
                 list[1].TicketId == "t2" && list[1].IsVegetarisch),
             null, null);
+    }
+
+    [Fact]
+    public async Task Run_WithOverrideEmail_SendsConfirmationToOverrideNotSponsor()
+    {
+        const string overrideEmail = "test@ocpittem.be";
+        var sponsor = PaidSponsor();
+        _storage.GetSponsorRequestByIdAsync(RequestId).Returns(sponsor);
+        _storage.GetTicketsByOrderIdAsync(RequestId).Returns(new List<TicketEntity>());
+
+        await _sut.Run(PostRequestWithOverrideEmail(RequestId, overrideEmail));
+
+        await _email.Received(1).SendSponsorPaymentConfirmationAsync(
+            overrideEmail, Arg.Any<string>(), Arg.Any<string>(),
+            Arg.Any<int>(), Arg.Any<int>(), Arg.Any<int>(), Arg.Any<int>(),
+            Arg.Any<IReadOnlyList<TicketPdfData>>(), null, null);
+        await _email.DidNotReceive().SendSponsorPaymentConfirmationAsync(
+            sponsor.Email, Arg.Any<string>(), Arg.Any<string>(),
+            Arg.Any<int>(), Arg.Any<int>(), Arg.Any<int>(), Arg.Any<int>(),
+            Arg.Any<IReadOnlyList<TicketPdfData>>(), null, null);
+    }
+
+    [Fact]
+    public async Task Run_WithOverrideEmail_SendsContactNotificationToOverrideNotContactEmail()
+    {
+        const string overrideEmail = "test@ocpittem.be";
+        var sponsor = PaidSponsor();
+        _storage.GetSponsorRequestByIdAsync(RequestId).Returns(sponsor);
+        _storage.GetTicketsByOrderIdAsync(RequestId).Returns(new List<TicketEntity>());
+
+        await _sut.Run(PostRequestWithOverrideEmail(RequestId, overrideEmail));
+
+        await _email.Received(1).SendContactNotificationAsync(
+            Arg.Any<string>(), Arg.Any<string>(),
+            Arg.Any<string>(), Arg.Any<string>(),
+            overrideEmail);
+    }
+
+    [Fact]
+    public async Task Run_WithOverrideEmail_ResponseContainsTestModeTrue()
+    {
+        const string overrideEmail = "test@ocpittem.be";
+        var sponsor = PaidSponsor();
+        _storage.GetSponsorRequestByIdAsync(RequestId).Returns(sponsor);
+        _storage.GetTicketsByOrderIdAsync(RequestId).Returns(new List<TicketEntity>());
+
+        var result = await _sut.Run(PostRequestWithOverrideEmail(RequestId, overrideEmail));
+
+        var ok = Assert.IsType<OkObjectResult>(result);
+        var json = System.Text.Json.JsonSerializer.Serialize(ok.Value);
+        Assert.Contains("\"testMode\":true", json);
+        Assert.Contains(overrideEmail, json);
+    }
+
+    [Fact]
+    public async Task Run_WithoutOverrideEmail_ResponseContainsTestModeFalse()
+    {
+        var sponsor = PaidSponsor();
+        _storage.GetSponsorRequestByIdAsync(RequestId).Returns(sponsor);
+        _storage.GetTicketsByOrderIdAsync(RequestId).Returns(new List<TicketEntity>());
+
+        var result = await _sut.Run(PostRequestWithQueryId(RequestId));
+
+        var ok = Assert.IsType<OkObjectResult>(result);
+        var json = System.Text.Json.JsonSerializer.Serialize(ok.Value);
+        Assert.Contains("\"testMode\":false", json);
     }
 }
