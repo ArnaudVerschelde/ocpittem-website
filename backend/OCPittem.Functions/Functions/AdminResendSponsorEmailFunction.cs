@@ -31,7 +31,7 @@ public class AdminResendSponsorEmailFunction
 
     [Function("AdminResendSponsorEmail")]
     public async Task<IActionResult> Run(
-        [HttpTrigger(AuthorizationLevel.Function, "post", Route = "admin/sponsors/resend-email")] HttpRequest req)
+        [HttpTrigger(AuthorizationLevel.Function, "post", Route = "manage/sponsors/resend-email")] HttpRequest req)
     {
         var requestId = req.Query["requestId"].ToString();
         if (string.IsNullOrWhiteSpace(requestId))
