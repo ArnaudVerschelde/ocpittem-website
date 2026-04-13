@@ -165,6 +165,29 @@ public class TableStorageService : IStorageService
         await table.UpdateEntityAsync(request, request.ETag, TableUpdateMode.Replace);
     }
 
+    public async Task<SponsorRequestEntity?> GetSponsorRequestByIdAsync(string requestId)
+    {
+        var table = await GetTableAsync(_sponsorsTable);
+        try
+        {
+            var response = await table.GetEntityAsync<SponsorRequestEntity>("Sponsor", requestId);
+            return response.Value;
+        }
+        catch (Azure.RequestFailedException ex) when (ex.Status == 404)
+        {
+            return null;
+        }
+    }
+
+    public async Task<IReadOnlyList<TicketEntity>> GetTicketsByOrderIdAsync(string orderId)
+    {
+        var table = await GetTableAsync(_ticketsTable);
+        var results = new List<TicketEntity>();
+        await foreach (var entity in table.QueryAsync<TicketEntity>(e => e.PartitionKey == orderId))
+            results.Add(entity);
+        return results;
+    }
+
     public async Task<string> SaveSponsorLogoAsync(string logoId, Stream stream, string contentType, string extension)
     {
         var container = _blobServiceClient.GetBlobContainerClient(_sponsorLogosContainer);
