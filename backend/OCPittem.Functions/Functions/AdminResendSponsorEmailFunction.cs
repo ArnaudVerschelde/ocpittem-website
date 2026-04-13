@@ -31,9 +31,9 @@ public class AdminResendSponsorEmailFunction
 
     [Function("AdminResendSponsorEmail")]
     public async Task<IActionResult> Run(
-        [HttpTrigger(AuthorizationLevel.Function, "post", Route = "admin/sponsors/{requestId}/resend-email")] HttpRequest req,
-        string requestId)
+        [HttpTrigger(AuthorizationLevel.Function, "post", Route = "admin/sponsors/{requestId}/resend-email")] HttpRequest req)
     {
+        var requestId = req.RouteValues["requestId"]?.ToString() ?? "";
         var sponsor = await _storage.GetSponsorRequestByIdAsync(requestId);
         if (sponsor == null)
             return new NotFoundObjectResult(new { error = $"Sponsor request '{requestId}' not found." });
