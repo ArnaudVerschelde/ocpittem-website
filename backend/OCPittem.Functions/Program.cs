@@ -18,6 +18,7 @@ var host = new HostBuilder()
         services.Configure<StripeOptions>(config.GetSection("Stripe"));
         services.Configure<MailjetOptions>(config.GetSection("Mailjet"));
         services.Configure<EmailOptions>(config.GetSection("Email"));
+        services.Configure<SmtpOptions>(config.GetSection("Smtp"));
         services.Configure<AppOptions>(config.GetSection("App"));
         services.Configure<StorageOptions>(config.GetSection("Storage"));
         services.Configure<SponsorAttestationOptions>(config.GetSection("SponsorAttestation"));
@@ -38,10 +39,21 @@ var host = new HostBuilder()
 
         services.AddSingleton<IEmailService>(sp =>
         {
-            var mailjet = sp.GetRequiredService<IOptions<MailjetOptions>>().Value;
             var email = sp.GetRequiredService<IOptions<EmailOptions>>().Value;
-            var logger = sp.GetRequiredService<ILogger<MailjetEmailService>>();
-            return new MailjetEmailService(mailjet, email.Enabled, logger);
+
+            if (string.Equals(email.Provider, "Smtp", StringComparison.OrdinalIgnoreCase))
+            {
+                var smtp = sp.GetRequiredService<IOptions<SmtpOptions>>().Value;
+                var sender = sp.GetRequiredService<IOptions<MailjetOptions>>().Value;
+                var logger = sp.GetRequiredService<ILogger<SmtpEmailService>>();
+                return new SmtpEmailService(smtp, sender, email.Enabled, logger);
+            }
+            else
+            {
+                var mailjet = sp.GetRequiredService<IOptions<MailjetOptions>>().Value;
+                var logger = sp.GetRequiredService<ILogger<MailjetEmailService>>();
+                return new MailjetEmailService(mailjet, email.Enabled, logger);
+            }
         });
 
         services.AddSingleton<ITicketPdfService, TicketPdfService>();

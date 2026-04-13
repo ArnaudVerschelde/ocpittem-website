@@ -61,38 +61,9 @@ public class MailjetEmailService : IEmailService
 
         var safeName = WebUtility.HtmlEncode(toName);
 
-        var orderLines = new System.Text.StringBuilder();
-        if (toegangstickets > 0)
-            orderLines.AppendLine($"<li><strong>{toegangstickets}x Toegangsticket</strong> (vanaf 22u30) &mdash; &euro;{toegangstickets * 8}</li>");
-        if (etenPartyTickets > 0)
-        {
-            var vegStr = vegetarischCount > 0 ? $", waarvan {vegetarischCount} vegetarisch" : "";
-            orderLines.AppendLine($"<li><strong>{etenPartyTickets}x Eten &amp; Party ticket</strong> (vanaf 19u00{vegStr}) &mdash; &euro;{etenPartyTickets * 50}</li>");
-        }
-        if (drankkaart10 > 0)
-            orderLines.AppendLine($"<li><strong>{drankkaart10}x Drankkaart &euro;10</strong> &mdash; &euro;{drankkaart10 * 10}</li>");
-        if (drankkaart20 > 0)
-            orderLines.AppendLine($"<li><strong>{drankkaart20}x Drankkaart &euro;20</strong> &mdash; &euro;{drankkaart20 * 20}</li>");
-
+        var orderLines = EmailHtmlBuilder.BuildTicketOrderLines(toegangstickets, etenPartyTickets, vegetarischCount, drankkaart10, drankkaart20);
         var total = (toegangstickets * 8) + (etenPartyTickets * 50) + (drankkaart10 * 10) + (drankkaart20 * 20);
-
-        var ticketCards = new System.Text.StringBuilder();
-        foreach (var ticket in tickets)
-        {
-            var typeLabel = ticket.TicketType == nameof(TicketKind.EtenParty)
-                ? $"Eten &amp; Party{(ticket.IsVegetarisch ? " (Vegetarisch)" : "")}"
-                : "Toegangsticket";
-            var qrBase64 = QrCodeHelper.GenerateBase64(ticket.QrPayload);
-
-            ticketCards.AppendLine($@"
-                <div style=""border:1px solid #13A2A3;border-radius:6px;padding:16px;margin:12px 0;display:flex;align-items:center;gap:20px;"">
-                    <div>
-                        <p style=""margin:0 0 4px;font-weight:bold;color:#13A2A3;font-size:14px;"">{typeLabel}</p>
-                        <img src=""data:image/png;base64,{qrBase64}"" width=""110"" height=""110"" alt=""QR-code"" style=""display:block;""/>
-                        <p style=""margin:4px 0 0;font-size:10px;color:#888;"">ID: {ticket.TicketId}</p>
-                    </div>
-                </div>");
-        }
+        var ticketCards = EmailHtmlBuilder.BuildTicketCards(tickets, isSponsor: false);
 
         var html = $@"
             <div style=""font-family:Arial,sans-serif;max-width:600px;margin:0 auto;"">
@@ -141,10 +112,7 @@ public class MailjetEmailService : IEmailService
         var safeFromName = WebUtility.HtmlEncode(fromName);
         var safeFromEmail = WebUtility.HtmlEncode(fromEmail);
         var safeSubject = WebUtility.HtmlEncode(subject);
-        var safeMessage = WebUtility.HtmlEncode(message)
-            .Replace("\r\n", "<br />")
-            .Replace("\r", "<br />")
-            .Replace("\n", "<br />");
+        var safeMessage = EmailHtmlBuilder.NormalizeNewLinesToHtml(message);
 
         var email = new TransactionalEmailBuilder()
             .WithFrom(new SendContact(_contactFromEmail, _contactFromName))
@@ -357,36 +325,13 @@ public class MailjetEmailService : IEmailService
             "zilver" => 2, "goud" => 4, _ => 0
         };
 
-        var orderLines = new System.Text.StringBuilder();
-        var includedVegStr = includedVegetarisch > 0 ? $", waarvan {includedVegetarisch} vegetarisch" : "";
-        orderLines.AppendLine($"<li><strong>Pakket {safePackage}</strong> ({includedTickets} tickets inbegrepen{includedVegStr}) &mdash; &euro;{packagePrice}</li>");
-        if (extraEtenParty > 0)
-        {
-            var vegStr = extraVegetarisch > 0 ? $", waarvan {extraVegetarisch} vegetarisch" : "";
-            orderLines.AppendLine($"<li><strong>{extraEtenParty}x extra Eten &amp; Party ticket</strong>{vegStr} &mdash; &euro;{extraEtenParty * 50}</li>");
-        }
-        if (extraDrankkaart20 > 0)
-            orderLines.AppendLine($"<li><strong>{extraDrankkaart20}x Drankkaart &euro;20</strong> &mdash; &euro;{extraDrankkaart20 * 20}</li>");
-
+        var orderLines = EmailHtmlBuilder.BuildSponsorOrderLines(safePackage, packagePrice, includedTickets,
+            includedVegetarisch, extraEtenParty, extraVegetarisch, extraDrankkaart20);
         var total = packagePrice + extraEtenParty * 50 + extraDrankkaart20 * 20;
         var attestationNote = attestationPdf != null
             ? "<br/>Uw sponsorattest voor de boekhouding vindt u eveneens als bijlage."
             : "";
-
-        var ticketCards = new System.Text.StringBuilder();
-        foreach (var ticket in tickets)
-        {
-            var typeLabel = ticket.IsVegetarisch ? "Eten &amp; Party (Vegetarisch)" : "Eten &amp; Party";
-            var qrBase64 = QrCodeHelper.GenerateBase64(ticket.QrPayload);
-            ticketCards.AppendLine($@"
-                <div style=""border:1px solid #13A2A3;border-radius:6px;padding:16px;margin:12px 0;display:flex;align-items:center;gap:20px;"">
-                    <div>
-                        <p style=""margin:0 0 4px;font-weight:bold;color:#13A2A3;font-size:14px;"">{typeLabel}</p>
-                        <img src=""data:image/png;base64,{qrBase64}"" width=""110"" height=""110"" alt=""QR-code"" style=""display:block;""/>
-                        <p style=""margin:4px 0 0;font-size:10px;color:#888;"">ID: {ticket.TicketId}</p>
-                    </div>
-                </div>");
-        }
+        var ticketCards = EmailHtmlBuilder.BuildTicketCards(tickets, isSponsor: true);
 
         var html = $@"
             <div style=""font-family:Arial,sans-serif;max-width:600px;margin:0 auto;"">
