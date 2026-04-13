@@ -45,10 +45,10 @@ public class AdminResendSponsorEmailFunctionTests
         AttestationBlobUrl = attestUrl,
     };
 
-    private static HttpRequest PostRequestWithRouteId(string requestId)
+    private static HttpRequest PostRequestWithQueryId(string requestId)
     {
         var context = new DefaultHttpContext();
-        context.Request.RouteValues["requestId"] = requestId;
+        context.Request.QueryString = new QueryString($"?requestId={requestId}");
         return context.Request;
     }
 
@@ -57,7 +57,7 @@ public class AdminResendSponsorEmailFunctionTests
     {
         _storage.GetSponsorRequestByIdAsync(RequestId).Returns((SponsorRequestEntity?)null);
 
-        var result = await _sut.Run(PostRequestWithRouteId(RequestId));
+        var result = await _sut.Run(PostRequestWithQueryId(RequestId));
 
         Assert.IsType<NotFoundObjectResult>(result);
     }
@@ -69,7 +69,7 @@ public class AdminResendSponsorEmailFunctionTests
         sponsor.Status = "Pending";
         _storage.GetSponsorRequestByIdAsync(RequestId).Returns(sponsor);
 
-        var result = await _sut.Run(PostRequestWithRouteId(RequestId));
+        var result = await _sut.Run(PostRequestWithQueryId(RequestId));
 
         Assert.IsType<BadRequestObjectResult>(result);
     }
@@ -92,7 +92,7 @@ public class AdminResendSponsorEmailFunctionTests
         });
         _httpClientFactory.CreateClient().Returns(new HttpClient(fakeHandler));
 
-        var result = await _sut.Run(PostRequestWithRouteId(RequestId));
+        var result = await _sut.Run(PostRequestWithQueryId(RequestId));
 
         Assert.IsType<OkObjectResult>(result);
         await _email.Received(1).SendSponsorPaymentConfirmationAsync(
@@ -113,7 +113,7 @@ public class AdminResendSponsorEmailFunctionTests
         _storage.GetSponsorRequestByIdAsync(RequestId).Returns(sponsor);
         _storage.GetTicketsByOrderIdAsync(RequestId).Returns(new List<TicketEntity>());
 
-        var result = await _sut.Run(PostRequestWithRouteId(RequestId));
+        var result = await _sut.Run(PostRequestWithQueryId(RequestId));
 
         Assert.IsType<OkObjectResult>(result);
         await _email.Received(1).SendSponsorPaymentConfirmationAsync(
@@ -134,7 +134,7 @@ public class AdminResendSponsorEmailFunctionTests
             new HttpResponseMessage(System.Net.HttpStatusCode.Forbidden));
         _httpClientFactory.CreateClient().Returns(new HttpClient(fakeHandler));
 
-        var result = await _sut.Run(PostRequestWithRouteId(RequestId));
+        var result = await _sut.Run(PostRequestWithQueryId(RequestId));
 
         Assert.IsType<OkObjectResult>(result);
         await _email.Received(1).SendSponsorPaymentConfirmationAsync(
@@ -142,6 +142,14 @@ public class AdminResendSponsorEmailFunctionTests
             Arg.Any<int>(), Arg.Any<int>(), Arg.Any<int>(), Arg.Any<int>(),
             Arg.Any<IReadOnlyList<TicketPdfData>>(),
             null, null);
+    }
+
+    [Fact]
+    public async Task Run_MissingRequestId_ReturnsBadRequest()
+    {
+        var result = await _sut.Run(new DefaultHttpContext().Request);
+
+        Assert.IsType<BadRequestObjectResult>(result);
     }
 
     [Fact]
@@ -156,7 +164,7 @@ public class AdminResendSponsorEmailFunctionTests
         _storage.GetSponsorRequestByIdAsync(RequestId).Returns(sponsor);
         _storage.GetTicketsByOrderIdAsync(RequestId).Returns(ticketEntities);
 
-        await _sut.Run(PostRequestWithRouteId(RequestId));
+        await _sut.Run(PostRequestWithQueryId(RequestId));
 
         await _email.Received(1).SendSponsorPaymentConfirmationAsync(
             Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(),
