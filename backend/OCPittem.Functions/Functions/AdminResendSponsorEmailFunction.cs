@@ -1,3 +1,4 @@
+using Azure.Storage.Blobs;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.Functions.Worker;
@@ -12,20 +13,20 @@ public class AdminResendSponsorEmailFunction
     private readonly IStorageService _storage;
     private readonly IEmailService _email;
     private readonly AppOptions _appOptions;
-    private readonly IHttpClientFactory _httpClientFactory;
+    private readonly BlobServiceClient _blobServiceClient;
     private readonly ILogger<AdminResendSponsorEmailFunction> _logger;
 
     public AdminResendSponsorEmailFunction(
         IStorageService storage,
         IEmailService email,
         IOptions<AppOptions> appOptions,
-        IHttpClientFactory httpClientFactory,
+        BlobServiceClient blobServiceClient,
         ILogger<AdminResendSponsorEmailFunction> logger)
     {
         _storage = storage;
         _email = email;
         _appOptions = appOptions.Value;
-        _httpClientFactory = httpClientFactory;
+        _blobServiceClient = blobServiceClient;
         _logger = logger;
     }
 
@@ -95,8 +96,24 @@ public class AdminResendSponsorEmailFunction
 
         try
         {
-            var client = _httpClientFactory.CreateClient();
-            return await client.GetByteArrayAsync(url);
+            var uri = new Uri(url);
+            var path = uri.AbsolutePath.TrimStart('/');
+            var slashIndex = path.IndexOf('/');
+            if (slashIndex < 0)
+            {
+                _logger.LogWarning("Could not parse container/blob from URL {Url}", url);
+                return null;
+            }
+
+            var containerName = path[..slashIndex];
+            var blobName = path[(slashIndex + 1)..];
+
+            var blobClient = _blobServiceClient
+                .GetBlobContainerClient(containerName)
+                .GetBlobClient(blobName);
+
+            var response = await blobClient.DownloadContentAsync();
+            return response.Value.Content.ToArray();
         }
         catch (Exception ex)
         {

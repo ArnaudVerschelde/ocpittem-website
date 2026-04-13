@@ -59,17 +59,22 @@ var host = new HostBuilder()
         services.AddSingleton<ITicketPdfService, TicketPdfService>();
         services.AddHttpClient();
         services.AddSingleton<ISponsorLogoPackageService, SponsorLogoPackageService>();
+        services.AddSingleton<BlobServiceClient>(sp =>
+        {
+            var connectionString = config.GetConnectionString("StorageAccount") ?? config["AzureWebJobsStorage"];
+            if (!string.IsNullOrWhiteSpace(connectionString))
+                return new BlobServiceClient(connectionString);
+
+            var blobServiceUri = config["SponsorAttestation:BlobServiceUri"]
+                ?? throw new InvalidOperationException("Geen storage connection string of BlobServiceUri gevonden.");
+            return new BlobServiceClient(new Uri(blobServiceUri), new DefaultAzureCredential());
+        });
+
         services.AddSingleton<ISponsorAttestationService>(sp =>
         {
             var opts = sp.GetRequiredService<IOptions<SponsorAttestationOptions>>();
             var logger = sp.GetRequiredService<ILogger<SponsorAttestationService>>();
-            var connectionString = config.GetConnectionString("StorageAccount") ?? config["AzureWebJobsStorage"];
-            var blobServiceClient = !string.IsNullOrWhiteSpace(connectionString)
-                ? new BlobServiceClient(connectionString)
-                : new BlobServiceClient(
-                    new Uri(opts.Value.BlobServiceUri
-                        ?? throw new InvalidOperationException("Geen storage connection string of BlobServiceUri gevonden voor SponsorAttestationService.")),
-                    new DefaultAzureCredential());
+            var blobServiceClient = sp.GetRequiredService<BlobServiceClient>();
             return new SponsorAttestationService(blobServiceClient, opts, logger);
         });
         services.AddSingleton<IDailyReportService, DailyReportService>();

@@ -1,12 +1,15 @@
+using Azure;
+using Azure.Storage.Blobs;
+using Azure.Storage.Blobs.Models;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using NSubstitute;
+using NSubstitute.ExceptionExtensions;
 using OCPittem.Functions.Functions;
 using OCPittem.Functions.Models;
 using OCPittem.Functions.Services;
-using OCPittem.Functions.Tests.Helpers;
 
 namespace OCPittem.Functions.Tests.Functions;
 
@@ -14,7 +17,7 @@ public class AdminResendSponsorEmailFunctionTests
 {
     private readonly IStorageService _storage = Substitute.For<IStorageService>();
     private readonly IEmailService _email = Substitute.For<IEmailService>();
-    private readonly IHttpClientFactory _httpClientFactory = Substitute.For<IHttpClientFactory>();
+    private readonly BlobServiceClient _blobServiceClient = Substitute.For<BlobServiceClient>();
     private readonly ILogger<AdminResendSponsorEmailFunction> _logger =
         Substitute.For<ILogger<AdminResendSponsorEmailFunction>>();
     private readonly AdminResendSponsorEmailFunction _sut;
@@ -24,7 +27,7 @@ public class AdminResendSponsorEmailFunctionTests
     public AdminResendSponsorEmailFunctionTests()
     {
         var options = Options.Create(new AppOptions { ContactEmail = "oc@ocpittem.be" });
-        _sut = new AdminResendSponsorEmailFunction(_storage, _email, options, _httpClientFactory, _logger);
+        _sut = new AdminResendSponsorEmailFunction(_storage, _email, options, _blobServiceClient, _logger);
     }
 
     private static SponsorRequestEntity PaidSponsor(string pdfUrl = "", string attestUrl = "") => new()
@@ -85,19 +88,18 @@ public class AdminResendSponsorEmailFunctionTests
     public async Task Run_PaidSponsor_WithBlobUrls_SendsBothEmailsAndReturnsOk()
     {
         var pdfBytes = new byte[] { 1, 2, 3 };
-        var attestBytes = new byte[] { 4, 5, 6 };
-        var sponsor = PaidSponsor("https://blob/pdf-sas-url", "https://blob/attest-sas-url");
+        var sponsor = PaidSponsor("https://stocpittem2026.blob.core.windows.net/ticket-pdfs/05fd/tickets.pdf",
+                                  "https://stocpittem2026.blob.core.windows.net/document-assets/attest.pdf");
         _storage.GetSponsorRequestByIdAsync(RequestId).Returns(sponsor);
         _storage.GetTicketsByOrderIdAsync(RequestId).Returns(new List<TicketEntity>());
-        var fakeHandler = new FakeHttpMessageHandler(req =>
-        {
-            var bytes = req.RequestUri!.ToString().Contains("pdf") ? pdfBytes : attestBytes;
-            return new HttpResponseMessage(System.Net.HttpStatusCode.OK)
-            {
-                Content = new ByteArrayContent(bytes)
-            };
-        });
-        _httpClientFactory.CreateClient().Returns(new HttpClient(fakeHandler));
+
+        var containerClient = Substitute.For<BlobContainerClient>();
+        var blobClient = Substitute.For<BlobClient>();
+        _blobServiceClient.GetBlobContainerClient(Arg.Any<string>()).Returns(containerClient);
+        containerClient.GetBlobClient(Arg.Any<string>()).Returns(blobClient);
+        var downloadResult = BlobsModelFactory.BlobDownloadResult(BinaryData.FromBytes(pdfBytes));
+        blobClient.DownloadContentAsync(Arg.Any<CancellationToken>())
+            .Returns(Response.FromValue(downloadResult, Substitute.For<Response>()));
 
         var result = await _sut.Run(PostRequestWithQueryId(RequestId));
 
@@ -128,18 +130,23 @@ public class AdminResendSponsorEmailFunctionTests
             Arg.Any<int>(), Arg.Any<int>(), Arg.Any<int>(), Arg.Any<int>(),
             Arg.Any<IReadOnlyList<TicketPdfData>>(),
             null, null);
-        _httpClientFactory.DidNotReceive().CreateClient();
+        _blobServiceClient.DidNotReceive().GetBlobContainerClient(Arg.Any<string>());
     }
 
     [Fact]
     public async Task Run_PaidSponsor_BlobDownloadFails_StillSendsEmailWithNullAttachments()
     {
-        var sponsor = PaidSponsor("https://blob/pdf-sas-url", "https://blob/attest-sas-url");
+        var sponsor = PaidSponsor("https://stocpittem2026.blob.core.windows.net/ticket-pdfs/05fd/tickets.pdf",
+                                  "https://stocpittem2026.blob.core.windows.net/document-assets/attest.pdf");
         _storage.GetSponsorRequestByIdAsync(RequestId).Returns(sponsor);
         _storage.GetTicketsByOrderIdAsync(RequestId).Returns(new List<TicketEntity>());
-        var fakeHandler = new FakeHttpMessageHandler(_ =>
-            new HttpResponseMessage(System.Net.HttpStatusCode.Forbidden));
-        _httpClientFactory.CreateClient().Returns(new HttpClient(fakeHandler));
+
+        var containerClient = Substitute.For<BlobContainerClient>();
+        var blobClient = Substitute.For<BlobClient>();
+        _blobServiceClient.GetBlobContainerClient(Arg.Any<string>()).Returns(containerClient);
+        containerClient.GetBlobClient(Arg.Any<string>()).Returns(blobClient);
+        blobClient.DownloadContentAsync(Arg.Any<CancellationToken>())
+            .ThrowsAsync(new RequestFailedException("Public access is not permitted."));
 
         var result = await _sut.Run(PostRequestWithQueryId(RequestId));
 
