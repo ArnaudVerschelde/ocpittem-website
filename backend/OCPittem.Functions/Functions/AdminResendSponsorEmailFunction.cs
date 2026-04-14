@@ -14,6 +14,7 @@ public class AdminResendSponsorEmailFunction
     private readonly IEmailService _email;
     private readonly AppOptions _appOptions;
     private readonly BlobServiceClient _blobServiceClient;
+    private readonly ISponsorAttestationService _attestationService;
     private readonly ILogger<AdminResendSponsorEmailFunction> _logger;
 
     public AdminResendSponsorEmailFunction(
@@ -21,12 +22,14 @@ public class AdminResendSponsorEmailFunction
         IEmailService email,
         IOptions<AppOptions> appOptions,
         BlobServiceClient blobServiceClient,
+        ISponsorAttestationService attestationService,
         ILogger<AdminResendSponsorEmailFunction> logger)
     {
         _storage = storage;
         _email = email;
         _appOptions = appOptions.Value;
         _blobServiceClient = blobServiceClient;
+        _attestationService = attestationService;
         _logger = logger;
     }
 
@@ -54,7 +57,28 @@ public class AdminResendSponsorEmailFunction
             .ToList();
 
         var pdfBytes = await TryDownloadAsync(sponsor.PdfBlobUrl);
-        var attestBytes = await TryDownloadAsync(sponsor.AttestationBlobUrl);
+
+        var regenerate = string.Equals(req.Query["regenerateAttestation"].ToString(), "true", StringComparison.OrdinalIgnoreCase);
+        byte[]? attestBytes;
+        if (regenerate)
+        {
+            var packagePrice = sponsor.Package.ToLowerInvariant() switch
+            {
+                "brons" => 100m, "zilver" => 250m, "goud" => 500m, _ => 0m
+            };
+            var amount = packagePrice + sponsor.ExtraEtenPartyCount * 50m + sponsor.ExtraDrankkaart20Count * 20m;
+            var date = sponsor.Timestamp?.UtcDateTime ?? DateTime.UtcNow;
+
+            attestBytes = await _attestationService.GenerateAttestationAsync(
+                sponsor.CompanyName, sponsor.Street, sponsor.HouseNumber,
+                sponsor.PostalCode, sponsor.City, sponsor.EnterpriseNumber,
+                amount, date);
+            _logger.LogInformation("Regenerated attestation PDF for {RequestId} ({Company})", requestId, sponsor.CompanyName);
+        }
+        else
+        {
+            attestBytes = await TryDownloadAsync(sponsor.AttestationBlobUrl);
+        }
 
         var recipientEmail = isTestMode ? overrideEmail : sponsor.Email;
 
@@ -85,7 +109,8 @@ public class AdminResendSponsorEmailFunction
         {
             message = $"Emails successfully resent for {sponsor.CompanyName}.",
             recipient = recipientEmail,
-            testMode = isTestMode
+            testMode = isTestMode,
+            attestationRegenerated = regenerate
         });
     }
 

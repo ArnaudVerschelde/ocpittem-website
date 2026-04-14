@@ -18,6 +18,7 @@ public class AdminResendSponsorEmailFunctionTests
     private readonly IStorageService _storage = Substitute.For<IStorageService>();
     private readonly IEmailService _email = Substitute.For<IEmailService>();
     private readonly BlobServiceClient _blobServiceClient = Substitute.For<BlobServiceClient>();
+    private readonly ISponsorAttestationService _attestationService = Substitute.For<ISponsorAttestationService>();
     private readonly ILogger<AdminResendSponsorEmailFunction> _logger =
         Substitute.For<ILogger<AdminResendSponsorEmailFunction>>();
     private readonly AdminResendSponsorEmailFunction _sut;
@@ -27,7 +28,7 @@ public class AdminResendSponsorEmailFunctionTests
     public AdminResendSponsorEmailFunctionTests()
     {
         var options = Options.Create(new AppOptions { ContactEmail = "oc@ocpittem.be" });
-        _sut = new AdminResendSponsorEmailFunction(_storage, _email, options, _blobServiceClient, _logger);
+        _sut = new AdminResendSponsorEmailFunction(_storage, _email, options, _blobServiceClient, _attestationService, _logger);
     }
 
     private static SponsorRequestEntity PaidSponsor(string pdfUrl = "", string attestUrl = "") => new()
@@ -59,6 +60,13 @@ public class AdminResendSponsorEmailFunctionTests
     {
         var context = new DefaultHttpContext();
         context.Request.QueryString = new QueryString($"?requestId={requestId}&overrideEmail={overrideEmail}");
+        return context.Request;
+    }
+
+    private static HttpRequest PostRequestWithRegenerate(string requestId)
+    {
+        var context = new DefaultHttpContext();
+        context.Request.QueryString = new QueryString($"?requestId={requestId}&regenerateAttestation=true");
         return context.Request;
     }
 
@@ -254,5 +262,63 @@ public class AdminResendSponsorEmailFunctionTests
         var ok = Assert.IsType<OkObjectResult>(result);
         var json = System.Text.Json.JsonSerializer.Serialize(ok.Value);
         Assert.Contains("\"testMode\":false", json);
+    }
+
+    [Fact]
+    public async Task Run_WithRegenerateAttestation_CallsAttestationServiceNotBlobDownload()
+    {
+        var sponsor = PaidSponsor(attestUrl: "https://stocpittem2026.blob.core.windows.net/document-assets/old.pdf");
+        _storage.GetSponsorRequestByIdAsync(RequestId).Returns(sponsor);
+        _storage.GetTicketsByOrderIdAsync(RequestId).Returns(new List<TicketEntity>());
+        _attestationService.GenerateAttestationAsync(
+            Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(),
+            Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(),
+            Arg.Any<decimal>(), Arg.Any<DateTime>())
+            .Returns(new byte[] { 9, 8, 7 });
+
+        await _sut.Run(PostRequestWithRegenerate(RequestId));
+
+        await _attestationService.Received(1).GenerateAttestationAsync(
+            sponsor.CompanyName, sponsor.Street, sponsor.HouseNumber,
+            sponsor.PostalCode, sponsor.City, sponsor.EnterpriseNumber,
+            Arg.Any<decimal>(), Arg.Any<DateTime>());
+        _blobServiceClient.DidNotReceive().GetBlobContainerClient("document-assets");
+    }
+
+    [Fact]
+    public async Task Run_WithRegenerateAttestation_ResponseContainsAttestationRegeneratedTrue()
+    {
+        var sponsor = PaidSponsor();
+        _storage.GetSponsorRequestByIdAsync(RequestId).Returns(sponsor);
+        _storage.GetTicketsByOrderIdAsync(RequestId).Returns(new List<TicketEntity>());
+        _attestationService.GenerateAttestationAsync(
+            Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(),
+            Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(),
+            Arg.Any<decimal>(), Arg.Any<DateTime>())
+            .Returns(new byte[] { 9, 8, 7 });
+
+        var result = await _sut.Run(PostRequestWithRegenerate(RequestId));
+
+        var ok = Assert.IsType<OkObjectResult>(result);
+        var json = System.Text.Json.JsonSerializer.Serialize(ok.Value);
+        Assert.Contains("\"attestationRegenerated\":true", json);
+    }
+
+    [Fact]
+    public async Task Run_WithoutRegenerate_ResponseContainsAttestationRegeneratedFalse()
+    {
+        var sponsor = PaidSponsor();
+        _storage.GetSponsorRequestByIdAsync(RequestId).Returns(sponsor);
+        _storage.GetTicketsByOrderIdAsync(RequestId).Returns(new List<TicketEntity>());
+
+        var result = await _sut.Run(PostRequestWithQueryId(RequestId));
+
+        var ok = Assert.IsType<OkObjectResult>(result);
+        var json = System.Text.Json.JsonSerializer.Serialize(ok.Value);
+        Assert.Contains("\"attestationRegenerated\":false", json);
+        await _attestationService.DidNotReceive().GenerateAttestationAsync(
+            Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(),
+            Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(),
+            Arg.Any<decimal>(), Arg.Any<DateTime>());
     }
 }
