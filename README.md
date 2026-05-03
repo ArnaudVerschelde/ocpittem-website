@@ -39,8 +39,8 @@ func start
 ### Environment variables
 
 - Frontend: kopieer `frontend/.env.example` naar `frontend/.env`
-- Backend: pas `backend/OCPittem.Functions/local.settings.json` aan met jouw Stripe/SendGrid keys
+- Backend: pas `backend/OCPittem.Functions/local.settings.json` aan met jouw Stripe/Mailjet keys
 
 ## Deployment
 
-Zie de setup-instructies in de projectdocumentatie voor Azure resources, Stripe en SendGrid configuratie.
+Zie de setup-instructies in de projectdocumentatie voor Azure resources, Stripe en Mailjet configuratie.
