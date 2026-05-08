@@ -196,7 +196,10 @@ public class AdminCreateAndPaySponsorFunction
         }
 
         if (!isTestMode)
+        {
+            entity.ETag = Azure.ETag.All;
             await _storage.UpdateSponsorRequestAsync(entity);
+        }
 
         var recipientEmail = isTestMode ? overrideEmail : entity.Email;
 
