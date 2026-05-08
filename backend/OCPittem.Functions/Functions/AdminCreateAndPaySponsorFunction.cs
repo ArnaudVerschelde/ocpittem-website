@@ -113,9 +113,18 @@ public class AdminCreateAndPaySponsorFunction
             LogoUrl = body.LogoUrl?.Trim() ?? "",
         };
 
-        await _storage.SaveSponsorRequestAsync(entity);
-        _logger.LogInformation("Manually created sponsor request {RequestId} ({Company}, {Package})",
-            requestId, entity.CompanyName, entity.Package);
+        if (!isTestMode)
+        {
+            await _storage.SaveSponsorRequestAsync(entity);
+            _logger.LogInformation("Manually created sponsor request {RequestId} ({Company}, {Package})",
+                requestId, entity.CompanyName, entity.Package);
+        }
+        else
+        {
+            _logger.LogInformation(
+                "[TEST] Dry-run create for {Company} ({Package}) — geen opslag in storage",
+                entity.CompanyName, entity.Package);
+        }
 
         // Tickets aanmaken
         var pdfTickets = new List<TicketPdfData>();
@@ -125,11 +134,12 @@ public class AdminCreateAndPaySponsorFunction
             var ticketId = Guid.NewGuid().ToString();
             var qrPayload = QrPayloadHelper.Generate(ticketId, _appOptions.TicketHmacSecret);
             var isVeg = i < body.IncludedVegetarischCount;
-            await _storage.SaveTicketAsync(new TicketEntity
-            {
-                PartitionKey = requestId, RowKey = ticketId,
-                QrPayload = qrPayload, TicketType = nameof(TicketKind.EtenParty), IsVegetarisch = isVeg,
-            });
+            if (!isTestMode)
+                await _storage.SaveTicketAsync(new TicketEntity
+                {
+                    PartitionKey = requestId, RowKey = ticketId,
+                    QrPayload = qrPayload, TicketType = nameof(TicketKind.EtenParty), IsVegetarisch = isVeg,
+                });
             pdfTickets.Add(new TicketPdfData(ticketId, qrPayload, nameof(TicketKind.EtenParty), isVeg));
         }
 
@@ -138,11 +148,12 @@ public class AdminCreateAndPaySponsorFunction
             var ticketId = Guid.NewGuid().ToString();
             var qrPayload = QrPayloadHelper.Generate(ticketId, _appOptions.TicketHmacSecret);
             var isVeg = i < body.ExtraVegetarischCount;
-            await _storage.SaveTicketAsync(new TicketEntity
-            {
-                PartitionKey = requestId, RowKey = ticketId,
-                QrPayload = qrPayload, TicketType = nameof(TicketKind.EtenParty), IsVegetarisch = isVeg,
-            });
+            if (!isTestMode)
+                await _storage.SaveTicketAsync(new TicketEntity
+                {
+                    PartitionKey = requestId, RowKey = ticketId,
+                    QrPayload = qrPayload, TicketType = nameof(TicketKind.EtenParty), IsVegetarisch = isVeg,
+                });
             pdfTickets.Add(new TicketPdfData(ticketId, qrPayload, nameof(TicketKind.EtenParty), isVeg));
         }
 
@@ -151,7 +162,7 @@ public class AdminCreateAndPaySponsorFunction
             ? _ticketPdf.GenerateTicketsPdf(pdfTickets, entity.CompanyName, "Bal Parental 2026")
             : null;
 
-        if (combinedPdf != null)
+        if (combinedPdf != null && !isTestMode)
         {
             var blobUrl = await _storage.SaveTicketPdfAsync(requestId, combinedPdf);
             entity.PdfBlobUrl = blobUrl;
@@ -172,16 +183,20 @@ public class AdminCreateAndPaySponsorFunction
                 entity.CompanyName, entity.Street, entity.HouseNumber,
                 entity.PostalCode, entity.City, entity.EnterpriseNumber,
                 total, DateTime.UtcNow);
-            var attestUrl = await _storage.SaveSponsorAttestationAsync(requestId, attestPdf);
-            entity.AttestationBlobUrl = attestUrl;
-            _logger.LogInformation("Attestation PDF saved for sponsor request {RequestId}", requestId);
+            if (!isTestMode)
+            {
+                var attestUrl = await _storage.SaveSponsorAttestationAsync(requestId, attestPdf);
+                entity.AttestationBlobUrl = attestUrl;
+                _logger.LogInformation("Attestation PDF saved for sponsor request {RequestId}", requestId);
+            }
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to generate/save attestation for request {RequestId}", requestId);
         }
 
-        await _storage.UpdateSponsorRequestAsync(entity);
+        if (!isTestMode)
+            await _storage.UpdateSponsorRequestAsync(entity);
 
         var recipientEmail = isTestMode ? overrideEmail : entity.Email;
 
@@ -209,8 +224,10 @@ public class AdminCreateAndPaySponsorFunction
 
         return new OkObjectResult(new
         {
-            message = $"Sponsor {entity.CompanyName} successfully created and marked as Paid.",
-            requestId,
+            message = isTestMode
+                ? $"[TEST] Dry-run voltooid voor {entity.CompanyName} — geen opslag, e-mail verstuurd naar {overrideEmail}."
+                : $"Sponsor {entity.CompanyName} successfully created and marked as Paid.",
+            requestId = isTestMode ? (string?)null : requestId,
             ticketsGenerated = pdfTickets.Count,
             attestationGenerated = attestPdf != null,
             recipient = recipientEmail,

@@ -341,6 +341,30 @@ public class AdminCreateAndPaySponsorFunctionTests
     }
 
     [Fact]
+    public async Task Run_WithOverrideEmail_DoesNotSaveAnythingToStorage()
+    {
+        const string overrideEmail = "test@ocpittem.be";
+
+        await _sut.Run(BuildRequest(ValidRequest("zilver"), overrideEmail));
+
+        await _storage.DidNotReceive().SaveSponsorRequestAsync(Arg.Any<SponsorRequestEntity>());
+        await _storage.DidNotReceive().SaveTicketAsync(Arg.Any<TicketEntity>());
+        await _storage.DidNotReceive().SaveTicketPdfAsync(Arg.Any<string>(), Arg.Any<byte[]>());
+        await _storage.DidNotReceive().SaveSponsorAttestationAsync(Arg.Any<string>(), Arg.Any<byte[]>());
+        await _storage.DidNotReceive().UpdateSponsorRequestAsync(Arg.Any<SponsorRequestEntity>());
+    }
+
+    [Fact]
+    public async Task Run_WithOverrideEmail_ResponseHasNullRequestId()
+    {
+        var result = await _sut.Run(BuildRequest(ValidRequest(), "test@ocpittem.be"));
+
+        var ok = Assert.IsType<OkObjectResult>(result);
+        var json = JsonSerializer.Serialize(ok.Value);
+        Assert.Contains("\"requestId\":null", json);
+    }
+
+    [Fact]
     public async Task Run_WithOverrideEmail_ResponseContainsTestModeTrue()
     {
         const string overrideEmail = "test@ocpittem.be";
