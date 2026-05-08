@@ -365,11 +365,5 @@ public class StripeWebhookFunction
     }
 
     private string GenerateQrPayload(string ticketId)
-    {
-        var secret = Encoding.UTF8.GetBytes(_appOptions.TicketHmacSecret);
-        using var hmac = new HMACSHA256(secret);
-        var hash = hmac.ComputeHash(Encoding.UTF8.GetBytes(ticketId));
-        var signature = Convert.ToBase64String(hash)[..16];
-        return $"{ticketId}:{signature}";
-    }
+        => QrPayloadHelper.Generate(ticketId, _appOptions.TicketHmacSecret);
 }
