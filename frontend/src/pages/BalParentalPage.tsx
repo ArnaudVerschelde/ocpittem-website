@@ -474,7 +474,7 @@ function getResetSponsorSelection(form: SponsorForm, packageId: string): Sponsor
 // ---------------------------------------------------------------------------
 
 export default function BalParentalPage() {
-    const [activeTab, setActiveTab] = useState<'tickets' | 'sponsor'>('tickets');
+    const [activeTab, setActiveTab] = useState<'tickets' | 'sponsor'>('sponsor');
     const [showTerms, setShowTerms] = useState(false);
 
     const [ticketForm, setTicketForm] = useState<TicketForm>({
@@ -802,17 +802,6 @@ export default function BalParentalPage() {
                         <div className="flex rounded-xl bg-gray-100 p-1">
                             <button
                                 type="button"
-                                onClick={() => setActiveTab('tickets')}
-                                className={`flex-1 rounded-lg py-2.5 text-sm font-semibold transition-all ${activeTab === 'tickets'
-                                        ? 'bg-white text-gray-900 shadow'
-                                        : 'text-gray-500 hover:text-gray-700'
-                                    }`}
-                            >
-                                🎟️ Tickets bestellen
-                            </button>
-
-                            <button
-                                type="button"
                                 onClick={() => setActiveTab('sponsor')}
                                 className={`flex-1 rounded-lg py-2.5 text-sm font-semibold transition-all ${activeTab === 'sponsor'
                                         ? 'bg-white text-gray-900 shadow'
@@ -820,6 +809,17 @@ export default function BalParentalPage() {
                                     }`}
                             >
                                 🤝 Sponsorpakket bestellen
+                            </button>
+
+                            <button
+                                type="button"
+                                onClick={() => setActiveTab('tickets')}
+                                className={`flex-1 rounded-lg py-2.5 text-sm font-semibold transition-all ${activeTab === 'tickets'
+                                        ? 'bg-white text-gray-900 shadow'
+                                        : 'text-gray-500 hover:text-gray-700'
+                                    }`}
+                            >
+                                🎟️ Tickets bestellen
                             </button>
                         </div>
 
