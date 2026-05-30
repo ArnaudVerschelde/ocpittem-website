@@ -61,7 +61,7 @@ public class DailyReportService : IDailyReportService
             TotalSponsorExtraEtenParty: paidSponsors.Sum(s => s.ExtraEtenPartyCount),
             TotalSponsorExtraVegetarisch: paidSponsors.Sum(s => s.ExtraVegetarischCount),
             TotalSponsorExtraDrankkaart20: paidSponsors.Sum(s => s.ExtraDrankkaart20Count),
-            TotalSponsorRevenue: paidSponsors.Sum(s => SponsorPackagePrice(s.Package) + s.ExtraEtenPartyCount * 50m + s.ExtraDrankkaart20Count * 20m));
+            TotalSponsorRevenue: paidSponsors.Sum(s => s.CustomAttestationTotal ?? SponsorPackagePrice(s.Package) + s.ExtraEtenPartyCount * 50m + s.ExtraDrankkaart20Count * 20m));
 
         var excelBytes = BuildExcel(orders, sponsors, reportDate);
 
@@ -177,7 +177,7 @@ public class DailyReportService : IDailyReportService
         int row = 2;
         foreach (var sponsor in sponsors.OrderBy(s => s.CreatedAt))
         {
-            var total = (double)(SponsorPackagePrice(sponsor.Package) + sponsor.ExtraEtenPartyCount * 50m + sponsor.ExtraDrankkaart20Count * 20m);
+            var total = (double)(sponsor.CustomAttestationTotal ?? SponsorPackagePrice(sponsor.Package) + sponsor.ExtraEtenPartyCount * 50m + sponsor.ExtraDrankkaart20Count * 20m);
 
             ws.Cell(row, 1).Value = row - 1;
             ws.Cell(row, 2).Value = sponsor.CompanyName;

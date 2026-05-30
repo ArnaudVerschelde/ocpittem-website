@@ -1,3 +1,5 @@
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Extensions.Logging;
 using OCPittem.Functions.Services;
@@ -25,5 +27,14 @@ public class DailyReportFunction
             _logger.LogWarning("DailyReport timer is running late.");
 
         await _reportService.SendDailyReportAsync();
+    }
+
+    [Function("DailyReportManual")]
+    public async Task<IActionResult> RunManual(
+        [HttpTrigger(AuthorizationLevel.Function, "post", Route = "manage/report/send")] HttpRequest req)
+    {
+        _logger.LogInformation("DailyReport manually triggered at {Time} UTC.", DateTime.UtcNow);
+        await _reportService.SendDailyReportAsync();
+        return new OkObjectResult(new { message = "Dagelijks rapport verstuurd." });
     }
 }

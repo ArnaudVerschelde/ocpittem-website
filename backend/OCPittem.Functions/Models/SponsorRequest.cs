@@ -17,4 +17,5 @@ public sealed record SponsorRequest(
     int IncludedVegetarischCount = 0,
     bool SponsorAttends = false,
     int SponsorAttendeesCount = 0,
-    string LogoUrl = "");
+    string LogoUrl = "",
+    decimal? CustomAttestationTotal = null);

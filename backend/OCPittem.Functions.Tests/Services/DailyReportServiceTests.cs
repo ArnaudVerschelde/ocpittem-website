@@ -153,4 +153,28 @@ public class DailyReportServiceTests
                 s.TotalSponsorRevenue == 720m),
             Arg.Any<DateTime>());
     }
+
+    [Fact]
+    public async Task SendDailyReportAsync_SponsorWithCustomAttestationTotal_UsesCustomTotalForRevenue()
+    {
+        var sponsors = new List<SponsorRequestEntity>
+        {
+            // goud normaal = 500, maar betaalde 1000 (dubbel pakket)
+            new() { Status = "Paid", Package = "goud", ExtraEtenPartyCount = 4, ExtraDrankkaart20Count = 0, CustomAttestationTotal = 1000m },
+            // brons normaal = 100, geen override
+            new() { Status = "Paid", Package = "brons", ExtraEtenPartyCount = 0, ExtraDrankkaart20Count = 0 },
+        };
+        _storage.GetAllOrdersAsync().Returns(new List<OrderEntity>());
+        _storage.GetAllSponsorRequestsAsync().Returns(sponsors);
+
+        var sut = CreateSut("test@example.com");
+        await sut.SendDailyReportAsync();
+
+        // Revenue: goud custom(1000) + brons(100) = 1100
+        await _email.Received(1).SendDailyReportAsync(
+            Arg.Any<IReadOnlyList<string>>(),
+            Arg.Any<byte[]>(),
+            Arg.Is<DailyReportStats>(s => s.TotalSponsorRevenue == 1100m),
+            Arg.Any<DateTime>());
+    }
 }

@@ -31,5 +31,6 @@ public class SponsorRequestEntity : ITableEntity
     public string LogoUrl { get; set; } = string.Empty;
     public string AttestationBlobUrl { get; set; } = string.Empty;
     public string PdfBlobUrl { get; set; } = string.Empty;
+    public decimal? CustomAttestationTotal { get; set; }
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 }

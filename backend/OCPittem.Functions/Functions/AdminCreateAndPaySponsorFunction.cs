@@ -111,6 +111,7 @@ public class AdminCreateAndPaySponsorFunction
             SponsorAttends = body.SponsorAttends,
             SponsorAttendeesCount = body.SponsorAttends ? body.SponsorAttendeesCount : 0,
             LogoUrl = body.LogoUrl?.Trim() ?? "",
+            CustomAttestationTotal = body.CustomAttestationTotal,
         };
 
         if (!isTestMode)
@@ -174,7 +175,8 @@ public class AdminCreateAndPaySponsorFunction
         {
             "brons" => 100m, "zilver" => 250m, "goud" => 500m, _ => 0m
         };
-        var total = packagePrice + body.ExtraEtenPartyCount * 50m + body.ExtraDrankkaart20Count * 20m;
+        var total = body.CustomAttestationTotal
+            ?? packagePrice + body.ExtraEtenPartyCount * 50m + body.ExtraDrankkaart20Count * 20m;
 
         byte[]? attestPdf = null;
         try
