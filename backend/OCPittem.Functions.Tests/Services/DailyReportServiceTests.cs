@@ -160,7 +160,7 @@ public class DailyReportServiceTests
         var sponsors = new List<SponsorRequestEntity>
         {
             // goud normaal = 500, maar betaalde 1000 (dubbel pakket)
-            new() { Status = "Paid", Package = "goud", ExtraEtenPartyCount = 4, ExtraDrankkaart20Count = 0, CustomAttestationTotal = 1000m },
+            new() { Status = "Paid", Package = "goud", ExtraEtenPartyCount = 4, ExtraDrankkaart20Count = 0, CustomAttestationTotal = 1000d },
             // brons normaal = 100, geen override
             new() { Status = "Paid", Package = "brons", ExtraEtenPartyCount = 0, ExtraDrankkaart20Count = 0 },
         };

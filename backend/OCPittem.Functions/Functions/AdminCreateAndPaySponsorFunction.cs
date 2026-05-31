@@ -111,7 +111,7 @@ public class AdminCreateAndPaySponsorFunction
             SponsorAttends = body.SponsorAttends,
             SponsorAttendeesCount = body.SponsorAttends ? body.SponsorAttendeesCount : 0,
             LogoUrl = body.LogoUrl?.Trim() ?? "",
-            CustomAttestationTotal = body.CustomAttestationTotal,
+            CustomAttestationTotal = body.CustomAttestationTotal.HasValue ? (double?)body.CustomAttestationTotal.Value : null,
         };
 
         if (!isTestMode)
