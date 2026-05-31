@@ -1,4 +1,4 @@
-import { useEffect, useState, FormEvent } from 'react';
+import { useEffect, useState, FormEvent, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import Section from '../components/Section';
 import balPoster from '../assets/BalParental2026Poster.jpeg';
@@ -8,6 +8,11 @@ import balPoster from '../assets/BalParental2026Poster.jpeg';
 // ---------------------------------------------------------------------------
 
 const contactEmail = 'balparental@ocpittem.be';
+
+// Configuratie: deadlines (pas deze datums aan indien nodig)
+const SPONSOR_DEADLINE    = new Date('2026-06-16T23:59:59');
+const ETEN_PARTY_DEADLINE = new Date('2026-06-14T23:59:59');
+const TICKET_DEADLINE     = new Date('2026-07-19T23:59:59');
 
 // ---------------------------------------------------------------------------
 // Data
@@ -89,6 +94,73 @@ const sponsorPackages = [
 // ---------------------------------------------------------------------------
 // Terms Modal
 // ---------------------------------------------------------------------------
+
+
+// ---------------------------------------------------------------------------
+// Countdown helper
+// ---------------------------------------------------------------------------
+
+interface TimeLeft { days: number; hours: number; minutes: number; seconds: number; expired: boolean }
+
+function useCountdown(deadline: Date): TimeLeft {
+    const calc = useCallback(() => {
+        const diff = deadline.getTime() - Date.now();
+        if (diff <= 0) return { days: 0, hours: 0, minutes: 0, seconds: 0, expired: true };
+        return {
+            days:    Math.floor(diff / 86400000),
+            hours:   Math.floor((diff % 86400000) / 3600000),
+            minutes: Math.floor((diff % 3600000)  / 60000),
+            seconds: Math.floor((diff % 60000)    / 1000),
+            expired: false,
+        };
+    }, [deadline]);
+
+    const [timeLeft, setTimeLeft] = useState<TimeLeft>(calc);
+
+    useEffect(() => {
+        const id = setInterval(() => setTimeLeft(calc()), 1000);
+        return () => clearInterval(id);
+    }, [calc]);
+
+    return timeLeft;
+}
+
+function CountdownBanner({ deadline, label }: { deadline: Date; label: string }) {
+    const t = useCountdown(deadline);
+
+    if (t.expired) {
+        return (
+            <div className="mb-4 rounded-lg bg-red-50 px-4 py-3 text-center text-sm font-semibold text-red-700">
+                De verkoop van {label} is gesloten.
+            </div>
+        );
+    }
+
+    const units = [
+        { value: t.days,    label: 'dagen' },
+        { value: t.hours,   label: 'uur' },
+        { value: t.minutes, label: 'min' },
+        { value: t.seconds, label: 'sec' },
+    ];
+
+    return (
+        <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3">
+            <p className="mb-2 text-center text-xs font-semibold text-amber-800">
+                {`⏳ Nog beschikbaar tot ${deadline.toLocaleDateString('nl-BE', { day: 'numeric', month: 'long', year: 'numeric' })}`}
+            </p>
+            <div className="flex justify-center gap-3">
+                {units.map((u) => (
+                    <div key={u.label} className="flex flex-col items-center">
+                        <span className="text-xl font-extrabold tabular-nums text-amber-900">
+                            {String(u.value).padStart(2, '0')}
+                        </span>
+                        <span className="text-xs text-amber-600">{u.label}</span>
+                    </div>
+                ))}
+            </div>
+        </div>
+    );
+}
 
 function TermsModal({ onClose }: { onClose: () => void }) {
     useEffect(() => {
@@ -343,18 +415,20 @@ function Stepper({
     onChange,
     min = 0,
     max = 20,
+    disabled = false,
 }: {
     value: number;
     onChange: (n: number) => void;
     min?: number;
     max?: number;
+    disabled?: boolean;
 }) {
     return (
         <div className="flex items-center gap-2">
             <button
                 type="button"
                 onClick={() => onChange(Math.max(min, value - 1))}
-                disabled={value <= min}
+                disabled={disabled || value <= min}
                 className="flex h-8 w-8 items-center justify-center rounded-full border border-gray-300 text-gray-700 hover:bg-gray-50 disabled:opacity-30"
             >
                 <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
@@ -367,7 +441,7 @@ function Stepper({
             <button
                 type="button"
                 onClick={() => onChange(Math.min(max, value + 1))}
-                disabled={value >= max}
+                disabled={disabled || value >= max}
                 className="flex h-8 w-8 items-center justify-center rounded-full border border-gray-300 text-gray-700 hover:bg-gray-50 disabled:opacity-30"
             >
                 <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
@@ -496,6 +570,10 @@ export default function BalParentalPage() {
     const [enterpriseNumberError, setEnterpriseNumberError] = useState('');
     const [logoFile, setLogoFile] = useState<File | null>(null);
     const [logoError, setLogoError] = useState('');
+
+    const etenPartyExpired = useCountdown(ETEN_PARTY_DEADLINE).expired;
+    const ticketExpired    = useCountdown(TICKET_DEADLINE).expired;
+    const sponsorExpired   = useCountdown(SPONSOR_DEADLINE).expired;
 
     const inputClass =
         'mt-1 block w-full rounded-lg border border-gray-300 px-4 py-2.5 text-gray-900 shadow-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-200';
@@ -827,9 +905,10 @@ export default function BalParentalPage() {
                             <div className="mt-4 rounded-2xl bg-white p-8 shadow-xl ring-1 ring-gray-100">
                                 <h2 className="text-2xl font-bold text-gray-900">Tickets bestellen</h2>
                                 <p className="mt-2 text-sm text-gray-500">
-                                    Vul je gegevens in en kies je tickets. Je wordt doorgestuurd naar een beveiligde betaalpagina.
+                                    Vul je gegevens in en kies je tickets. Je wordt doorgestuurd naar een beveiligde betaalpagina. Feesttickets zijn beschikbaar tot 19 juni.
                                 </p>
 
+                                <CountdownBanner deadline={ETEN_PARTY_DEADLINE} label="Eten &amp; Party tickets" />
                                 <form onSubmit={handleTicketSubmit} className="mt-6 space-y-5">
                                     <div>
                                         <label htmlFor="t-name" className="block text-sm font-medium text-gray-700">
@@ -894,6 +973,7 @@ export default function BalParentalPage() {
                                                             vegetarischCount: Math.min(ticketForm.vegetarischCount, n),
                                                         })
                                                     }
+                                                disabled={etenPartyExpired}
                                                 />
                                             </div>
 
@@ -989,7 +1069,7 @@ export default function BalParentalPage() {
 
                                     <button
                                         type="submit"
-                                        disabled={ticketLoading || ticketForm.toegangsticketCount + ticketForm.etenPartyCount < 1}
+                                        disabled={ticketLoading || ticketExpired || ticketForm.toegangsticketCount + ticketForm.etenPartyCount < 1}
                                         className="btn-primary w-full disabled:cursor-not-allowed disabled:opacity-50"
                                     >
                                         {ticketLoading ? <Spinner /> : 'Betalen'}
@@ -1005,6 +1085,7 @@ export default function BalParentalPage() {
                                     Kies een pakket hieronder en vul je gegevens in. Je wordt doorgestuurd naar een beveiligde betaalpagina.
                                 </p>
 
+                                <CountdownBanner deadline={SPONSOR_DEADLINE} label="sponsorpakketten" />
                                 <form onSubmit={handleSponsorSubmit} className="mt-6 space-y-5">
                                     <div>
                                         <label className="block text-sm font-medium text-gray-700">Sponsorpakket</label>
@@ -1459,7 +1540,7 @@ export default function BalParentalPage() {
 
                                     <button
                                         type="submit"
-                                        disabled={sponsorLoading}
+                                        disabled={sponsorLoading || sponsorExpired}
                                         className="btn-primary w-full disabled:cursor-not-allowed disabled:opacity-50"
                                     >
                                         {sponsorLoading ? <Spinner /> : 'Sponsorpakket betalen'}
