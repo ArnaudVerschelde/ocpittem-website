@@ -10,7 +10,7 @@ import balPoster from '../assets/BalParental2026Poster.jpeg';
 const contactEmail = 'balparental@ocpittem.be';
 
 // Configuratie: deadlines (pas deze datums aan indien nodig)
-const SPONSOR_DEADLINE    = new Date('2026-06-16T23:59:59');
+const SPONSOR_DEADLINE    = new Date('2026-06-14T23:59:59');
 const ETEN_PARTY_DEADLINE = new Date('2026-06-14T23:59:59');
 const TICKET_DEADLINE     = new Date('2026-07-19T23:59:59');
 
