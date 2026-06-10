@@ -856,7 +856,7 @@ export default function BalParentalPage() {
                                 <div className="rounded-lg border border-gray-200 bg-white p-4">
                                     <p className="font-semibold text-gray-900">🍽️ Eten &amp; Party — €50 p.p.</p>
                                     <ul className="mt-2 space-y-1 text-sm text-gray-500">
-                                        <li>• Vanaf 19u00</li>
+                                        <li>• Vanaf 19u30</li>
                                         <li>• Inclusief diner + feest</li>
                                         <li>• Vegetarische optie mogelijk</li>
                                         <li>• Optioneel: drankkaarten van €10 of €20</li>
@@ -960,7 +960,7 @@ export default function BalParentalPage() {
                                             <div className="flex items-center justify-between px-4 py-3">
                                                 <div>
                                                     <p className="text-sm font-semibold text-gray-900">🍽️ Eten &amp; Party</p>
-                                                    <p className="text-xs text-gray-500">Diner + feest vanaf 19u00 · €50 per persoon</p>
+                                                    <p className="text-xs text-gray-500">Diner + feest vanaf 19u30 · €50 per persoon</p>
                                                     <p className="text-xs text-gray-400">Vegetarische optie per ticket mogelijk</p>
                                                 </div>
 
@@ -1420,7 +1420,7 @@ export default function BalParentalPage() {
                                                 <div className="flex items-center justify-between px-4 py-3">
                                                     <div>
                                                         <p className="text-sm font-semibold text-gray-900">🍽️ Eten &amp; Party</p>
-                                                        <p className="text-xs text-gray-500">Diner + feest vanaf 19u00 · €50 per persoon</p>
+                                                        <p className="text-xs text-gray-500">Diner + feest vanaf 19u30 · €50 per persoon</p>
                                                         <p className="text-xs text-gray-400">Vegetarische optie per ticket mogelijk</p>
                                                     </div>
 

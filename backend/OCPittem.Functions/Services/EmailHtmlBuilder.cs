@@ -44,7 +44,7 @@ internal static class EmailHtmlBuilder
         if (etenPartyTickets > 0)
         {
             var vegStr = vegetarischCount > 0 ? $", waarvan {vegetarischCount} vegetarisch" : "";
-            sb.AppendLine($"<li><strong>{etenPartyTickets}x Eten &amp; Party ticket</strong> (vanaf 19u00{vegStr}) &mdash; &euro;{etenPartyTickets * 50}</li>");
+            sb.AppendLine($"<li><strong>{etenPartyTickets}x Eten &amp; Party ticket</strong> (vanaf 19u30{vegStr}) &mdash; &euro;{etenPartyTickets * 50}</li>");
         }
         if (drankkaart10 > 0)
             sb.AppendLine($"<li><strong>{drankkaart10}x Drankkaart &euro;10</strong> &mdash; &euro;{drankkaart10 * 10}</li>");
