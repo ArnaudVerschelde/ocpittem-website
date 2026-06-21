@@ -17,6 +17,15 @@ const events = [
     color: 'primary',
   },
   {
+    title: 'Afscheid 6de leerjaar',
+    date: 'maandag 29 juni 2026 om 19.00 uur',
+    description:
+        'Met een grote glimlach en een beetje weemoed nemen we afscheid van onze fantastische 6de jaars. Dat bijzonder moment vieren we graag samen, met een hapje en een drankje! Om er een gezellig en vlot moment van te maken, vragen we vriendelijk dat enkel de leerling en zijn/haar ouders (of plusouders) aanwezig zijn.',
+    cta: null,
+    ended: false,
+    color: 'primary',
+  },
+  {
     title: 'Apero op de speelplaats',
     date: 'September 2026',
     description:
