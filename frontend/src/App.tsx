@@ -11,6 +11,7 @@ import PaymentSuccessPage from './pages/PaymentSuccessPage';
 import PaymentCancelPage from './pages/PaymentCancelPage';
 import ScanPage from './pages/ScanPage';
 import PrivacyPage from './pages/PrivacyPage';
+import { BAL_PARENTAL_ACTIVE } from './config/balParental';
 
 function App() {
     return (
@@ -27,7 +28,9 @@ function App() {
                 <Route path="wat-doen-we" element={<WatDoenWePage />} />
                 <Route path="wie-zijn-we" element={<WieZijnWePage />} />
                 <Route path="activiteiten" element={<ActiviteitenPage />} />
-                <Route path="bal-parental" element={<BalParentalPage />} />
+                {BAL_PARENTAL_ACTIVE && (
+                    <Route path="bal-parental" element={<BalParentalPage />} />
+                )}
                 <Route path="contact" element={<ContactPage />} />
 
                 {/* Stripe return pages */}

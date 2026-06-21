@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import Section from '../components/Section';
+import { BAL_PARENTAL_ACTIVE } from '../config/balParental';
 
 export default function HomePage() {
   return (
@@ -37,6 +38,7 @@ export default function HomePage() {
       </div>
 
       {/* Bal Parental promo */}
+      {BAL_PARENTAL_ACTIVE && (
       <div className="relative overflow-hidden bg-gradient-to-br from-[#120018] via-[#2d0057] to-[#3b0764]">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(139,92,246,0.30),transparent_40%),radial-gradient(circle_at_bottom_left,rgba(236,72,153,0.20),transparent_40%)]" />
         <div className="relative mx-auto max-w-7xl px-4 py-14 sm:px-6 lg:px-8">
@@ -71,6 +73,7 @@ export default function HomePage() {
           </div>
         </div>
       </div>
+      )}
 
       {/* Kort overzicht */}
       <Section>

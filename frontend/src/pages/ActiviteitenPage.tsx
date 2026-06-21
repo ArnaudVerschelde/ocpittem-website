@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import Hero from '../components/Hero';
 import Section from '../components/Section';
+import { BAL_PARENTAL_ACTIVE } from '../config/balParental';
 
 const paymentsEnabled = import.meta.env.VITE_ENABLE_PAYMENTS === 'true';
 
@@ -8,9 +9,11 @@ const events = [
   {
     title: 'Bal Parental 2026',
     date: 'zaterdag 20 juni 2026',
-    description:
-      'Ons jaarlijks ouderbal! Een fantastische avond met muziek, drank en gezelligheid.',
-    cta: { label: 'Tickets & info', to: '/bal-parental' },
+    description: BAL_PARENTAL_ACTIVE
+      ? 'Ons jaarlijks ouderbal! Een fantastische avond met muziek, drank en gezelligheid.'
+      : 'De editie 2026 van ons jaarlijks ouderbal is achter de rug en was een groot succes! Bedankt aan alle aanwezigen, sponsors en vrijwilligers. Tot de volgende editie!',
+    cta: BAL_PARENTAL_ACTIVE ? { label: 'Tickets & info', to: '/bal-parental' } : null,
+    ended: !BAL_PARENTAL_ACTIVE,
     color: 'primary',
   },
   {
@@ -19,6 +22,7 @@ const events = [
     description:
         'Een gezellige dag waarbij ouders, kinderen en leerkrachten samenkomen op de speelplaats voor een hapje en een drankje. Ontspannen en gezellig!',
     cta: null,
+    ended: false,
     color: 'accent',
   },
   {
@@ -27,6 +31,7 @@ const events = [
     description:
         'Onze jaarlijkse koekjesverkoop. Bestel heerlijke koekjes en steun daarmee de school!',
     cta: null,
+    ended: false,
     color: 'accent',
   },
 ];
@@ -69,6 +74,11 @@ export default function ActiviteitenPage() {
                     <span className={`inline-block rounded-full px-3 py-1 text-xs font-semibold ${colors.badge}`}>
                       {event.date}
                     </span>
+                    {event.ended && (
+                      <span className="ml-2 inline-block rounded-full bg-gray-200 px-3 py-1 text-xs font-semibold text-gray-600">
+                        ✅ Editie afgelopen
+                      </span>
+                    )}
                     <h3 className="mt-3 text-xl font-bold text-gray-900 sm:text-2xl">
                       {event.title}
                     </h3>
