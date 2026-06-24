@@ -214,4 +214,31 @@ public class TableStorageService : IStorageService
         var sasUri = blobClient.GenerateSasUri(BlobSasPermissions.Read, DateTimeOffset.UtcNow.AddYears(5));
         return sasUri.ToString();
     }
+
+    public async Task<IReadOnlyList<string>> GetGalleryImageUrlsAsync(string containerName, TimeSpan sasLifetime)
+    {
+        var container = _blobServiceClient.GetBlobContainerClient(containerName);
+
+        if (!await container.ExistsAsync())
+            return Array.Empty<string>();
+
+        var expiresOn = DateTimeOffset.UtcNow.Add(sasLifetime);
+        var urls = new List<string>();
+
+        await foreach (var blob in container.GetBlobsAsync())
+        {
+            if (!GalleryImageFilter.IsSupportedImage(blob.Name))
+                continue;
+
+            var blobClient = container.GetBlobClient(blob.Name);
+
+            if (!blobClient.CanGenerateSasUri)
+                continue;
+
+            var sasUri = blobClient.GenerateSasUri(BlobSasPermissions.Read, expiresOn);
+            urls.Add(sasUri.ToString());
+        }
+
+        return urls;
+    }
 }

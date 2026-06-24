@@ -60,6 +60,7 @@ public class StorageOptions
     public string BlobContainerTickets { get; init; } = "ticket-pdfs";
     public string BlobContainerSponsorLogos { get; init; } = "sponsor-logos";
     public string BlobContainerSponsorAttestations { get; init; } = "sponsor-attestations";
+    public string BlobContainerGallery2026 { get; init; } = "fotos-2026";
 }
 
 public class SponsorAttestationOptions

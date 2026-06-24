@@ -23,4 +23,5 @@ public interface IStorageService
     Task<string> SaveSponsorAttestationAsync(string requestId, byte[] pdf);
     Task<SponsorRequestEntity?> GetSponsorRequestByIdAsync(string requestId);
     Task<IReadOnlyList<TicketEntity>> GetTicketsByOrderIdAsync(string orderId);
+    Task<IReadOnlyList<string>> GetGalleryImageUrlsAsync(string containerName, TimeSpan sasLifetime);
 }
