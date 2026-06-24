@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import Hero from '../components/Hero';
 import Section from '../components/Section';
-import { BAL_PARENTAL_ACTIVE } from '../config/balParental';
+import { BAL_PARENTAL_ACTIVE, SFEERBEELDEN_BUTTON_ACTIVE } from '../config/balParental';
 
 const paymentsEnabled = import.meta.env.VITE_ENABLE_PAYMENTS === 'true';
 
@@ -13,6 +13,7 @@ const events = [
       ? 'Ons jaarlijks ouderbal! Een fantastische avond met muziek, drank en gezelligheid.'
       : 'De editie 2026 van ons jaarlijks ouderbal is achter de rug en was een groot succes! Bedankt aan alle aanwezigen, sponsors en vrijwilligers. Tot de volgende editie!',
     cta: BAL_PARENTAL_ACTIVE ? { label: 'Tickets & info', to: '/bal-parental' } : null,
+    galleryTo: '/sfeerbeelden-bal-parental-2026',
     ended: !BAL_PARENTAL_ACTIVE,
     color: 'primary',
   },
@@ -22,6 +23,7 @@ const events = [
     description:
         'Met een grote glimlach en een beetje weemoed nemen we afscheid van onze fantastische 6de jaars. Dat bijzonder moment vieren we graag samen, met een hapje en een drankje! Om er een gezellig en vlot moment van te maken, vragen we vriendelijk dat enkel de leerling en zijn/haar ouders (of plusouders) aanwezig zijn.',
     cta: null,
+    galleryTo: null,
     ended: false,
     color: 'primary',
   },
@@ -31,6 +33,7 @@ const events = [
     description:
         'Een gezellige dag waarbij ouders, kinderen en leerkrachten samenkomen op de speelplaats voor een hapje en een drankje. Ontspannen en gezellig!',
     cta: null,
+    galleryTo: null,
     ended: false,
     color: 'accent',
   },
@@ -40,6 +43,7 @@ const events = [
     description:
         'Onze jaarlijkse koekjesverkoop. Bestel heerlijke koekjes en steun daarmee de school!',
     cta: null,
+    galleryTo: null,
     ended: false,
     color: 'accent',
   },
@@ -93,15 +97,22 @@ export default function ActiviteitenPage() {
                     </h3>
                     <p className="mt-2 max-w-2xl text-gray-600 leading-relaxed">{event.description}</p>
                   </div>
-                  {event.cta && (
-                    paymentsEnabled
-                      ? <Link to={event.cta.to} className="btn-primary mt-2 flex-shrink-0 sm:mt-0">
-                          {event.cta.label}
-                        </Link>
-                      : <span className="mt-2 flex-shrink-0 cursor-not-allowed rounded-lg bg-gray-100 px-5 py-2.5 text-sm font-semibold text-gray-400 sm:mt-0">
-                          Binnenkort beschikbaar
-                        </span>
-                  )}
+                  <div className="flex flex-shrink-0 flex-col gap-2 sm:items-end">
+                    {event.cta && (
+                      paymentsEnabled
+                        ? <Link to={event.cta.to} className="btn-primary">
+                            {event.cta.label}
+                          </Link>
+                        : <span className="cursor-not-allowed rounded-lg bg-gray-100 px-5 py-2.5 text-sm font-semibold text-gray-400">
+                            Binnenkort beschikbaar
+                          </span>
+                    )}
+                    {event.galleryTo && SFEERBEELDEN_BUTTON_ACTIVE && (
+                      <Link to={event.galleryTo} className="btn-secondary">
+                        Bekijk de sfeerbeelden
+                      </Link>
+                    )}
+                  </div>
                 </div>
               </div>
             );

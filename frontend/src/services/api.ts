@@ -38,6 +38,10 @@ export interface ValidateTicketResponse {
   error?: string;
 }
 
+export interface GalleryResponse {
+  images: string[];
+}
+
 export const api = {
   createTicketCheckout: (data: CreateCheckoutRequest) =>
     request<CreateCheckoutResponse>('/tickets/create-checkout', {
@@ -53,4 +57,7 @@ export const api = {
 
   validateTicket: (code: string) =>
     request<ValidateTicketResponse>(`/tickets/validate?code=${encodeURIComponent(code)}`),
+
+  getBalParental2026Gallery: () =>
+    request<GalleryResponse>('/gallery/bal-parental-2026'),
 };

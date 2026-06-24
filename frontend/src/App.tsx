@@ -5,6 +5,7 @@ import WatDoenWePage from './pages/WatDoenWePage';
 import WieZijnWePage from './pages/WieZijnWePage';
 import ActiviteitenPage from './pages/ActiviteitenPage';
 import BalParentalPage from './pages/BalParentalPage';
+import SfeerbeeldenBalParental2026Page from './pages/SfeerbeeldenBalParental2026Page';
 import ContactPage from './pages/ContactPage';
 import NotFoundPage from './pages/NotFoundPage';
 import PaymentSuccessPage from './pages/PaymentSuccessPage';
@@ -28,6 +29,10 @@ function App() {
                 <Route path="wat-doen-we" element={<WatDoenWePage />} />
                 <Route path="wie-zijn-we" element={<WieZijnWePage />} />
                 <Route path="activiteiten" element={<ActiviteitenPage />} />
+                <Route
+                    path="sfeerbeelden-bal-parental-2026"
+                    element={<SfeerbeeldenBalParental2026Page />}
+                />
                 {BAL_PARENTAL_ACTIVE && (
                     <Route path="bal-parental" element={<BalParentalPage />} />
                 )}
