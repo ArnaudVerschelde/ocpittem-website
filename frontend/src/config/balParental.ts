@@ -26,4 +26,4 @@ export const BAL_PARENTAL_ACTIVE = false;
 // De pagina /sfeerbeelden-bal-parental-2026 blijft sowieso bereikbaar via de
 // URL; deze vlag bepaalt enkel of er een knop verschijnt om er naartoe te
 // navigeren. Zet op `true` zodra de sfeerbeelden klaar zijn om getoond te worden.
-export const SFEERBEELDEN_BUTTON_ACTIVE = false;
+export const SFEERBEELDEN_BUTTON_ACTIVE = true;
