@@ -24,12 +24,12 @@ const events = [
         'Met een grote glimlach en een beetje weemoed nemen we afscheid van onze fantastische 6de jaars. Dat bijzonder moment vieren we graag samen, met een hapje en een drankje! Om er een gezellig en vlot moment van te maken, vragen we vriendelijk dat enkel de leerling en zijn/haar ouders (of plusouders) aanwezig zijn.',
     cta: null,
     galleryTo: null,
-    ended: false,
+    ended: true,
     color: 'primary',
   },
   {
     title: 'Apero op de speelplaats',
-    date: 'September 2026',
+    date: 'zondag 13 september 2026',
     description:
         'Een gezellige dag waarbij ouders, kinderen en leerkrachten samenkomen op de speelplaats voor een hapje en een drankje. Ontspannen en gezellig!',
     cta: null,
