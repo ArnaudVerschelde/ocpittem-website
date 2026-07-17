@@ -4,42 +4,17 @@ import Section from '../components/Section';
 import ImageCarousel from '../components/ImageCarousel';
 import ImageGalleryGrid from '../components/ImageGalleryGrid';
 import { api } from '../services/api';
+import type { GalleryImage } from '../services/api';
 import { shuffle } from '../utils/shuffle';
 import balPoster from '../assets/BalParental2026Poster.jpeg';
 
 type Status = 'loading' | 'ready' | 'empty' | 'error';
 
 type GalleryImages = {
-    fotograaf: string[];
-    photobooth: string[];
-    sfeerbeelden: string[];
+    fotograaf: GalleryImage[];
+    photobooth: GalleryImage[];
+    sfeerbeelden: GalleryImage[];
 };
-
-type GalleryCategory = keyof GalleryImages;
-
-function getGalleryCategory(imageUrl: string): GalleryCategory | null {
-    let path = imageUrl.toLowerCase();
-
-    try {
-        path = decodeURIComponent(new URL(imageUrl).pathname).toLowerCase();
-    } catch {
-        // Ondersteunt ook relatieve URL's.
-    }
-
-    if (path.includes('/fotograaf/')) {
-        return 'fotograaf';
-    }
-
-    if (path.includes('/photobooth/')) {
-        return 'photobooth';
-    }
-
-    if (path.includes('/sfeerbeelden/')) {
-        return 'sfeerbeelden';
-    }
-
-    return null;
-}
 
 export default function SfeerbeeldenBalParental2026Page() {
     const [gallery, setGallery] = useState<GalleryImages>({
@@ -62,17 +37,19 @@ export default function SfeerbeeldenBalParental2026Page() {
                 sfeerbeelden: [],
             };
 
-            for (const imageUrl of res.images ?? []) {
-                const category = getGalleryCategory(imageUrl);
-
-                if (category) {
-                    categorized[category].push(imageUrl);
+            for (const image of res.images ?? []) {
+                if (
+                    image.category === 'fotograaf' ||
+                    image.category === 'photobooth' ||
+                    image.category === 'sfeerbeelden'
+                ) {
+                    categorized[image.category].push(image);
                 }
             }
 
-            const sortImages = (images: string[]) =>
+            const sortImages = (images: GalleryImage[]) =>
                 [...images].sort((a, b) =>
-                    a.localeCompare(b, undefined, {
+                    a.name.localeCompare(b.name, undefined, {
                         numeric: true,
                         sensitivity: 'base',
                     })
@@ -93,7 +70,11 @@ export default function SfeerbeeldenBalParental2026Page() {
 
             setStatus(totalImages > 0 ? 'ready' : 'empty');
         } catch (error) {
-            console.error('Fout bij het laden van de fotogalerij:', error);
+            console.error(
+                'Fout bij het laden van de fotogalerij:',
+                error
+            );
+
             setStatus('error');
         }
     }, []);
@@ -106,9 +87,14 @@ export default function SfeerbeeldenBalParental2026Page() {
         const source =
             gallery.fotograaf.length > 0
                 ? gallery.fotograaf
-                : [...gallery.sfeerbeelden, ...gallery.photobooth];
+                : [
+                    ...gallery.sfeerbeelden,
+                    ...gallery.photobooth,
+                ];
 
-        return shuffle([...source]);
+        return shuffle([...source])
+            .slice(0, 12)
+            .map((image) => image.originalUrl);
     }, [gallery]);
 
     return (

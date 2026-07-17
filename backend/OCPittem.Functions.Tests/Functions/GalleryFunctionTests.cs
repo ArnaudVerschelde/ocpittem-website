@@ -6,6 +6,7 @@ using NSubstitute;
 using NSubstitute.ExceptionExtensions;
 using OCPittem.Functions;
 using OCPittem.Functions.Functions;
+using OCPittem.Functions.Models;
 using OCPittem.Functions.Services;
 using OCPittem.Functions.Tests.Helpers;
 
@@ -27,12 +28,20 @@ public class GalleryFunctionTests
     [Fact]
     public async Task Run_ReturnsImagesFromConfiguredContainer()
     {
-        var images = new List<string>
+        var images = new List<GalleryImageDto>
         {
-            "https://example.blob.core.windows.net/fotos-2026/a.jpg?sas",
-            "https://example.blob.core.windows.net/fotos-2026/b.png?sas",
+            new(
+                Name: "a.jpg",
+                Category: "fotograaf",
+                OriginalUrl: "https://example.blob.core.windows.net/fotos-2026/fotograaf/a.jpg?sas",
+                ThumbnailUrl: "https://example.blob.core.windows.net/fotos-2026/thumbnails/fotograaf/a.webp?sas"),
+            new(
+                Name: "b.png",
+                Category: "photobooth",
+                OriginalUrl: "https://example.blob.core.windows.net/fotos-2026/photobooth/b.png?sas",
+                ThumbnailUrl: "https://example.blob.core.windows.net/fotos-2026/thumbnails/photobooth/b.webp?sas"),
         };
-        _storage.GetGalleryImageUrlsAsync("fotos-2026", Arg.Any<TimeSpan>())
+        _storage.GetGalleryImagesAsync("fotos-2026", Arg.Any<TimeSpan>())
             .Returns(images);
 
         var result = await _sut.Run(HttpRequestHelper.CreateGetRequest());
@@ -40,31 +49,31 @@ public class GalleryFunctionTests
         var ok = Assert.IsType<OkObjectResult>(result);
         var value = ok.Value!;
         var imagesProp = value.GetType().GetProperty("images")!.GetValue(value);
-        var returned = Assert.IsAssignableFrom<IReadOnlyList<string>>(imagesProp);
+        var returned = Assert.IsAssignableFrom<IReadOnlyList<GalleryImageDto>>(imagesProp);
         Assert.Equal(images, returned);
 
-        await _storage.Received(1).GetGalleryImageUrlsAsync("fotos-2026", Arg.Any<TimeSpan>());
+        await _storage.Received(1).GetGalleryImagesAsync("fotos-2026", Arg.Any<TimeSpan>());
     }
 
     [Fact]
     public async Task Run_EmptyContainer_ReturnsOkWithEmptyList()
     {
-        _storage.GetGalleryImageUrlsAsync(Arg.Any<string>(), Arg.Any<TimeSpan>())
-            .Returns(Array.Empty<string>());
+        _storage.GetGalleryImagesAsync(Arg.Any<string>(), Arg.Any<TimeSpan>())
+            .Returns(Array.Empty<GalleryImageDto>());
 
         var result = await _sut.Run(HttpRequestHelper.CreateGetRequest());
 
         var ok = Assert.IsType<OkObjectResult>(result);
         var value = ok.Value!;
         var imagesProp = value.GetType().GetProperty("images")!.GetValue(value);
-        var returned = Assert.IsAssignableFrom<IReadOnlyList<string>>(imagesProp);
+        var returned = Assert.IsAssignableFrom<IReadOnlyList<GalleryImageDto>>(imagesProp);
         Assert.Empty(returned);
     }
 
     [Fact]
     public async Task Run_StorageThrows_Returns500()
     {
-        _storage.GetGalleryImageUrlsAsync(Arg.Any<string>(), Arg.Any<TimeSpan>())
+        _storage.GetGalleryImagesAsync(Arg.Any<string>(), Arg.Any<TimeSpan>())
             .ThrowsAsync(new Exception("Storage down"));
 
         var result = await _sut.Run(HttpRequestHelper.CreateGetRequest());

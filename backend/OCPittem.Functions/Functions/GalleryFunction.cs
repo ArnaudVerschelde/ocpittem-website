@@ -27,19 +27,26 @@ public class GalleryFunction
 
     [Function("GalleryBalParental2026")]
     public async Task<IActionResult> Run(
-        [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "gallery/bal-parental-2026")] HttpRequest req)
+        [HttpTrigger(
+            AuthorizationLevel.Anonymous,
+            "get",
+            Route = "gallery/bal-parental-2026")]
+        HttpRequest req)
     {
         try
         {
-            var images = await _storage.GetGalleryImageUrlsAsync(
-                _storageOptions.BlobContainerGallery2026, SasLifetime);
+            var images = await _storage.GetGalleryImagesAsync(
+                _storageOptions.BlobContainerGallery2026,
+                SasLifetime);
 
             return new OkObjectResult(new { images });
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Kon sfeerbeelden niet ophalen.");
-            return new ObjectResult(new { error = "Kon de sfeerbeelden niet ophalen." })
+
+            return new ObjectResult(
+                new { error = "Kon de sfeerbeelden niet ophalen." })
             {
                 StatusCode = StatusCodes.Status500InternalServerError,
             };

@@ -241,4 +241,121 @@ public class TableStorageService : IStorageService
 
         return urls;
     }
+
+    public async Task<IReadOnlyList<GalleryImageDto>> GetGalleryImagesAsync(string containerName, TimeSpan sasLifetime)
+    {
+        var containerClient = _blobServiceClient
+            .GetBlobContainerClient(containerName);
+
+        if (!await containerClient.ExistsAsync())
+        {
+            return Array.Empty<GalleryImageDto>();
+        }
+
+        var blobNames = new HashSet<string>(
+            StringComparer.OrdinalIgnoreCase);
+
+        await foreach (var blob in containerClient.GetBlobsAsync())
+        {
+            blobNames.Add(blob.Name);
+        }
+
+        var images = new List<GalleryImageDto>();
+        var expiresOn = DateTimeOffset.UtcNow.Add(sasLifetime);
+
+        foreach (var originalBlobName in blobNames.Where(IsOriginalGalleryImage))
+        {
+            var category = GetCategory(originalBlobName);
+
+            if (category is null)
+            {
+                continue;
+            }
+
+            var thumbnailBlobName =
+                $"thumbnails/{Path.ChangeExtension(originalBlobName, ".webp")}"
+                    .Replace('\\', '/');
+
+            if (!blobNames.Contains(thumbnailBlobName))
+            {
+                continue;
+            }
+
+            var originalBlob = containerClient
+                .GetBlobClient(originalBlobName);
+
+            var thumbnailBlob = containerClient
+                .GetBlobClient(thumbnailBlobName);
+
+            var originalUrl = CreateReadSasUrl(
+                originalBlob,
+                expiresOn);
+
+            var thumbnailUrl = CreateReadSasUrl(
+                thumbnailBlob,
+                expiresOn);
+
+            images.Add(new GalleryImageDto(
+                Name: Path.GetFileName(originalBlobName),
+                Category: category,
+                OriginalUrl: originalUrl,
+                ThumbnailUrl: thumbnailUrl));
+        }
+
+        return images;
+    }
+
+    private static bool IsOriginalGalleryImage(string blobName)
+    {
+        if (blobName.StartsWith(
+            "thumbnails/",
+            StringComparison.OrdinalIgnoreCase))
+        {
+            return false;
+        }
+
+        var extension = Path.GetExtension(blobName);
+
+        return extension.Equals(".jpg", StringComparison.OrdinalIgnoreCase)
+            || extension.Equals(".jpeg", StringComparison.OrdinalIgnoreCase)
+            || extension.Equals(".png", StringComparison.OrdinalIgnoreCase)
+            || extension.Equals(".webp", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static string? GetCategory(string blobName)
+    {
+        var normalizedName = blobName
+            .Replace('\\', '/')
+            .ToLowerInvariant();
+
+        if (normalizedName.StartsWith("fotograaf/"))
+        {
+            return "fotograaf";
+        }
+
+        if (normalizedName.StartsWith("photobooth/"))
+        {
+            return "photobooth";
+        }
+
+        if (normalizedName.StartsWith("sfeerbeelden/"))
+        {
+            return "sfeerbeelden";
+        }
+
+        return null;
+    }
+
+    private static string CreateReadSasUrl(BlobClient blobClient, DateTimeOffset expiresOn)
+    {
+        if (!blobClient.CanGenerateSasUri)
+        {
+            throw new InvalidOperationException(
+                $"Er kan geen SAS-URL worden gegenereerd voor blob '{blobClient.Name}'.");
+        }
+
+        return blobClient
+            .GenerateSasUri(BlobSasPermissions.Read, expiresOn)
+            .ToString();
+    }
 }

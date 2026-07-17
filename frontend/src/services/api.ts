@@ -38,8 +38,17 @@ export interface ValidateTicketResponse {
   error?: string;
 }
 
+export type GalleryCategory = 'fotograaf' | 'photobooth' | 'sfeerbeelden';
+
+export interface GalleryImage {
+  name: string;
+  category: GalleryCategory;
+  originalUrl: string;
+  thumbnailUrl: string;
+}
+
 export interface GalleryResponse {
-  images: string[];
+  images: GalleryImage[];
 }
 
 export const api = {

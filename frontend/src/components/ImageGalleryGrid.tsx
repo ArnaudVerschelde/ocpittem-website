@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useState } from 'react';
+import type { GalleryImage } from '../services/api';
 
 interface ImageGalleryGridProps {
-  images: string[];
+  images: GalleryImage[];
 }
 
 export default function ImageGalleryGrid({ images }: ImageGalleryGridProps) {
@@ -42,8 +43,8 @@ export default function ImageGalleryGrid({ images }: ImageGalleryGridProps) {
   return (
     <>
       <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 lg:grid-cols-4">
-        {images.map((src, index) => (
-          <li key={src}>
+        {images.map((image, index) => (
+          <li key={image.name}>
             <button
               type="button"
               onClick={() => setLightboxIndex(index)}
@@ -51,7 +52,7 @@ export default function ImageGalleryGrid({ images }: ImageGalleryGridProps) {
               className="group block aspect-square w-full overflow-hidden rounded-xl bg-gray-100 ring-1 ring-gray-200 focus:outline-none focus:ring-2 focus:ring-primary-400"
             >
               <img
-                src={src}
+                src={image.thumbnailUrl}
                 alt={`Sfeerbeeld Bal Parental 2026 — foto ${index + 1} van ${count}`}
                 loading="lazy"
                 className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
@@ -112,7 +113,7 @@ export default function ImageGalleryGrid({ images }: ImageGalleryGridProps) {
           )}
 
           <img
-            src={images[lightboxIndex]}
+            src={images[lightboxIndex].originalUrl}
             alt={`Sfeerbeeld Bal Parental 2026 — foto ${lightboxIndex + 1} van ${count}`}
             onClick={(e) => e.stopPropagation()}
             className="max-h-[85vh] max-w-full rounded-lg object-contain shadow-2xl"
