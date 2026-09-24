@@ -31,6 +31,7 @@ const members: Member[] = [
     { name: 'Bart Dewinter', description: 'papa van Elise en Emile' },
     { name: 'Charlot Bossuyt', description: 'mama van Nya en Zyas' },
     { name: 'Cindy De Clercq', description: 'mama van Maure' },
+    { name: 'Cynthia Blancke', description: 'mama van Oscar' },
     { name: 'Delfine Lafaut', description: 'mama van Odiel' },
     { name: 'Dempsey Van Renterghem', description: 'papa van Vince, Fons en Dré' },
     { name: 'Eline Desmet', description: 'mama van Louise en Victor' },
