@@ -207,12 +207,13 @@ export default function WieZijnWePage() {
                         <div className="mt-8 grid gap-4 sm:grid-cols-2">
                             <div className="rounded-xl bg-white p-5 shadow-sm ring-1 ring-secondary-100">
                                 <p className="text-xs font-semibold uppercase tracking-wider text-secondary-500">Directie</p>
-                                <p className="mt-2 font-semibold text-gray-900">Hanne Devisch</p>
+                                <p className="mt-2 font-semibold text-gray-900">Katrien Lemiengre</p>
                             </div>
                             <div className="rounded-xl bg-white p-5 shadow-sm ring-1 ring-secondary-100">
                                 <p className="text-xs font-semibold uppercase tracking-wider text-secondary-500">Leerkrachten</p>
                                 <p className="mt-2 font-semibold text-gray-900">Ine Vandeputte</p>
                                 <p className="font-semibold text-gray-900">Nele De Brabandere</p>
+                                <p className="font-semibold text-gray-900">Eveline Ooghe</p>
                             </div>
                         </div>
                     </div>
