@@ -7,6 +7,7 @@ const paymentsEnabled = import.meta.env.VITE_ENABLE_PAYMENTS === 'true';
 
 const events = [
   {
+    id: 'bal-parental-2026',
     title: 'Bal Parental 2026',
     date: 'zaterdag 20 juni 2026',
     description: BAL_PARENTAL_ACTIVE
@@ -18,6 +19,7 @@ const events = [
     color: 'primary',
   },
   {
+    id: 'afscheid-6de-2026',
     title: 'Afscheid 6de leerjaar',
     date: 'maandag 29 juni 2026 om 19.00 uur',
     description:
@@ -28,16 +30,29 @@ const events = [
     color: 'primary',
   },
   {
+    id: 'infomoment-2026',
+    title: 'Infomoment',
+    date: 'donderdag 27 augustus 2026',
+    description:
+        'Tijdens het infomoment verwelkomen we de ouders graag op school. Het oudercomité trakteert alle ouders op een gratis drankje om samen gezellig het nieuwe schooljaar in te zetten.',
+    cta: null,
+    galleryTo: null,
+    ended: true,
+    color: 'accent',
+  },
+  {
+    id: 'apero-speelplaats-2026',
     title: 'Apero op de speelplaats',
     date: 'zondag 13 september 2026',
     description:
         'Een gezellige dag waarbij ouders, kinderen en leerkrachten samenkomen op de speelplaats voor een hapje en een drankje. Ontspannen en gezellig!',
     cta: null,
     galleryTo: null,
-    ended: false,
+    ended: true,
     color: 'accent',
   },
   {
+    id: 'koekjesverkoop-2026',
     title: 'Koekjesverkoop 2026',
     date: 'donderdag 10 december 2026',
     description:
@@ -46,6 +61,28 @@ const events = [
     galleryTo: null,
     ended: false,
     color: 'accent',
+  },
+  {
+    id: 'grote-sprong-2027',
+    title: 'De Grote Sprong',
+    date: 'Datum nog te bepalen',
+    description:
+        'Een bijzonder moment voor onze derde kleuterklassers: afscheid nemen van de kleuterklas en de grote sprong maken naar de lagere school. Samen vieren we deze mooie mijlpaal!',
+    cta: null,
+    galleryTo: null,
+    ended: false,
+    color: 'primary',
+  },
+  {
+    id: 'afscheid-6de-2027',
+    title: 'Afscheid 6de leerjaar',
+    date: 'Datum nog te bepalen',
+    description:
+        'Aan het einde van het schooljaar nemen we feestelijk afscheid van onze leerlingen van het 6de leerjaar. Samen met hun ouders vieren we deze bijzondere mijlpaal en hun volgende grote stap.',
+    cta: null,
+    galleryTo: null,
+    ended: false,
+    color: 'primary',
   },
 ];
 
@@ -69,7 +106,7 @@ export default function ActiviteitenPage() {
     <>
       <Hero
         title="Activiteiten"
-        subtitle="Ontdek onze geplande activiteiten en evenementen. Er is altijd iets leuks op komst!"
+        subtitle="Ontdek de activiteiten en evenementen van het oudercomité, van gezellige ontmoetingsmomenten tot acties ten voordele van onze school."
         backgroundClass="bg-gradient-to-br from-accent-500 via-accent-600 to-accent-800"
       />
 
@@ -79,7 +116,7 @@ export default function ActiviteitenPage() {
             const colors = getColorClasses(event.color);
             return (
               <div
-                key={event.title}
+                key={event.id}
                 className={`rounded-2xl border ${colors.border} ${colors.bg} p-6 sm:p-8`}
               >
                 <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
