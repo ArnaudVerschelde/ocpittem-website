@@ -255,8 +255,8 @@ export default function WieZijnWePage() {
                             mailtje of spreek één van onze leden aan — we heten je graag welkom!
                         </p>
                         <div className="mt-8 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
-                            <a href="mailto:oudercomitepittem@gmail.com" className="btn-primary">
-                                oudercomitepittem@gmail.com
+                            <a href="mailto:oudercomite@ocpittem.be" className="btn-primary">
+                                oudercomite@ocpittem.be
                             </a>
                             <Link to="/contact" className="btn-secondary">
                                 Contactformulier

@@ -75,10 +75,10 @@ export default function ContactPage() {
                 <div>
                   <p className="font-semibold text-gray-900">E-mail</p>
                   <a
-                    href="mailto:oudercomitepittem@gmail.com"
+                    href="mailto:oudercomite@ocpittem.be"
                     className="text-sm text-primary-600 hover:text-primary-700"
                   >
-                    oudercomitepittem@gmail.com
+                    oudercomite@ocpittem.be
                   </a>
                 </div>
               </div>

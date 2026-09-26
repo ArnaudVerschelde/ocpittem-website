@@ -30,7 +30,7 @@ param enablePurgeProtection bool = true
 
 // ---- App settings (non-secret) ----
 param appFrontendUrl string = 'https://ocpittem.be'
-param appContactEmail string = 'oudercomitepittem@gmail.com'
+param appContactEmail string = 'oudercomite@ocpittem.be'
 param appReportRecipients string = ''
 param appCookieReportRecipients string = ''
 param emailEnabled bool = true

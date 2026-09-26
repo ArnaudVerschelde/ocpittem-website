@@ -23,7 +23,7 @@ export default function PrivacyPage() {
                         <h2 className="font-semibold text-gray-900">1. Wie zijn wij?</h2>
                         <p>
                             Oudercomité met Pit, Pittem.
-                            Contact: <a href="mailto:oudercomitepittem@ocpittem.be" className="text-primary-600 underline">oudercomitepittem@gmail.com</a>
+                            Contact: <a href="mailto:oudercomite@ocpittem.be" className="text-primary-600 underline">oudercomite@ocpittem.be</a>
                         </p>
                     </section>
 

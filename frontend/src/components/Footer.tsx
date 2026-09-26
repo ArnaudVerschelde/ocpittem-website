@@ -54,7 +54,7 @@ export default function Footer() {
             <ul className="mt-4 space-y-2 text-sm text-gray-500">
               <li>
                 <a
-                  href="mailto:oudercomitepittem@gmail.com"
+                  href="mailto:oudercomite@ocpittem.be"
                   className="transition-colors hover:text-primary-600"
                 >
                   oudercomitepittem@gmail.com
