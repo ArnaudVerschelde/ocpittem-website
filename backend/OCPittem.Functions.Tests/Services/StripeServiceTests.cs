@@ -17,6 +17,8 @@ public class StripeServiceTests
             PriceIdSponsorBrons = "price_brons",
             PriceIdSponsorZilver = "price_zilver",
             PriceIdSponsorGoud = "price_goud",
+            PriceIdCookieCoteDor = "price_cookie_cotedor",
+            PriceIdCookieLotus = "price_cookie_lotus",
         },
         frontendUrl: "http://localhost:5173");
 
@@ -53,5 +55,29 @@ public class StripeServiceTests
             sut.CreateSponsorCheckoutSessionAsync("req-1", "bedrijf@example.com", "Bedrijf NV", knownPackage, 0, 0));
 
         Assert.IsNotType<ArgumentException>(ex);
+    }
+
+    [Fact]
+    public void BuildCookieSaleCheckoutOptions_UsesConfiguredPricesAndMinimalMetadata()
+    {
+        var sut = CreateSut();
+
+        var options = sut.BuildCookieSaleCheckoutOptions(
+            "order-123",
+            "ouder@example.com",
+            coteDorQuantity: 2,
+            lotusQuantity: 1);
+
+        Assert.Equal("ouder@example.com", options.CustomerEmail);
+        Assert.Equal(2, options.LineItems.Count);
+        Assert.Contains(options.LineItems, item =>
+            item.Price == "price_cookie_cotedor" && item.Quantity == 2);
+        Assert.Contains(options.LineItems, item =>
+            item.Price == "price_cookie_lotus" && item.Quantity == 1);
+        Assert.Equal("cookie-sale-2026", options.Metadata["flow"]);
+        Assert.Equal("order-123", options.Metadata["orderId"]);
+        Assert.Equal(2, options.Metadata.Count);
+        Assert.Contains("/koekjesverkoop/betaling/success", options.SuccessUrl);
+        Assert.EndsWith("/koekjesverkoop/betaling/cancel", options.CancelUrl);
     }
 }

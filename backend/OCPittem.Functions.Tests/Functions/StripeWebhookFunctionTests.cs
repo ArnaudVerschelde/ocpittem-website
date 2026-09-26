@@ -46,12 +46,16 @@ public class StripeWebhookFunctionTests
         var stripeEvent = CreateStripeEvent("evt_dup", EventTypes.CheckoutSessionCompleted);
         var req = HttpRequestHelper.CreateWebhookRequest("{}", "valid-sig");
         _stripe.ConstructWebhookEvent(Arg.Any<string>(), Arg.Any<string>()).Returns(stripeEvent);
-        _storage.WebhookEventExistsAsync("evt_dup").Returns(true);
+        _storage.TryBeginWebhookEventAsync(
+                "evt_dup",
+                false,
+                Arg.Any<DateTimeOffset>())
+            .Returns(WebhookEventBeginResult.AlreadyProcessed);
 
         var result = await _sut.Run(req);
 
         Assert.IsType<OkResult>(result);
-        await _storage.DidNotReceive().SaveWebhookEventAsync(Arg.Any<WebhookEventEntity>());
+        await _storage.DidNotReceive().UpsertWebhookEventAsync(Arg.Any<WebhookEventEntity>());
     }
 
     [Fact]
@@ -243,6 +247,224 @@ public class StripeWebhookFunctionTests
         await _storage.Received(1).UpsertWebhookEventAsync(
             Arg.Is<WebhookEventEntity>(e => e.Result.StartsWith("error:")));
     }
+
+    [Fact]
+    public async Task Run_CookieProcessingError_ReturnsServerErrorForStripeRetry()
+    {
+        var stripeEvent = CreateStripeEvent(
+            "evt_cookie_error",
+            EventTypes.CheckoutSessionCompleted,
+            CreatePaidCookieSession());
+        _stripe.ConstructWebhookEvent(Arg.Any<string>(), Arg.Any<string>()).Returns(stripeEvent);
+        _storage.GetCookieOrderAsync("cookie-order-1")
+            .Returns(Task.FromException<CookieOrderEntity?>(new InvalidOperationException("DB error")));
+
+        var result = await _sut.Run(HttpRequestHelper.CreateWebhookRequest("{}", "valid-sig"));
+
+        var error = Assert.IsType<ObjectResult>(result);
+        Assert.Equal(500, error.StatusCode);
+        await _storage.Received(1).UpsertWebhookEventAsync(
+            Arg.Is<WebhookEventEntity>(entity => entity.Result.StartsWith("error:")));
+    }
+
+    [Fact]
+    public async Task Run_CookieCheckoutCompleted_MarksPaidAndSendsOneConfirmation()
+    {
+        var session = CreatePaidCookieSession();
+        var stripeEvent = CreateStripeEvent("evt_cookie_paid", EventTypes.CheckoutSessionCompleted, session);
+        var order = CreateCookieOrder();
+        var paidOrder = CreateCookieOrder();
+        paidOrder.PaymentStatus = nameof(CookieOrderStatus.Paid);
+
+        var req = HttpRequestHelper.CreateWebhookRequest("{}", "valid-sig");
+        _stripe.ConstructWebhookEvent(Arg.Any<string>(), Arg.Any<string>()).Returns(stripeEvent);
+        _storage.WebhookEventExistsAsync("evt_cookie_paid").Returns(false);
+        _storage.GetCookieOrderAsync("cookie-order-1").Returns(order);
+        _storage.TryMarkCookieOrderPaidAsync(
+                "cookie-order-1",
+                "cs_cookie",
+                "pi_cookie",
+                Arg.Any<DateTimeOffset>())
+            .Returns(paidOrder);
+        _storage.TryClaimCookieOrderConfirmationEmailAsync(
+                "cookie-order-1",
+                Arg.Any<string>(),
+                Arg.Any<DateTimeOffset>())
+            .Returns(call =>
+            {
+                paidOrder.ConfirmationEmailClaimId = call.ArgAt<string>(1);
+                paidOrder.ConfirmationEmailClaimedUtc = call.ArgAt<DateTimeOffset>(2);
+                return paidOrder;
+            });
+
+        var result = await _sut.Run(req);
+
+        Assert.IsType<OkResult>(result);
+        await _storage.Received(1).TryMarkCookieOrderPaidAsync(
+            "cookie-order-1",
+            "cs_cookie",
+            "pi_cookie",
+            Arg.Any<DateTimeOffset>());
+        await _email.Received(1).SendCookieSaleConfirmationAsync(
+            Arg.Is<CookieSaleConfirmationData>(data =>
+                data.ConfirmationNumber == "KV26-23456789ABCD"
+                && data.TotalAmountCents == 3100));
+        await _storage.Received(1).MarkCookieOrderConfirmationEmailSentAsync(
+            "cookie-order-1",
+            Arg.Any<string>(),
+            Arg.Any<DateTimeOffset>());
+    }
+
+    [Fact]
+    public async Task Run_CookieDuplicateSuccessEvent_DoesNotSendDuplicateEmail()
+    {
+        var firstEvent = CreateStripeEvent(
+            "evt_cookie_first",
+            EventTypes.CheckoutSessionCompleted,
+            CreatePaidCookieSession());
+        var duplicateEvent = CreateStripeEvent(
+            "evt_cookie_second",
+            EventTypes.CheckoutSessionAsyncPaymentSucceeded,
+            CreatePaidCookieSession());
+        var paidOrder = CreateCookieOrder();
+        paidOrder.PaymentStatus = nameof(CookieOrderStatus.Paid);
+
+        _storage.GetCookieOrderAsync("cookie-order-1").Returns(paidOrder);
+        _storage.TryMarkCookieOrderPaidAsync(
+                "cookie-order-1",
+                "cs_cookie",
+                "pi_cookie",
+                Arg.Any<DateTimeOffset>())
+            .Returns(paidOrder);
+        _storage.TryClaimCookieOrderConfirmationEmailAsync(
+                "cookie-order-1",
+                Arg.Any<string>(),
+                Arg.Any<DateTimeOffset>())
+            .Returns(paidOrder, (CookieOrderEntity?)null);
+
+        _stripe.ConstructWebhookEvent(Arg.Any<string>(), Arg.Any<string>())
+            .Returns(firstEvent, duplicateEvent);
+
+        await _sut.Run(HttpRequestHelper.CreateWebhookRequest("{}", "valid-sig"));
+        await _sut.Run(HttpRequestHelper.CreateWebhookRequest("{}", "valid-sig"));
+
+        await _email.Received(1).SendCookieSaleConfirmationAsync(
+            Arg.Any<CookieSaleConfirmationData>());
+    }
+
+    [Fact]
+    public async Task Run_CookieCheckoutCompleted_Unpaid_DoesNotMarkPaid()
+    {
+        var session = CreatePaidCookieSession();
+        session.PaymentStatus = "unpaid";
+        var stripeEvent = CreateStripeEvent(
+            "evt_cookie_unpaid",
+            EventTypes.CheckoutSessionCompleted,
+            session);
+        _stripe.ConstructWebhookEvent(Arg.Any<string>(), Arg.Any<string>()).Returns(stripeEvent);
+
+        var result = await _sut.Run(HttpRequestHelper.CreateWebhookRequest("{}", "valid-sig"));
+
+        Assert.IsType<OkResult>(result);
+        await _storage.DidNotReceive().TryMarkCookieOrderPaidAsync(
+            Arg.Any<string>(),
+            Arg.Any<string>(),
+            Arg.Any<string>(),
+            Arg.Any<DateTimeOffset>());
+    }
+
+    [Fact]
+    public async Task Run_SponsorCheckoutCompleted_StillUsesSponsorRoute()
+    {
+        var session = new Session
+        {
+            Id = "sess_sponsor",
+            PaymentStatus = "paid",
+            CustomerEmail = "sponsor@example.com",
+            Metadata = new Dictionary<string, string>
+            {
+                ["requestId"] = "sponsor-1",
+                ["customerName"] = "Sponsor NV",
+                ["orderType"] = "sponsor",
+            },
+        };
+        var sponsor = new SponsorRequestEntity
+        {
+            PartitionKey = "Sponsor",
+            RowKey = "sponsor-1",
+            CompanyName = "Sponsor NV",
+            Email = "sponsor@example.com",
+            Package = "brons",
+            Status = "Pending",
+            StripeSessionId = "sess_sponsor",
+        };
+        var stripeEvent = CreateStripeEvent(
+            "evt_sponsor_regression",
+            EventTypes.CheckoutSessionCompleted,
+            session);
+
+        _stripe.ConstructWebhookEvent(Arg.Any<string>(), Arg.Any<string>()).Returns(stripeEvent);
+        _storage.GetSponsorRequestByStripeSessionAsync("sess_sponsor").Returns(sponsor);
+        _attestation.GenerateAttestationAsync(
+                Arg.Any<string>(),
+                Arg.Any<string>(),
+                Arg.Any<string>(),
+                Arg.Any<string>(),
+                Arg.Any<string>(),
+                Arg.Any<string>(),
+                Arg.Any<decimal>(),
+                Arg.Any<DateTime>())
+            .Returns([1, 2, 3]);
+        _storage.SaveSponsorAttestationAsync("sponsor-1", Arg.Any<byte[]>())
+            .Returns("https://blob/sponsor-1/attest.pdf");
+
+        var result = await _sut.Run(HttpRequestHelper.CreateWebhookRequest("{}", "valid-sig"));
+
+        Assert.IsType<OkResult>(result);
+        Assert.Equal("Paid", sponsor.Status);
+        await _storage.Received(1).UpdateSponsorRequestAsync(sponsor);
+        await _email.Received(1).SendSponsorPaymentConfirmationAsync(
+            "sponsor@example.com",
+            "Sponsor NV",
+            "brons",
+            Arg.Any<int>(),
+            Arg.Any<int>(),
+            Arg.Any<int>(),
+            Arg.Any<int>(),
+            Arg.Any<IReadOnlyList<TicketPdfData>>(),
+            Arg.Any<byte[]?>(),
+            Arg.Any<byte[]?>());
+    }
+
+    private static Session CreatePaidCookieSession() => new()
+    {
+        Id = "cs_cookie",
+        PaymentStatus = "paid",
+        AmountTotal = 3100,
+        Currency = "eur",
+        PaymentIntentId = "pi_cookie",
+        Metadata = new Dictionary<string, string>
+        {
+            ["flow"] = "cookie-sale-2026",
+            ["orderId"] = "cookie-order-1",
+        },
+    };
+
+    private static CookieOrderEntity CreateCookieOrder() => new()
+    {
+        PartitionKey = "COOKIE_SALE_2026",
+        RowKey = "cookie-order-1",
+        OrderId = "cookie-order-1",
+        ConfirmationNumber = "KV26-23456789ABCD",
+        Name = "Test Ouder",
+        Email = "ouder@example.com",
+        ClassName = "Testklas",
+        CoteDorQuantity = 2,
+        LotusQuantity = 1,
+        TotalPackages = 3,
+        TotalAmountCents = 3100,
+        PaymentStatus = nameof(CookieOrderStatus.Pending),
+    };
 
     private static Event CreateStripeEvent(string eventId, string eventType, Session? session = null)
     {

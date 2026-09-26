@@ -11,6 +11,8 @@ public class StripeOptions
     public string PriceIdSponsorBrons { get; init; } = "";
     public string PriceIdSponsorZilver { get; init; } = "";
     public string PriceIdSponsorGoud { get; init; } = "";
+    public string PriceIdCookieCoteDor { get; init; } = "";
+    public string PriceIdCookieLotus { get; init; } = "";
 }
 
 public class MailjetOptions
@@ -54,6 +56,7 @@ public class AppOptions
 public class StorageOptions
 {
     public string TableNameOrders { get; init; } = "Orders";
+    public string TableNameCookieOrders { get; init; } = "CookieOrders";
     public string TableNameTickets { get; init; } = "Tickets";
     public string TableNameWebhookEvents { get; init; } = "WebhookEvents";
     public string TableNameSponsors { get; init; } = "SponsorRequests";

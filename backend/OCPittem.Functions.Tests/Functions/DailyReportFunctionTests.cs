@@ -9,12 +9,14 @@ namespace OCPittem.Functions.Tests.Functions;
 public class DailyReportFunctionTests
 {
     private readonly IDailyReportService _reportService = Substitute.For<IDailyReportService>();
+    private readonly ICookieSaleReportService _cookieSaleReportService =
+        Substitute.For<ICookieSaleReportService>();
     private readonly ILogger<DailyReportFunction> _logger = Substitute.For<ILogger<DailyReportFunction>>();
     private readonly DailyReportFunction _sut;
 
     public DailyReportFunctionTests()
     {
-        _sut = new DailyReportFunction(_reportService, _logger);
+        _sut = new DailyReportFunction(_reportService, _cookieSaleReportService, _logger);
     }
 
     [Fact]
@@ -25,6 +27,7 @@ public class DailyReportFunctionTests
         await _sut.Run(timer);
 
         await _reportService.Received(1).SendDailyReportAsync();
+        await _cookieSaleReportService.Received(1).SendDailyReportAsync();
     }
 
     [Fact]
@@ -35,5 +38,6 @@ public class DailyReportFunctionTests
         await _sut.Run(timer);
 
         await _reportService.Received(1).SendDailyReportAsync();
+        await _cookieSaleReportService.Received(1).SendDailyReportAsync();
     }
 }

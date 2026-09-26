@@ -31,16 +31,17 @@ export default function PrivacyPage() {
                         <h2 className="font-semibold text-gray-900">2. Welke gegevens verzamelen wij?</h2>
                         <p>
                             Wij verwerken persoonsgegevens die je zelf aan ons bezorgt, zoals naam,
-                            e-mailadres, telefoonnummer, bedrijfsgegevens en gegevens in verband met
-                            ticket- of sponsoraanvragen.
+                            e-mailadres, telefoonnummer, klas, bedrijfsgegevens en gegevens in verband met
+                            ticket-, sponsor- of koekjesbestellingen.
                         </p>
                     </section>
 
                     <section>
                         <h2 className="font-semibold text-gray-900">3. Waarom verwerken wij deze gegevens?</h2>
                         <p>
-                            Om contactaanvragen te beantwoorden, tickets te verwerken en te verzenden,
-                            sponsoraanvragen op te volgen en te voldoen aan wettelijke verplichtingen.
+                            Om contactaanvragen te beantwoorden, tickets en koekjesbestellingen te verwerken
+                            en te bevestigen, sponsoraanvragen op te volgen en te voldoen aan wettelijke
+                            verplichtingen.
                         </p>
                     </section>
 

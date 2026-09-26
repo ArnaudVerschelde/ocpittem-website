@@ -1,7 +1,7 @@
-# ============================================================
-# OC Pittem — Azure Infrastructure (Bicep) — West Europe
-# Deploy: az deployment group create -g rg-ocpittem -f infrastructure/main.bicep -p infrastructure/main.parameters.json
-# ============================================================
+// ============================================================
+// OC Pittem — Azure Infrastructure (Bicep) — West Europe
+// Deploy: az deployment group create -g rg-ocpittem -f infrastructure/main.bicep -p infrastructure/main.parameters.json
+// ============================================================
 
 @description('Location for all resources. Use westeurope to maximize service compatibility.')
 param location string = 'westeurope'
@@ -31,6 +31,7 @@ param enablePurgeProtection bool = true
 // ---- App settings (non-secret) ----
 param appFrontendUrl string = 'https://ocpittem.be'
 param appContactEmail string = 'oudercomitepittem@gmail.com'
+param appReportRecipients string = ''
 param mailjetFromEmail string = 'oudercomitepittem@gmail.com'
 param mailjetFromName string = 'Oudercomité met Pit'
 param mailjetContactFromEmail string = 'oudercomitepittem@gmail.com'
@@ -44,9 +45,12 @@ param stripePriceIdDrankkaart20 string = 'price_xxx'
 param stripePriceIdSponsorBrons string = 'price_xxx'
 param stripePriceIdSponsorZilver string = 'price_xxx'
 param stripePriceIdSponsorGoud string = 'price_xxx'
+param stripePriceIdCookieCoteDor string = 'price_xxx'
+param stripePriceIdCookieLotus string = 'price_xxx'
 
 // ---- Table names ----
 param tableNameOrders string = 'Orders'
+param tableNameCookieOrders string = 'CookieOrders'
 param tableNameTickets string = 'Tickets'
 param tableNameWebhookEvents string = 'WebhookEvents'
 param tableNameSponsors string = 'SponsorRequests'
@@ -95,6 +99,10 @@ resource tableService 'Microsoft.Storage/storageAccounts/tableServices@2023-05-0
 resource tableOrders 'Microsoft.Storage/storageAccounts/tableServices/tables@2023-05-01' = {
   parent: tableService
   name: tableNameOrders
+}
+resource tableCookieOrders 'Microsoft.Storage/storageAccounts/tableServices/tables@2023-05-01' = {
+  parent: tableService
+  name: tableNameCookieOrders
 }
 resource tableTickets 'Microsoft.Storage/storageAccounts/tableServices/tables@2023-05-01' = {
   parent: tableService
@@ -232,6 +240,8 @@ resource functionApp 'Microsoft.Web/sites@2023-12-01' = {
         { name: 'Stripe__PriceIdSponsorBrons', value: stripePriceIdSponsorBrons }
         { name: 'Stripe__PriceIdSponsorZilver', value: stripePriceIdSponsorZilver }
         { name: 'Stripe__PriceIdSponsorGoud', value: stripePriceIdSponsorGoud }
+        { name: 'Stripe__PriceIdCookieCoteDor', value: stripePriceIdCookieCoteDor }
+        { name: 'Stripe__PriceIdCookieLotus', value: stripePriceIdCookieLotus }
         { name: 'Mailjet__FromEmail', value: mailjetFromEmail }
         { name: 'Mailjet__FromName', value: mailjetFromName }
         { name: 'Mailjet__ContactFromEmail', value: mailjetContactFromEmail }
@@ -240,9 +250,11 @@ resource functionApp 'Microsoft.Web/sites@2023-12-01' = {
         { name: 'Mailjet__TicketFromName', value: mailjetTicketFromName }
         { name: 'App__FrontendUrl', value: appFrontendUrl }
         { name: 'App__ContactEmail', value: appContactEmail }
+        { name: 'App__ReportRecipients', value: appReportRecipients }
 
         // Table names
         { name: 'Storage__TableNameOrders', value: tableNameOrders }
+        { name: 'Storage__TableNameCookieOrders', value: tableNameCookieOrders }
         { name: 'Storage__TableNameTickets', value: tableNameTickets }
         { name: 'Storage__TableNameWebhookEvents', value: tableNameWebhookEvents }
         { name: 'Storage__TableNameSponsors', value: tableNameSponsors }

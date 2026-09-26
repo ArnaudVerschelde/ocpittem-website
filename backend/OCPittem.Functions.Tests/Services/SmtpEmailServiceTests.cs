@@ -147,6 +147,36 @@ public class SmtpEmailServiceTests
             includedVegetarisch: 0, tickets, null, null);
     }
 
+    [Fact]
+    public async Task SendCookieSaleConfirmationAsync_EmailDisabled_CompletesWithoutThrowing()
+    {
+        var sut = CreateDisabledSut();
+
+        await sut.SendCookieSaleConfirmationAsync(
+            new CookieSaleConfirmationData(
+                "order-1",
+                "KV26-23456789ABCD",
+                "Naam",
+                "to@example.com",
+                "Testklas",
+                1,
+                1,
+                2,
+                2000));
+    }
+
+    [Fact]
+    public async Task SendCookieSaleDailyReportAsync_EmailDisabled_CompletesWithoutThrowing()
+    {
+        var sut = CreateDisabledSut();
+
+        await sut.SendCookieSaleDailyReportAsync(
+            ["report@example.com"],
+            [1, 2, 3],
+            new CookieSaleReportStats(1, 2, 1, 3, 3100),
+            DateTime.UtcNow);
+    }
+
     // ── Sender fallback logic ───────────────────────────────────────────────
 
     [Fact]

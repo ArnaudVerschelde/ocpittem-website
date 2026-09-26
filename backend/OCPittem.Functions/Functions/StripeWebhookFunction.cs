@@ -7,6 +7,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using OCPittem.Functions.Models;
 using OCPittem.Functions.Services;
+using OCPittem.Functions.Configuration;
 using Stripe;
 using Stripe.Checkout;
 
@@ -62,14 +63,30 @@ public class StripeWebhookFunction
             return new BadRequestObjectResult(new { error = "Invalid signature." });
         }
 
-        // Idempotency check
-        if (await _storage.WebhookEventExistsAsync(stripeEvent.Id))
+        var isCookieSaleEvent = stripeEvent.Data.Object is Session eventSession
+            && eventSession.Metadata?.GetValueOrDefault("flow") == CookieSale2026Catalog.Flow;
+        var beginResult = await _storage.TryBeginWebhookEventAsync(
+            stripeEvent.Id,
+            allowRetry: isCookieSaleEvent,
+            DateTimeOffset.UtcNow);
+
+        if (beginResult == WebhookEventBeginResult.AlreadyProcessed)
         {
             _logger.LogInformation("Webhook event {EventId} already processed, skipping", stripeEvent.Id);
             return new OkResult();
         }
 
-        // Record the event
+        if (beginResult == WebhookEventBeginResult.InProgress)
+        {
+            _logger.LogInformation("Webhook event {EventId} is already being processed", stripeEvent.Id);
+            return isCookieSaleEvent
+                ? new ObjectResult(new { error = "Webhook event is still processing." })
+                {
+                    StatusCode = StatusCodes.Status500InternalServerError,
+                }
+                : new OkResult();
+        }
+
         var webhookEntity = new WebhookEventEntity
         {
             PartitionKey = "Stripe",
@@ -77,8 +94,6 @@ public class StripeWebhookFunction
             ReceivedAt = DateTime.UtcNow,
             Result = "received",
         };
-        await _storage.SaveWebhookEventAsync(webhookEntity);
-
         try
         {
             switch (stripeEvent.Type)
@@ -95,6 +110,10 @@ public class StripeWebhookFunction
                     await HandlePaymentFailed(stripeEvent);
                     break;
 
+                case EventTypes.CheckoutSessionExpired:
+                    await HandleSessionExpired(stripeEvent);
+                    break;
+
                 default:
                     _logger.LogInformation("Unhandled event type: {EventType}", stripeEvent.Type);
                     break;
@@ -108,6 +127,16 @@ public class StripeWebhookFunction
             _logger.LogError(ex, "Error processing webhook event {EventId}", stripeEvent.Id);
             webhookEntity.ProcessedAt = DateTime.UtcNow;
             webhookEntity.Result = $"error: {ex.Message}";
+            await _storage.UpsertWebhookEventAsync(webhookEntity);
+            if (isCookieSaleEvent)
+            {
+                return new ObjectResult(new { error = "Webhook processing failed." })
+                {
+                    StatusCode = StatusCodes.Status500InternalServerError,
+                };
+            }
+
+            return new OkResult();
         }
 
         await _storage.UpsertWebhookEventAsync(webhookEntity);
@@ -129,11 +158,84 @@ public class StripeWebhookFunction
             return;
         }
 
+        var flow = session.Metadata.GetValueOrDefault("flow");
+        if (flow == CookieSale2026Catalog.Flow)
+        {
+            await HandleCookieSaleCheckoutCompleted(session);
+            return;
+        }
+
         var orderType = session.Metadata.GetValueOrDefault("orderType") ?? "ticket";
         if (orderType == "sponsor")
             await HandleSponsorCheckoutCompleted(session);
         else
             await HandleTicketCheckoutCompleted(session);
+    }
+
+    private async Task HandleCookieSaleCheckoutCompleted(Session session)
+    {
+        var orderId = session.Metadata.GetValueOrDefault("orderId") ?? "";
+        if (string.IsNullOrWhiteSpace(orderId))
+            throw new InvalidOperationException("Cookie checkout session has no orderId metadata.");
+
+        var order = await _storage.GetCookieOrderAsync(orderId)
+            ?? throw new InvalidOperationException($"Cookie order {orderId} was not found.");
+
+        if (session.AmountTotal != order.TotalAmountCents
+            || !string.Equals(session.Currency, "eur", StringComparison.OrdinalIgnoreCase))
+        {
+            throw new InvalidOperationException($"Paid amount mismatch for cookie order {orderId}.");
+        }
+
+        var paidOrder = await _storage.TryMarkCookieOrderPaidAsync(
+            orderId,
+            session.Id,
+            session.PaymentIntentId ?? string.Empty,
+            DateTimeOffset.UtcNow);
+
+        if (paidOrder is null)
+        {
+            _logger.LogWarning(
+                "Cookie order {OrderId} could not transition to Paid from its current status",
+                orderId);
+            return;
+        }
+
+        var claimedUtc = DateTimeOffset.UtcNow;
+        var claimId = Guid.NewGuid().ToString();
+        var claimedOrder = await _storage.TryClaimCookieOrderConfirmationEmailAsync(
+            orderId,
+            claimId,
+            claimedUtc);
+        if (claimedOrder is null)
+            return;
+
+        try
+        {
+            await _email.SendCookieSaleConfirmationAsync(new CookieSaleConfirmationData(
+                claimedOrder.OrderId,
+                claimedOrder.ConfirmationNumber,
+                claimedOrder.Name,
+                claimedOrder.Email,
+                claimedOrder.ClassName,
+                claimedOrder.CoteDorQuantity,
+                claimedOrder.LotusQuantity,
+                claimedOrder.TotalPackages,
+                claimedOrder.TotalAmountCents));
+            await _storage.MarkCookieOrderConfirmationEmailSentAsync(
+                orderId,
+                claimId,
+                DateTimeOffset.UtcNow);
+            _logger.LogInformation(
+                "Cookie order {OrderId} marked Paid and confirmation sent ({ConfirmationNumber})",
+                orderId,
+                claimedOrder.ConfirmationNumber);
+        }
+        catch
+        {
+            await _storage.ReleaseCookieOrderConfirmationEmailClaimAsync(orderId, claimId);
+            throw;
+        }
     }
 
     private async Task HandleTicketCheckoutCompleted(Session session)
@@ -341,6 +443,15 @@ public class StripeWebhookFunction
     {
         if (stripeEvent.Data.Object is not Session session) return;
 
+        var flow = session.Metadata.GetValueOrDefault("flow");
+        if (flow == CookieSale2026Catalog.Flow)
+        {
+            var cookieOrderId = session.Metadata.GetValueOrDefault("orderId") ?? "";
+            if (!string.IsNullOrWhiteSpace(cookieOrderId))
+                await _storage.TryMarkCookieOrderStatusAsync(cookieOrderId, CookieOrderStatus.Failed);
+            return;
+        }
+
         var orderType = session.Metadata.GetValueOrDefault("orderType") ?? "ticket";
         _logger.LogWarning("Payment failed for session {SessionId}, type {OrderType}", session.Id, orderType);
 
@@ -362,6 +473,19 @@ public class StripeWebhookFunction
                 await _storage.UpdateOrderAsync(order);
             }
         }
+    }
+
+    private async Task HandleSessionExpired(Event stripeEvent)
+    {
+        if (stripeEvent.Data.Object is not Session session)
+            return;
+
+        if (session.Metadata.GetValueOrDefault("flow") != CookieSale2026Catalog.Flow)
+            return;
+
+        var orderId = session.Metadata.GetValueOrDefault("orderId") ?? "";
+        if (!string.IsNullOrWhiteSpace(orderId))
+            await _storage.TryMarkCookieOrderStatusAsync(orderId, CookieOrderStatus.Cancelled);
     }
 
     private string GenerateQrPayload(string ticketId)

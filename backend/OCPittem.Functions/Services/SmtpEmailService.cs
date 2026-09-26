@@ -267,6 +267,75 @@ public class SmtpEmailService : IEmailService
         _logger.LogInformation("Sponsor payment confirmation sent to {Email} ({Company}).", toEmail, companyName);
     }
 
+    public async Task SendCookieSaleConfirmationAsync(CookieSaleConfirmationData data)
+    {
+        if (!_enabled)
+        {
+            _logger.LogInformation(
+                "Email disabled. Would send cookie confirmation for order {OrderId}.",
+                data.OrderId);
+            return;
+        }
+
+        using var message = CreateHtmlMessage(
+            new MailAddress(_fromEmail, _fromName, Encoding.UTF8),
+            $"Bevestiging koekjesbestelling OC Pittem – {data.ConfirmationNumber}",
+            EmailHtmlBuilder.BuildCookieSaleConfirmationHtml(data));
+        message.To.Add(new MailAddress(data.Email, data.Name, Encoding.UTF8));
+
+        await SendAsync(message, $"cookie confirmation for order {data.OrderId}");
+        _logger.LogInformation(
+            "Cookie confirmation email sent for order {OrderId} ({ConfirmationNumber}).",
+            data.OrderId,
+            data.ConfirmationNumber);
+    }
+
+    public async Task SendCookieSaleDailyReportAsync(
+        IReadOnlyList<string> recipients,
+        byte[] excelBytes,
+        CookieSaleReportStats stats,
+        DateTime reportDate)
+    {
+        var dateLabel = reportDate.ToString("dd/MM/yyyy");
+        if (!_enabled)
+        {
+            _logger.LogInformation(
+                "Email disabled. Would send cookie-sale report ({Date}) to {Count} recipient(s).",
+                dateLabel,
+                recipients.Count);
+            return;
+        }
+
+        var html = $@"
+            <div style=""font-family:Arial,sans-serif;max-width:600px;margin:0 auto;"">
+                <h2 style=""color:#13A2A3;margin-bottom:4px;"">Koekjesverkoop 2026 &mdash; Dagelijks overzicht</h2>
+                <p style=""color:#666;margin-top:0;"">Rapport van {dateLabel}</p>
+                <hr style=""border:none;border-top:2px solid #13A2A3;margin-bottom:20px;""/>
+                <p><strong>Betaalde bestellingen:</strong> {stats.TotalOrders}</p>
+                <p><strong>Côte d'Or:</strong> {stats.TotalCoteDorPackages}<br/>
+                   <strong>Lotus:</strong> {stats.TotalLotusPackages}<br/>
+                   <strong>Totaal pakketten:</strong> {stats.TotalPackages}</p>
+                <p style=""font-size:17px;font-weight:bold;color:#13A2A3;"">Totale omzet: {EmailHtmlBuilder.FormatEuroCents(stats.TotalAmountCents)}</p>
+                <p>Het overzicht en de lijsten per klas vind je in de Excel-bijlage.</p>
+            </div>";
+
+        using var message = CreateHtmlMessage(
+            new MailAddress(_fromEmail, _fromName, Encoding.UTF8),
+            $"Koekjesverkoop 2026 – Dagelijks overzicht {dateLabel}",
+            html);
+        foreach (var recipient in recipients.Where(recipient => !string.IsNullOrWhiteSpace(recipient)))
+            message.To.Add(new MailAddress(recipient));
+        message.Attachments.Add(CreateAttachment(
+            excelBytes,
+            $"Koekjesverkoop_2026_Bestellingen_{reportDate:yyyyMMdd}.xlsx",
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"));
+
+        await SendAsync(message, $"cookie-sale report to {recipients.Count} recipient(s)");
+        _logger.LogInformation(
+            "Cookie-sale report sent to {Count} recipient(s).",
+            recipients.Count);
+    }
+
     private async Task SendAsync(MailMessage message, string context)
     {
         try

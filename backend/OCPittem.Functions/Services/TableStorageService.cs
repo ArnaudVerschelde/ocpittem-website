@@ -3,6 +3,7 @@ using Azure.Data.Tables;
 using Azure.Storage.Blobs;
 using Azure.Storage.Blobs.Models;
 using Azure.Storage.Sas;
+using OCPittem.Functions.Configuration;
 using OCPittem.Functions.Models;
 
 namespace OCPittem.Functions.Services;
@@ -12,6 +13,7 @@ public class TableStorageService : IStorageService
     private readonly TableServiceClient _serviceClient;
     private readonly BlobServiceClient _blobServiceClient;
     private readonly string _ordersTable;
+    private readonly string _cookieOrdersTable;
     private readonly string _ticketsTable;
     private readonly string _webhookEventsTable;
     private readonly string _sponsorsTable;
@@ -24,6 +26,7 @@ public class TableStorageService : IStorageService
         _serviceClient = new TableServiceClient(connectionString);
         _blobServiceClient = new BlobServiceClient(connectionString);
         _ordersTable = options.TableNameOrders;
+        _cookieOrdersTable = options.TableNameCookieOrders;
         _ticketsTable = options.TableNameTickets;
         _webhookEventsTable = options.TableNameWebhookEvents;
         _sponsorsTable = options.TableNameSponsors;
@@ -88,6 +91,65 @@ public class TableStorageService : IStorageService
     {
         var table = await GetTableAsync(_webhookEventsTable);
         await table.AddEntityAsync(webhookEvent);
+    }
+
+    public async Task<WebhookEventBeginResult> TryBeginWebhookEventAsync(
+        string eventId,
+        bool allowRetry,
+        DateTimeOffset receivedUtc)
+    {
+        var table = await GetTableAsync(_webhookEventsTable);
+        var newEvent = new WebhookEventEntity
+        {
+            PartitionKey = "Stripe",
+            RowKey = eventId,
+            ReceivedAt = receivedUtc.UtcDateTime,
+            Result = "received",
+        };
+
+        try
+        {
+            await table.AddEntityAsync(newEvent);
+            return WebhookEventBeginResult.Acquired;
+        }
+        catch (RequestFailedException ex) when (ex.Status == 409)
+        {
+        }
+
+        WebhookEventEntity existingEvent;
+        try
+        {
+            existingEvent = (await table.GetEntityAsync<WebhookEventEntity>("Stripe", eventId)).Value;
+        }
+        catch (RequestFailedException ex) when (ex.Status == 404)
+        {
+            return WebhookEventBeginResult.InProgress;
+        }
+
+        if (string.Equals(existingEvent.Result, "processed", StringComparison.Ordinal)
+            || !allowRetry)
+        {
+            return WebhookEventBeginResult.AlreadyProcessed;
+        }
+
+        var claimExpired = existingEvent.ReceivedAt <= receivedUtc.UtcDateTime.AddMinutes(-5);
+        var failedAttempt = existingEvent.Result.StartsWith("error:", StringComparison.Ordinal);
+        if (!failedAttempt && !claimExpired)
+            return WebhookEventBeginResult.InProgress;
+
+        existingEvent.ReceivedAt = receivedUtc.UtcDateTime;
+        existingEvent.ProcessedAt = null;
+        existingEvent.Result = "received";
+
+        try
+        {
+            await table.UpdateEntityAsync(existingEvent, existingEvent.ETag, TableUpdateMode.Replace);
+            return WebhookEventBeginResult.Acquired;
+        }
+        catch (RequestFailedException ex) when (ex.Status == 412)
+        {
+            return WebhookEventBeginResult.InProgress;
+        }
     }
 
     public async Task SaveSponsorRequestAsync(SponsorRequestEntity request)
@@ -357,5 +419,204 @@ public class TableStorageService : IStorageService
         return blobClient
             .GenerateSasUri(BlobSasPermissions.Read, expiresOn)
             .ToString();
+    }
+
+    public async Task SaveCookieOrderAsync(CookieOrderEntity order)
+    {
+        var table = await GetTableAsync(_cookieOrdersTable);
+        await table.AddEntityAsync(order);
+    }
+
+    public async Task<CookieOrderEntity?> GetCookieOrderAsync(string orderId)
+    {
+        var table = await GetTableAsync(_cookieOrdersTable);
+        try
+        {
+            var response = await table.GetEntityAsync<CookieOrderEntity>(
+                CookieSale2026Catalog.PartitionKey,
+                orderId);
+            return response.Value;
+        }
+        catch (RequestFailedException ex) when (ex.Status == 404)
+        {
+            return null;
+        }
+    }
+
+    public async Task<CookieOrderEntity?> GetCookieOrderByStripeSessionAsync(string sessionId)
+    {
+        var table = await GetTableAsync(_cookieOrdersTable);
+        var filter = TableClient.CreateQueryFilter<CookieOrderEntity>(
+            order => order.PartitionKey == CookieSale2026Catalog.PartitionKey
+                && order.StripeCheckoutSessionId == sessionId);
+
+        await foreach (var order in table.QueryAsync<CookieOrderEntity>(filter: filter, maxPerPage: 1))
+            return order;
+
+        return null;
+    }
+
+    public async Task<IReadOnlyList<CookieOrderEntity>> GetPaidCookieOrdersAsync()
+    {
+        var table = await GetTableAsync(_cookieOrdersTable);
+        var paidStatus = nameof(CookieOrderStatus.Paid);
+        var filter = TableClient.CreateQueryFilter<CookieOrderEntity>(
+            order => order.PartitionKey == CookieSale2026Catalog.PartitionKey
+                && order.PaymentStatus == paidStatus);
+        var orders = new List<CookieOrderEntity>();
+
+        await foreach (var order in table.QueryAsync<CookieOrderEntity>(filter: filter))
+            orders.Add(order);
+
+        return orders;
+    }
+
+    public async Task SetCookieOrderStripeSessionAsync(string orderId, string sessionId)
+    {
+        var table = await GetTableAsync(_cookieOrdersTable);
+        var patch = new TableEntity(CookieSale2026Catalog.PartitionKey, orderId)
+        {
+            [nameof(CookieOrderEntity.StripeCheckoutSessionId)] = sessionId,
+        };
+        await table.UpdateEntityAsync(patch, ETag.All, TableUpdateMode.Merge);
+    }
+
+    public async Task<CookieOrderEntity?> TryMarkCookieOrderPaidAsync(
+        string orderId,
+        string sessionId,
+        string paymentIntentId,
+        DateTimeOffset paidUtc)
+    {
+        for (var attempt = 0; attempt < 3; attempt++)
+        {
+            var order = await GetCookieOrderAsync(orderId);
+            if (order is null)
+                return null;
+
+            if (order.PaymentStatus == nameof(CookieOrderStatus.Paid))
+                return order;
+
+            if (order.PaymentStatus != nameof(CookieOrderStatus.Pending))
+                return null;
+
+            order.PaymentStatus = nameof(CookieOrderStatus.Paid);
+            order.PaidUtc = paidUtc;
+            order.StripeCheckoutSessionId = sessionId;
+            order.StripePaymentIntentId = paymentIntentId;
+
+            try
+            {
+                var table = await GetTableAsync(_cookieOrdersTable);
+                await table.UpdateEntityAsync(order, order.ETag, TableUpdateMode.Replace);
+                return order;
+            }
+            catch (RequestFailedException ex) when (ex.Status == 412)
+            {
+            }
+        }
+
+        return await GetCookieOrderAsync(orderId);
+    }
+
+    public async Task TryMarkCookieOrderStatusAsync(string orderId, CookieOrderStatus status)
+    {
+        if (status is CookieOrderStatus.Pending or CookieOrderStatus.Paid)
+            throw new ArgumentOutOfRangeException(nameof(status), status, "Only terminal non-paid statuses are supported.");
+
+        for (var attempt = 0; attempt < 3; attempt++)
+        {
+            var order = await GetCookieOrderAsync(orderId);
+            if (order is null || order.PaymentStatus != nameof(CookieOrderStatus.Pending))
+                return;
+
+            order.PaymentStatus = status.ToString();
+
+            try
+            {
+                var table = await GetTableAsync(_cookieOrdersTable);
+                await table.UpdateEntityAsync(order, order.ETag, TableUpdateMode.Replace);
+                return;
+            }
+            catch (RequestFailedException ex) when (ex.Status == 412)
+            {
+            }
+        }
+    }
+
+    public async Task<CookieOrderEntity?> TryClaimCookieOrderConfirmationEmailAsync(
+        string orderId,
+        string claimId,
+        DateTimeOffset claimedUtc)
+    {
+        for (var attempt = 0; attempt < 3; attempt++)
+        {
+            var order = await GetCookieOrderAsync(orderId);
+            if (order is null
+                || order.PaymentStatus != nameof(CookieOrderStatus.Paid)
+                || order.ConfirmationEmailSentUtc.HasValue)
+            {
+                return null;
+            }
+
+            var activeClaim = order.ConfirmationEmailClaimedUtc.HasValue
+                && order.ConfirmationEmailClaimedUtc > claimedUtc.AddMinutes(-15);
+            if (activeClaim)
+                return null;
+
+            order.ConfirmationEmailClaimId = claimId;
+            order.ConfirmationEmailClaimedUtc = claimedUtc;
+
+            try
+            {
+                var table = await GetTableAsync(_cookieOrdersTable);
+                await table.UpdateEntityAsync(order, order.ETag, TableUpdateMode.Replace);
+                return order;
+            }
+            catch (RequestFailedException ex) when (ex.Status == 412)
+            {
+            }
+        }
+
+        return null;
+    }
+
+    public async Task MarkCookieOrderConfirmationEmailSentAsync(
+        string orderId,
+        string claimId,
+        DateTimeOffset sentUtc)
+    {
+        var order = await GetCookieOrderAsync(orderId);
+        if (order is null
+            || order.ConfirmationEmailSentUtc.HasValue
+            || order.ConfirmationEmailClaimId != claimId)
+        {
+            return;
+        }
+
+        order.ConfirmationEmailSentUtc = sentUtc;
+        await UpdateCookieOrderAsync(order);
+    }
+
+    public async Task ReleaseCookieOrderConfirmationEmailClaimAsync(
+        string orderId,
+        string claimId)
+    {
+        var order = await GetCookieOrderAsync(orderId);
+        if (order is null
+            || order.ConfirmationEmailSentUtc.HasValue
+            || order.ConfirmationEmailClaimId != claimId)
+        {
+            return;
+        }
+
+        order.ConfirmationEmailClaimId = string.Empty;
+        order.ConfirmationEmailClaimedUtc = null;
+        await UpdateCookieOrderAsync(order);
+    }
+
+    private async Task UpdateCookieOrderAsync(CookieOrderEntity order)
+    {
+        var table = await GetTableAsync(_cookieOrdersTable);
+        await table.UpdateEntityAsync(order, order.ETag, TableUpdateMode.Replace);
     }
 }

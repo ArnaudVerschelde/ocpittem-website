@@ -17,6 +17,11 @@
             string packageName,
             int extraEtenPartyCount,
             int extraDrankkaart20Count);
+        Task<StripeCheckoutResult> CreateCookieSaleCheckoutSessionAsync(
+            string orderId,
+            string email,
+            int coteDorQuantity,
+            int lotusQuantity);
         Stripe.Event ConstructWebhookEvent(string json, string signature);
     }
 }

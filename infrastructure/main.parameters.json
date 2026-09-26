@@ -32,17 +32,59 @@
     "appContactEmail": {
       "value": "oudercomitepittem@gmail.com"
     },
-    "sendGridFromEmail": {
+    "appReportRecipients": {
+      "value": ""
+    },
+    "mailjetFromEmail": {
+      "value": "oudercomitepittem@gmail.com"
+    },
+    "mailjetFromName": {
+      "value": "Oudercomité met Pit"
+    },
+    "mailjetContactFromEmail": {
+      "value": "oudercomitepittem@gmail.com"
+    },
+    "mailjetContactFromName": {
+      "value": "Oudercomité met Pit"
+    },
+    "mailjetTicketFromEmail": {
       "value": "balparental@ocpittem.be"
     },
-    "sendGridFromName": {
-      "value": "Oudercomit\u00e9 met Pit"
+    "mailjetTicketFromName": {
+      "value": "Oudercomité met Pit — Bal Parental"
     },
-    "stripeTicketPriceId": {
+    "stripePriceIdToegangsticket": {
+      "value": "price_xxx"
+    },
+    "stripePriceIdEtenParty": {
+      "value": "price_xxx"
+    },
+    "stripePriceIdDrankkaart10": {
+      "value": "price_xxx"
+    },
+    "stripePriceIdDrankkaart20": {
+      "value": "price_xxx"
+    },
+    "stripePriceIdSponsorBrons": {
+      "value": "price_xxx"
+    },
+    "stripePriceIdSponsorZilver": {
+      "value": "price_xxx"
+    },
+    "stripePriceIdSponsorGoud": {
+      "value": "price_xxx"
+    },
+    "stripePriceIdCookieCoteDor": {
+      "value": "price_xxx"
+    },
+    "stripePriceIdCookieLotus": {
       "value": "price_xxx"
     },
     "tableNameOrders": {
       "value": "Orders"
+    },
+    "tableNameCookieOrders": {
+      "value": "CookieOrders"
     },
     "tableNameTickets": {
       "value": "Tickets"
@@ -59,8 +101,11 @@
     "kvSecretStripeWebhookSecretName": {
       "value": "stripe-webhook-secret"
     },
-    "kvSecretSendGridApiKeyName": {
-      "value": "sendgrid-api-key"
+    "kvSecretMailjetApiKeyName": {
+      "value": "mailjet-api-key"
+    },
+    "kvSecretMailjetApiSecretName": {
+      "value": "mailjet-api-secret"
     },
     "corsAllowedOrigins": {
       "value": [
