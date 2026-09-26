@@ -38,14 +38,20 @@
     "appCookieReportRecipients": {
       "value": ""
     },
+    "emailEnabled": {
+      "value": true
+    },
+    "emailProvider": {
+      "value": "Mailjet"
+    },
     "mailjetFromEmail": {
-      "value": "oudercomitepittem@gmail.com"
+      "value": "oudercomite@ocpittem.be"
     },
     "mailjetFromName": {
       "value": "Oudercomité met Pit"
     },
     "mailjetContactFromEmail": {
-      "value": "oudercomitepittem@gmail.com"
+      "value": "oudercomitepittem@ocpittem.be"
     },
     "mailjetContactFromName": {
       "value": "Oudercomité met Pit"
@@ -54,34 +60,46 @@
       "value": "balparental@ocpittem.be"
     },
     "mailjetTicketFromName": {
-      "value": "Oudercomité met Pit — Bal Parental"
+      "value": "Bal Parental"
+    },
+    "smtpHost": {
+      "value": "smtp-auth.mailprotect.be"
+    },
+    "smtpPort": {
+      "value": 587
+    },
+    "smtpUsername": {
+      "value": "balparental@ocpittem.be"
+    },
+    "smtpEnableSsl": {
+      "value": true
     },
     "stripePriceIdToegangsticket": {
-      "value": "price_xxx"
+      "value": "price_1TDSAEBYwCYbNSDHwTgq7v2J"
     },
     "stripePriceIdEtenParty": {
-      "value": "price_xxx"
+      "value": "price_1TDSB2BYwCYbNSDHkrGTAq2J"
     },
     "stripePriceIdDrankkaart10": {
-      "value": "price_xxx"
+      "value": "price_1TDS8xBYwCYbNSDHtpjoCGYu"
     },
     "stripePriceIdDrankkaart20": {
-      "value": "price_xxx"
+      "value": "price_1TDS9YBYwCYbNSDHhA5y4QVm"
     },
     "stripePriceIdSponsorBrons": {
-      "value": "price_xxx"
+      "value": "price_1TEDzbBYwCYbNSDHtcX9hHgb"
     },
     "stripePriceIdSponsorZilver": {
-      "value": "price_xxx"
+      "value": "price_1TEE0ABYwCYbNSDHCox4MB1u"
     },
     "stripePriceIdSponsorGoud": {
-      "value": "price_xxx"
+      "value": "price_1TEE0mBYwCYbNSDHN5SyiroF"
     },
     "stripePriceIdCookieCoteDor": {
-      "value": "price_xxx"
+      "value": "price_1UJxdUBYwCYbNSDHv3OEiE9A"
     },
     "stripePriceIdCookieLotus": {
-      "value": "price_xxx"
+      "value": "price_1UJxcVBYwCYbNSDHg0uqTj93"
     },
     "tableNameOrders": {
       "value": "Orders"
@@ -98,6 +116,27 @@
     "tableNameSponsors": {
       "value": "SponsorRequests"
     },
+    "blobContainerTickets": {
+      "value": "ticket-pdfs"
+    },
+    "sponsorAttestationSignatureContainerName": {
+      "value": "document-assets"
+    },
+    "sponsorAttestationSignatureBlobName": {
+      "value": "sponsorattest-2026.png"
+    },
+    "disableBalParentalAdminFunctions": {
+      "value": true
+    },
+    "disableBalParentalSalesFunctions": {
+      "value": true
+    },
+    "disableBalParentalReportFunctions": {
+      "value": true
+    },
+    "disableTicketValidation": {
+      "value": true
+    },
     "kvSecretStripeSecretKeyName": {
       "value": "stripe-secret-key"
     },
@@ -105,10 +144,16 @@
       "value": "stripe-webhook-secret"
     },
     "kvSecretMailjetApiKeyName": {
-      "value": "mailjet-api-key"
+      "value": "sendgrid-api-key"
     },
     "kvSecretMailjetApiSecretName": {
-      "value": "mailjet-api-secret"
+      "value": "sendgrid-api-secret"
+    },
+    "kvSecretSmtpPasswordName": {
+      "value": "smtp-mailbox-password"
+    },
+    "kvSecretTicketHmacSecretName": {
+      "value": "ticket-hmac-secret"
     },
     "corsAllowedOrigins": {
       "value": [
