@@ -17,6 +17,7 @@ public static class CookieSale2026Catalog
         "Kleuter K1B - Lies Duyck & Eva Bernard",
         "Kleuter K1C - Fien Verhulst",
         "Kleuter K2A - Ellen Beeuwsaert",
+        "Kleuter K2B - Dominique Delacauw",
         "Kleuter K3A - Emma Vervaeke & Hanne Devisch",
         "Kleuter K3B - Amandine Buyse & Hanne Devisch",
         "Lager L1A - Fien Delaert (Tanita Eechkhout)",
