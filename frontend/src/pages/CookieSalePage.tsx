@@ -102,6 +102,7 @@ export default function CookieSalePage() {
   const [config, setConfig] = useState<CookieSaleConfig | null>(null);
   const [configError, setConfigError] = useState('');
   const [name, setName] = useState('');
+  const [studentName, setStudentName] = useState('');
   const [email, setEmail] = useState('');
   const [className, setClassName] = useState('');
   const [coteDorQuantity, setCoteDorQuantity] = useState(0);
@@ -152,8 +153,8 @@ export default function CookieSalePage() {
       return;
     }
 
-    if (!name.trim() || !email.trim() || !className) {
-      setSubmitError('Vul je naam, e-mailadres en klas in.');
+    if (!name.trim() || !studentName.trim() || !email.trim() || !className) {
+      setSubmitError('Vul de naam van de besteller en leerling, het e-mailadres en de klas in.');
       return;
     }
 
@@ -171,6 +172,7 @@ export default function CookieSalePage() {
     try {
       const response = await api.createCookieSaleCheckout({
         name,
+        studentName: studentName.trim(),
         email,
         className,
         coteDorQuantity,
@@ -276,7 +278,7 @@ export default function CookieSalePage() {
 
             <form onSubmit={handleSubmit} className="mt-6 space-y-5">
               <div>
-                <label htmlFor="cookie-name" className="block text-sm font-medium text-gray-700">Naam</label>
+                <label htmlFor="cookie-name" className="block text-sm font-medium text-gray-700">Naam ouder / besteller</label>
                 <input
                   id="cookie-name"
                   type="text"
@@ -284,6 +286,19 @@ export default function CookieSalePage() {
                   disabled={!orderingAvailable}
                   value={name}
                   onChange={(event) => setName(event.target.value)}
+                  className="mt-1 block w-full rounded-lg border border-gray-300 px-4 py-2.5 text-gray-900 shadow-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-200 disabled:bg-gray-100"
+                />
+              </div>
+
+              <div>
+                <label htmlFor="cookie-student-name" className="block text-sm font-medium text-gray-700">Naam leerling</label>
+                <input
+                  id="cookie-student-name"
+                  type="text"
+                  required
+                  disabled={!orderingAvailable}
+                  value={studentName}
+                  onChange={(event) => setStudentName(event.target.value)}
                   className="mt-1 block w-full rounded-lg border border-gray-300 px-4 py-2.5 text-gray-900 shadow-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-200 disabled:bg-gray-100"
                 />
               </div>

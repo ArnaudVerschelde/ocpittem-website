@@ -309,6 +309,7 @@ public class EmailHtmlBuilderTests
             OrderId: "order-1",
             ConfirmationNumber: "KV26-23456789ABCD",
             Name: "<Ouder>",
+            StudentName: "Leerling & Test",
             Email: "ouder@example.com",
             ClassName: "Klas & test",
             CoteDorQuantity: 2,
@@ -320,6 +321,8 @@ public class EmailHtmlBuilderTests
 
         Assert.Contains("KV26-23456789ABCD", html);
         Assert.Contains("&lt;Ouder&gt;", html);
+        Assert.Contains("Leerling &amp; Test", html);
+        Assert.Contains("Naam leerling", html);
         Assert.Contains("Klas &amp; test", html);
         Assert.Contains("2 x &euro;11,00", html);
         Assert.Contains("1 x &euro;9,00", html);

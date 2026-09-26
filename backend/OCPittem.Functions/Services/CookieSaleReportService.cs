@@ -28,10 +28,11 @@ public class CookieSaleReportService : ICookieSaleReportService
 
     public async Task SendDailyReportAsync()
     {
-        var recipients = _appOptions.GetReportRecipients();
+        var recipients = _appOptions.GetCookieReportRecipients();
         if (recipients.Count == 0)
         {
-            _logger.LogWarning("CookieSaleReport: no recipients configured in App__ReportRecipients.");
+            _logger.LogWarning(
+                "CookieSaleReport: no recipients configured in App__CookieReportRecipients or App__ReportRecipients.");
             return;
         }
 
@@ -79,14 +80,15 @@ public class CookieSaleReportService : ICookieSaleReportService
         string[] headers =
         [
             "Bevestigingsnummer",
-            "Besteldatum",
-            "Naam",
-            "E-mail",
+            "Naam leerling",
             "Klas",
+            "Naam besteller",
+            "E-mail",
             "Côte d'Or",
             "Lotus",
             "Totaal pakketten",
             "Totaalbedrag",
+            "Betaald op",
         ];
         WriteHeader(worksheet, headers);
 
@@ -94,30 +96,34 @@ public class CookieSaleReportService : ICookieSaleReportService
         foreach (var order in orders)
         {
             worksheet.Cell(row, 1).Value = order.ConfirmationNumber;
-            worksheet.Cell(row, 2).Value = order.CreatedUtc.UtcDateTime;
-            worksheet.Cell(row, 2).Style.DateFormat.Format = "dd/MM/yyyy HH:mm";
-            worksheet.Cell(row, 3).Value = order.Name;
-            worksheet.Cell(row, 4).Value = order.Email;
-            worksheet.Cell(row, 5).Value = order.ClassName;
+            worksheet.Cell(row, 2).Value = order.StudentName;
+            worksheet.Cell(row, 3).Value = order.ClassName;
+            worksheet.Cell(row, 4).Value = order.Name;
+            worksheet.Cell(row, 5).Value = order.Email;
             worksheet.Cell(row, 6).Value = order.CoteDorQuantity;
             worksheet.Cell(row, 7).Value = order.LotusQuantity;
             worksheet.Cell(row, 8).Value = order.TotalPackages;
             worksheet.Cell(row, 9).Value = order.TotalAmountCents / 100m;
             worksheet.Cell(row, 9).Style.NumberFormat.Format = "€ #,##0.00";
+            if (order.PaidUtc.HasValue)
+            {
+                worksheet.Cell(row, 10).Value = order.PaidUtc.Value.UtcDateTime;
+                worksheet.Cell(row, 10).Style.DateFormat.Format = "dd/MM/yyyy HH:mm";
+            }
             row++;
         }
 
         var totalsRow = row + 1;
         worksheet.Cell(totalsRow, 1).Value = "TOTALEN";
         worksheet.Cell(totalsRow, 1).Style.Font.Bold = true;
-        WriteSummaryValue(worksheet, totalsRow, 5, "Bestellingen", orders.Count);
-        WriteSummaryValue(worksheet, totalsRow + 1, 5, "Côte d'Or", orders.Sum(order => order.CoteDorQuantity));
-        WriteSummaryValue(worksheet, totalsRow + 2, 5, "Lotus", orders.Sum(order => order.LotusQuantity));
-        WriteSummaryValue(worksheet, totalsRow + 3, 5, "Totaal pakketten", orders.Sum(order => order.TotalPackages));
+        WriteSummaryValue(worksheet, totalsRow, 7, "Bestellingen", orders.Count);
+        WriteSummaryValue(worksheet, totalsRow + 1, 7, "Côte d'Or", orders.Sum(order => order.CoteDorQuantity));
+        WriteSummaryValue(worksheet, totalsRow + 2, 7, "Lotus", orders.Sum(order => order.LotusQuantity));
+        WriteSummaryValue(worksheet, totalsRow + 3, 7, "Totaal pakketten", orders.Sum(order => order.TotalPackages));
         WriteSummaryValue(
             worksheet,
             totalsRow + 4,
-            5,
+            7,
             "Totale omzet",
             orders.Sum(order => order.TotalAmountCents) / 100m,
             currency: true);
@@ -138,12 +144,15 @@ public class CookieSaleReportService : ICookieSaleReportService
             string[] headers =
             [
                 "Bevestigingsnummer",
-                "Naam",
+                "Naam leerling",
+                "Klas",
+                "Naam besteller",
                 "E-mail",
                 "Côte d'Or",
                 "Lotus",
                 "Totaal pakketten",
                 "Totaalbedrag",
+                "Betaald op",
             ];
             WriteHeader(worksheet, headers);
 
@@ -155,26 +164,33 @@ public class CookieSaleReportService : ICookieSaleReportService
             foreach (var order in classOrders)
             {
                 worksheet.Cell(row, 1).Value = order.ConfirmationNumber;
-                worksheet.Cell(row, 2).Value = order.Name;
-                worksheet.Cell(row, 3).Value = order.Email;
-                worksheet.Cell(row, 4).Value = order.CoteDorQuantity;
-                worksheet.Cell(row, 5).Value = order.LotusQuantity;
-                worksheet.Cell(row, 6).Value = order.TotalPackages;
-                worksheet.Cell(row, 7).Value = order.TotalAmountCents / 100m;
-                worksheet.Cell(row, 7).Style.NumberFormat.Format = "€ #,##0.00";
+                worksheet.Cell(row, 2).Value = order.StudentName;
+                worksheet.Cell(row, 3).Value = order.ClassName;
+                worksheet.Cell(row, 4).Value = order.Name;
+                worksheet.Cell(row, 5).Value = order.Email;
+                worksheet.Cell(row, 6).Value = order.CoteDorQuantity;
+                worksheet.Cell(row, 7).Value = order.LotusQuantity;
+                worksheet.Cell(row, 8).Value = order.TotalPackages;
+                worksheet.Cell(row, 9).Value = order.TotalAmountCents / 100m;
+                worksheet.Cell(row, 9).Style.NumberFormat.Format = "€ #,##0.00";
+                if (order.PaidUtc.HasValue)
+                {
+                    worksheet.Cell(row, 10).Value = order.PaidUtc.Value.UtcDateTime;
+                    worksheet.Cell(row, 10).Style.DateFormat.Format = "dd/MM/yyyy HH:mm";
+                }
                 row++;
             }
 
             var totalsRow = row + 1;
             worksheet.Cell(totalsRow, 1).Value = "TOTALEN";
             worksheet.Cell(totalsRow, 1).Style.Font.Bold = true;
-            WriteSummaryValue(worksheet, totalsRow, 3, "Côte d'Or", classOrders.Sum(order => order.CoteDorQuantity));
-            WriteSummaryValue(worksheet, totalsRow + 1, 3, "Lotus", classOrders.Sum(order => order.LotusQuantity));
-            WriteSummaryValue(worksheet, totalsRow + 2, 3, "Totaal pakketten", classOrders.Sum(order => order.TotalPackages));
+            WriteSummaryValue(worksheet, totalsRow, 7, "Côte d'Or", classOrders.Sum(order => order.CoteDorQuantity));
+            WriteSummaryValue(worksheet, totalsRow + 1, 7, "Lotus", classOrders.Sum(order => order.LotusQuantity));
+            WriteSummaryValue(worksheet, totalsRow + 2, 7, "Totaal pakketten", classOrders.Sum(order => order.TotalPackages));
             WriteSummaryValue(
                 worksheet,
                 totalsRow + 3,
-                3,
+                7,
                 "Omzet",
                 classOrders.Sum(order => order.TotalAmountCents) / 100m,
                 currency: true);

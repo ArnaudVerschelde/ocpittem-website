@@ -41,7 +41,7 @@ De applicatie bestaat uit een **React single-page app** (frontend), een **Azure 
 - **Sponsors** — sponsoraanvragen, betaling, logo-upload en fiscale attesten worden afgehandeld door de sponsor-functions en opgeslagen in Blob/Table Storage.
 - **Koekjesverkoop 2026** — de pagina `/koekjesverkoop` maakt een Pending bestelling vóór Stripe Checkout, bevestigt betalingen via de gedeelde Stripe-webhook en verstuurt een bevestiging via de bestaande e-mailservice.
 - **Contact** — `POST /api/contact` verstuurt een e-mail naar het oudercomité.
-- **Dagrapport** — een timer-triggered Function (`DailyReportFunction`) verstuurt het bestaande Bal Parental rapport en een afzonderlijk Paid-only koekjesrapport met een overzicht en werkblad per klas.
+- **Dagrapporten** — afzonderlijke timer-functions versturen het bestaande Bal Parental rapport en het Paid-only koekjesrapport met een overzicht en werkblad per klas.
 
 ---
 
@@ -108,7 +108,10 @@ De applicatie bestaat uit een **React single-page app** (frontend), een **Azure 
 | `POST /api/sponsors/...` | `SponsorRequestFunction` e.a. | Sponsoraanvraag, betaling, logo-upload, attest |
 | `GET  /api/gallery/...` | `GalleryFunction` | Levert sfeerbeelden-galerij |
 | `GET  /api/health` | `HealthFunction` | Health check |
-| *(timer)* | `DailyReportFunction` | Dagelijks verkooprapport |
+| `POST /api/manage/report/bal-parental/send` | `DailyReportFunction` | Verstuurt alleen het Bal Parental rapport |
+| `POST /api/manage/report/cookie-sale/send` | `CookieSaleReportFunction` | Verstuurt alleen het koekjesverkooprapport |
+| *(timer)* | `DailyReportFunction` | Dagelijks Bal Parental rapport |
+| *(timer)* | `CookieSaleReportFunction` | Dagelijks koekjesverkooprapport |
 
 > De `Admin*`-functions bieden beheeracties (manueel order/sponsor aanmaken, als betaald markeren, e-mail opnieuw versturen).
 
@@ -148,7 +151,8 @@ func start
 
 - Vul de definitieve, door de school bevestigde klassen in bij `CookieSale2026Catalog.AllowedClasses`. Dit is bewust de enige bron voor frontend- en backendvalidatie. Zolang de lijst leeg is, blijft de publieke pagina zichtbaar maar is bestellen uitgeschakeld.
 - Vervang `Stripe__PriceIdCookieCoteDor` en `Stripe__PriceIdCookieLotus` door echte Stripe Price IDs voor respectievelijk €11 en €9. De meegeleverde `price_xxx`-waarden zijn alleen placeholders.
-- De bestellingen worden opgeslagen in de bestaande Storage Account, tabel `CookieOrders`, en de aparte dagelijkse rapportmail gebruikt `App__ReportRecipients`.
+- De bestellingen worden opgeslagen in de bestaande Storage Account, tabel `CookieOrders`.
+- De aparte dagelijkse koekjesrapportmail gebruikt `App__CookieReportRecipients`. Als deze instelling leeg is, valt ze voor achterwaartse compatibiliteit terug op `App__ReportRecipients`.
 
 ---
 

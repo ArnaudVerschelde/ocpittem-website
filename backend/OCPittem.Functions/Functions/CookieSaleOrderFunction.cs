@@ -90,6 +90,7 @@ public class CookieSaleOrderFunction
             OrderId = orderId,
             ConfirmationNumber = ConfirmationNumberGenerator.Generate(),
             Name = validatedOrder!.Name,
+            StudentName = validatedOrder.StudentName,
             Email = validatedOrder.Email,
             ClassName = validatedOrder.ClassName,
             CoteDorQuantity = validatedOrder.CoteDorQuantity,

@@ -59,6 +59,7 @@ export interface CookieSaleConfig {
 
 export interface CreateCookieSaleCheckoutRequest {
   name: string;
+  studentName: string;
   email: string;
   className: string;
   coteDorQuantity: number;

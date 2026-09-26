@@ -48,9 +48,19 @@ public class AppOptions
     public string ContactEmail { get; init; } = "";
     public string TicketHmacSecret { get; init; } = "";
     public string ReportRecipients { get; init; } = "";
+    public string CookieReportRecipients { get; init; } = "";
 
     public IReadOnlyList<string> GetReportRecipients() =>
-        ReportRecipients.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        SplitRecipients(ReportRecipients);
+
+    public IReadOnlyList<string> GetCookieReportRecipients()
+    {
+        var cookieRecipients = SplitRecipients(CookieReportRecipients);
+        return cookieRecipients.Count > 0 ? cookieRecipients : GetReportRecipients();
+    }
+
+    private static IReadOnlyList<string> SplitRecipients(string recipients) =>
+        recipients.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
 }
 
 public class StorageOptions

@@ -9,16 +9,13 @@ namespace OCPittem.Functions.Functions;
 public class DailyReportFunction
 {
     private readonly IDailyReportService _reportService;
-    private readonly ICookieSaleReportService _cookieSaleReportService;
     private readonly ILogger<DailyReportFunction> _logger;
 
     public DailyReportFunction(
         IDailyReportService reportService,
-        ICookieSaleReportService cookieSaleReportService,
         ILogger<DailyReportFunction> logger)
     {
         _reportService = reportService;
-        _cookieSaleReportService = cookieSaleReportService;
         _logger = logger;
     }
 
@@ -32,16 +29,14 @@ public class DailyReportFunction
             _logger.LogWarning("DailyReport timer is running late.");
 
         await _reportService.SendDailyReportAsync();
-        await _cookieSaleReportService.SendDailyReportAsync();
     }
 
     [Function("DailyReportManual")]
     public async Task<IActionResult> RunManual(
-        [HttpTrigger(AuthorizationLevel.Function, "post", Route = "manage/report/send")] HttpRequest req)
+        [HttpTrigger(AuthorizationLevel.Function, "post", Route = "manage/report/bal-parental/send")] HttpRequest req)
     {
-        _logger.LogInformation("DailyReport manually triggered at {Time} UTC.", DateTime.UtcNow);
+        _logger.LogInformation("Bal Parental report manually triggered at {Time} UTC.", DateTime.UtcNow);
         await _reportService.SendDailyReportAsync();
-        await _cookieSaleReportService.SendDailyReportAsync();
-        return new OkObjectResult(new { message = "Dagelijks rapport verstuurd." });
+        return new OkObjectResult(new { message = "Bal Parental-rapport verstuurd." });
     }
 }

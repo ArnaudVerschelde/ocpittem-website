@@ -35,6 +35,9 @@
     "appReportRecipients": {
       "value": ""
     },
+    "appCookieReportRecipients": {
+      "value": ""
+    },
     "mailjetFromEmail": {
       "value": "oudercomitepittem@gmail.com"
     },

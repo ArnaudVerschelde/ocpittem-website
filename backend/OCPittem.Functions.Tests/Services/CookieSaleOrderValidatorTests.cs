@@ -87,9 +87,31 @@ public class CookieSaleOrderValidatorTests
         Assert.Equal("Testklas", order!.ClassName);
     }
 
+    [Fact]
+    public void TryValidate_MissingStudentName_IsRejected()
+    {
+        var request = CreateRequest(1, 0) with { StudentName = "   " };
+
+        var valid = CookieSaleOrderValidator.TryValidate(request, Classes, out _, out _);
+
+        Assert.False(valid);
+    }
+
+    [Fact]
+    public void TryValidate_StudentName_IsTrimmed()
+    {
+        var request = CreateRequest(1, 0) with { StudentName = "  Leerling Test  " };
+
+        var valid = CookieSaleOrderValidator.TryValidate(request, Classes, out var order, out _);
+
+        Assert.True(valid);
+        Assert.Equal("Leerling Test", order!.StudentName);
+    }
+
     private static CreateCookieSaleCheckoutRequest CreateRequest(int coteDorQuantity, int lotusQuantity) =>
         new(
             Name: "Test Ouder",
+            StudentName: "Test Leerling",
             Email: "ouder@example.com",
             ClassName: "Testklas",
             CoteDorQuantity: coteDorQuantity,

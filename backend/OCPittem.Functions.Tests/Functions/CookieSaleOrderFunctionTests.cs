@@ -69,6 +69,7 @@ public class CookieSaleOrderFunctionTests
                 && order.TotalAmountCents == 3100
                 && order.TotalPackages == 3
                 && order.ClassName == "Testklas"
+                && order.StudentName == "Test Leerling"
                 && order.ConfirmationNumber.StartsWith("KV26-")));
             _stripe.CreateCookieSaleCheckoutSessionAsync(
                 Arg.Any<string>(),
@@ -145,6 +146,7 @@ public class CookieSaleOrderFunctionTests
         HttpRequestHelper.CreateJsonRequest(new
         {
             name = "Test Ouder",
+            studentName = "  Test Leerling  ",
             email = "ouder@example.com",
             className = "Testklas",
             coteDorQuantity = 2,

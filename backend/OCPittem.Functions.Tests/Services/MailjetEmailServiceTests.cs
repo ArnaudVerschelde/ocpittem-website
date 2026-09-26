@@ -87,6 +87,7 @@ public class MailjetEmailServiceTests
                 "order-1",
                 "KV26-23456789ABCD",
                 "Naam",
+                "Leerling",
                 "to@example.com",
                 "Testklas",
                 1,

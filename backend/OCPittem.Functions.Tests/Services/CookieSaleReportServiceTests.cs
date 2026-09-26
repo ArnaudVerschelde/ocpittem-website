@@ -55,12 +55,16 @@ public class CookieSaleReportServiceTests
         var overview = workbook.Worksheet("Overzicht");
         Assert.Equal("KV26-AAAAAAAAAAAA", overview.Cell(2, 1).GetString());
         Assert.Equal("KV26-BBBBBBBBBBBB", overview.Cell(3, 1).GetString());
+        Assert.Equal("Naam leerling", overview.Cell(1, 2).GetString());
+        Assert.Equal("Leerling Anna", overview.Cell(2, 2).GetString());
         Assert.DoesNotContain(
             overview.CellsUsed(),
             cell => cell.GetString() == "KV26-PENDING00000");
 
         var classA = workbook.Worksheet("Klas A");
         Assert.Equal("KV26-AAAAAAAAAAAA", classA.Cell(2, 1).GetString());
+        Assert.Equal("Naam leerling", classA.Cell(1, 2).GetString());
+        Assert.Equal("Leerling Anna", classA.Cell(2, 2).GetString());
         Assert.DoesNotContain(classA.CellsUsed(), cell => cell.GetString() == "KV26-BBBBBBBBBBBB");
 
         var classB = workbook.Worksheet("Klas B");
@@ -120,11 +124,33 @@ public class CookieSaleReportServiceTests
             Arg.Any<DateTime>());
     }
 
-    private CookieSaleReportService CreateSut(string recipients) =>
+    [Fact]
+    public async Task SendDailyReportAsync_EmptyCookieRecipients_FallsBackToReportRecipients()
+    {
+        _storage.GetPaidCookieOrdersAsync().Returns([]);
+        var sut = CreateSut("", "fallback@example.com");
+
+        await sut.SendDailyReportAsync();
+
+        await _email.Received(1).SendCookieSaleDailyReportAsync(
+            Arg.Is<IReadOnlyList<string>>(recipients =>
+                recipients.SequenceEqual(new[] { "fallback@example.com" })),
+            Arg.Any<byte[]>(),
+            Arg.Any<CookieSaleReportStats>(),
+            Arg.Any<DateTime>());
+    }
+
+    private CookieSaleReportService CreateSut(
+        string cookieRecipients,
+        string reportRecipients = "") =>
         new(
             _storage,
             _email,
-            Options.Create(new AppOptions { ReportRecipients = recipients }),
+            Options.Create(new AppOptions
+            {
+                CookieReportRecipients = cookieRecipients,
+                ReportRecipients = reportRecipients,
+            }),
             _logger);
 
     private static CookieOrderEntity CreateOrder(
@@ -141,6 +167,7 @@ public class CookieSaleReportServiceTests
             ConfirmationNumber = confirmationNumber,
             ClassName = className,
             Name = name,
+            StudentName = $"Leerling {name}",
             Email = $"{name.ToLowerInvariant()}@example.com",
             CoteDorQuantity = coteDorQuantity,
             LotusQuantity = lotusQuantity,
@@ -148,6 +175,9 @@ public class CookieSaleReportServiceTests
             TotalAmountCents = coteDorQuantity * 1100 + lotusQuantity * 900,
             PaymentStatus = status.ToString(),
             CreatedUtc = new DateTimeOffset(2026, 9, 26, 8, 0, 0, TimeSpan.Zero),
+            PaidUtc = status == CookieOrderStatus.Paid
+                ? new DateTimeOffset(2026, 9, 26, 9, 0, 0, TimeSpan.Zero)
+                : null,
         };
     }
 }

@@ -216,6 +216,7 @@ public class StripeWebhookFunction
                 claimedOrder.OrderId,
                 claimedOrder.ConfirmationNumber,
                 claimedOrder.Name,
+                claimedOrder.StudentName,
                 claimedOrder.Email,
                 claimedOrder.ClassName,
                 claimedOrder.CoteDorQuantity,

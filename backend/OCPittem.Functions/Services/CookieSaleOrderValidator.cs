@@ -30,6 +30,13 @@ internal static class CookieSaleOrderValidator
             return false;
         }
 
+        var studentName = request.StudentName?.Trim() ?? string.Empty;
+        if (studentName.Length == 0 || studentName.Length > MaximumNameLength)
+        {
+            error = "Vul een geldige naam van de leerling in.";
+            return false;
+        }
+
         var email = request.Email?.Trim() ?? string.Empty;
         if (email.Length == 0
             || email.Length > MaximumEmailLength
@@ -73,6 +80,7 @@ internal static class CookieSaleOrderValidator
 
         order = new ValidatedCookieSaleOrder(
             name,
+            studentName,
             email,
             canonicalClass,
             request.CoteDorQuantity,

@@ -4,6 +4,7 @@ public sealed record CookieSaleConfirmationData(
     string OrderId,
     string ConfirmationNumber,
     string Name,
+    string StudentName,
     string Email,
     string ClassName,
     int CoteDorQuantity,

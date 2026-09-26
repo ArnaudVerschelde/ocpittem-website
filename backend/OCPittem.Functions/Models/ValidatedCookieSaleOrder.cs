@@ -2,6 +2,7 @@ namespace OCPittem.Functions.Models;
 
 public sealed record ValidatedCookieSaleOrder(
     string Name,
+    string StudentName,
     string Email,
     string ClassName,
     int CoteDorQuantity,

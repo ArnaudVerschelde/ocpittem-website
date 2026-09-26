@@ -32,6 +32,7 @@ param enablePurgeProtection bool = true
 param appFrontendUrl string = 'https://ocpittem.be'
 param appContactEmail string = 'oudercomitepittem@gmail.com'
 param appReportRecipients string = ''
+param appCookieReportRecipients string = ''
 param mailjetFromEmail string = 'oudercomitepittem@gmail.com'
 param mailjetFromName string = 'Oudercomité met Pit'
 param mailjetContactFromEmail string = 'oudercomitepittem@gmail.com'
@@ -251,6 +252,7 @@ resource functionApp 'Microsoft.Web/sites@2023-12-01' = {
         { name: 'App__FrontendUrl', value: appFrontendUrl }
         { name: 'App__ContactEmail', value: appContactEmail }
         { name: 'App__ReportRecipients', value: appReportRecipients }
+        { name: 'App__CookieReportRecipients', value: appCookieReportRecipients }
 
         // Table names
         { name: 'Storage__TableNameOrders', value: tableNameOrders }

@@ -72,6 +72,7 @@ internal static class EmailHtmlBuilder
     internal static string BuildCookieSaleConfirmationHtml(CookieSaleConfirmationData data)
     {
         var safeName = WebUtility.HtmlEncode(data.Name);
+        var safeStudentName = WebUtility.HtmlEncode(data.StudentName);
         var safeConfirmationNumber = WebUtility.HtmlEncode(data.ConfirmationNumber);
         var safeClassName = WebUtility.HtmlEncode(data.ClassName);
         var lines = new StringBuilder();
@@ -104,6 +105,7 @@ internal static class EmailHtmlBuilder
                 <p>Beste {safeName},</p>
                 <p>Bedankt voor je bestelling voor de koekjesverkoop van OC Pittem.</p>
                 <p><strong>Bevestigingsnummer:</strong> {safeConfirmationNumber}<br/>
+                   <strong>Naam leerling:</strong> {safeStudentName}<br/>
                    <strong>Klas:</strong> {safeClassName}</p>
                 <table style=""border-collapse:collapse;width:100%;font-size:14px;margin-top:18px;"">
                     <thead>
