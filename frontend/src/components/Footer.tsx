@@ -57,7 +57,7 @@ export default function Footer() {
                   href="mailto:oudercomite@ocpittem.be"
                   className="transition-colors hover:text-primary-600"
                 >
-                  oudercomitepittem@gmail.com
+                  oudercomite@ocpittem.be
                 </a>
               </li>
               <li>Pittem, West-Vlaanderen</li>
