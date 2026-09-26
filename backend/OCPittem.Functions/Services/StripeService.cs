@@ -1,5 +1,6 @@
 using Stripe;
 using Stripe.Checkout;
+using OCPittem.Functions.Configuration;
 
 namespace OCPittem.Functions.Services;
 
@@ -15,6 +16,8 @@ public class StripeService : IStripeService
     private readonly string _priceIdSponsorBrons;
     private readonly string _priceIdSponsorZilver;
     private readonly string _priceIdSponsorGoud;
+    private readonly string _priceIdCookieCoteDor;
+    private readonly string _priceIdCookieLotus;
     private readonly string _frontendUrl;
 
     public StripeService(StripeOptions options, string frontendUrl)
@@ -28,6 +31,8 @@ public class StripeService : IStripeService
         _priceIdSponsorBrons = options.PriceIdSponsorBrons;
         _priceIdSponsorZilver = options.PriceIdSponsorZilver;
         _priceIdSponsorGoud = options.PriceIdSponsorGoud;
+        _priceIdCookieCoteDor = options.PriceIdCookieCoteDor;
+        _priceIdCookieLotus = options.PriceIdCookieLotus;
         _frontendUrl = frontendUrl;
     }
 
@@ -113,4 +118,58 @@ public class StripeService : IStripeService
     public Stripe.Event ConstructWebhookEvent(string json, string signature)
         => EventUtility.ConstructEvent(json, signature, _webhookSecret,
             tolerance: 600, throwOnApiVersionMismatch: false);
+
+    public async Task<StripeCheckoutResult> CreateCookieSaleCheckoutSessionAsync(
+        string orderId,
+        string email,
+        int coteDorQuantity,
+        int lotusQuantity)
+    {
+        var options = BuildCookieSaleCheckoutOptions(
+            orderId,
+            email,
+            coteDorQuantity,
+            lotusQuantity);
+        var service = new SessionService();
+        var session = await service.CreateAsync(options);
+        return new StripeCheckoutResult(session.Url!, session.Id);
+    }
+
+    internal SessionCreateOptions BuildCookieSaleCheckoutOptions(
+        string orderId,
+        string email,
+        int coteDorQuantity,
+        int lotusQuantity)
+    {
+        var lineItems = new List<SessionLineItemOptions>();
+
+        if (coteDorQuantity > 0)
+            lineItems.Add(new SessionLineItemOptions
+            {
+                Price = _priceIdCookieCoteDor,
+                Quantity = coteDorQuantity,
+            });
+
+        if (lotusQuantity > 0)
+            lineItems.Add(new SessionLineItemOptions
+            {
+                Price = _priceIdCookieLotus,
+                Quantity = lotusQuantity,
+            });
+
+        return new SessionCreateOptions
+        {
+            PaymentMethodTypes = ["card", "bancontact"],
+            CustomerEmail = email,
+            LineItems = lineItems,
+            Mode = "payment",
+            SuccessUrl = $"{_frontendUrl}/koekjesverkoop/betaling/success?session_id={{CHECKOUT_SESSION_ID}}",
+            CancelUrl = $"{_frontendUrl}/koekjesverkoop/betaling/cancel",
+            Metadata = new Dictionary<string, string>
+            {
+                ["flow"] = CookieSale2026Catalog.Flow,
+                ["orderId"] = orderId,
+            },
+        };
+    }
 }

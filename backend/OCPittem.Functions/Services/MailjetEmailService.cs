@@ -370,4 +370,79 @@ public class MailjetEmailService : IEmailService
         await Send(builder.Build(), $"sponsor payment confirmation to {toEmail}");
         _logger.LogInformation("Sponsor payment confirmation sent to {Email} ({Company}).", toEmail, companyName);
     }
+
+    public async Task SendCookieSaleConfirmationAsync(CookieSaleConfirmationData data)
+    {
+        if (!_enabled)
+        {
+            _logger.LogInformation(
+                "Email disabled. Would send cookie confirmation for order {OrderId}.",
+                data.OrderId);
+            return;
+        }
+
+        var email = new TransactionalEmailBuilder()
+            .WithFrom(new SendContact(_fromEmail, _fromName))
+            .WithSubject($"Bevestiging koekjesbestelling OC Pittem – {data.ConfirmationNumber}")
+            .WithHtmlPart(EmailHtmlBuilder.BuildCookieSaleConfirmationHtml(data))
+            .WithTo(new SendContact(data.Email, data.Name))
+            .Build();
+
+        await Send(email, $"cookie confirmation for order {data.OrderId}");
+        _logger.LogInformation(
+            "Cookie confirmation email sent for order {OrderId} ({ConfirmationNumber}).",
+            data.OrderId,
+            data.ConfirmationNumber);
+    }
+
+    public async Task SendCookieSaleDailyReportAsync(
+        IReadOnlyList<string> recipients,
+        byte[] excelBytes,
+        CookieSaleReportStats stats,
+        DateTime reportDate)
+    {
+        var dateLabel = reportDate.ToString("dd/MM/yyyy");
+        if (!_enabled)
+        {
+            _logger.LogInformation(
+                "Email disabled. Would send cookie-sale report ({Date}) to {Count} recipient(s).",
+                dateLabel,
+                recipients.Count);
+            return;
+        }
+
+        var html = $@"
+            <div style=""font-family:Arial,sans-serif;max-width:600px;margin:0 auto;"">
+                <h2 style=""color:#13A2A3;margin-bottom:4px;"">Koekjesverkoop 2026 &mdash; Dagelijks overzicht</h2>
+                <p style=""color:#666;margin-top:0;"">Rapport van {dateLabel}</p>
+                <hr style=""border:none;border-top:2px solid #13A2A3;margin-bottom:20px;""/>
+                <table style=""border-collapse:collapse;width:100%;font-size:14px;"">
+                    <tr style=""background:#f0fafa;""><td style=""padding:6px 12px;"">Betaalde bestellingen</td><td style=""padding:6px 12px;font-weight:bold;"">{stats.TotalOrders}</td></tr>
+                    <tr><td style=""padding:6px 12px;"">Côte d'Or pakketten</td><td style=""padding:6px 12px;font-weight:bold;"">{stats.TotalCoteDorPackages}</td></tr>
+                    <tr style=""background:#f0fafa;""><td style=""padding:6px 12px;"">Lotus pakketten</td><td style=""padding:6px 12px;font-weight:bold;"">{stats.TotalLotusPackages}</td></tr>
+                    <tr><td style=""padding:6px 12px;"">Totaal pakketten</td><td style=""padding:6px 12px;font-weight:bold;"">{stats.TotalPackages}</td></tr>
+                    <tr style=""border-top:2px solid #13A2A3;""><td style=""padding:8px 12px;font-weight:bold;"">Totale omzet</td><td style=""padding:8px 12px;font-weight:bold;color:#13A2A3;"">{EmailHtmlBuilder.FormatEuroCents(stats.TotalAmountCents)}</td></tr>
+                </table>
+                <p style=""margin-top:24px;color:#555;font-size:13px;"">Het overzicht en de lijsten per klas vind je in de Excel-bijlage.</p>
+                <hr style=""border:none;border-top:1px solid #eee;margin-top:24px;""/>
+                <p style=""font-size:11px;color:#aaa;"">Oudercomité met Pit &mdash; Pittem &mdash; ocpittem.be</p>
+            </div>";
+
+        var builder = new TransactionalEmailBuilder()
+            .WithFrom(new SendContact(_fromEmail, _fromName))
+            .WithSubject($"Koekjesverkoop 2026 – Dagelijks overzicht {dateLabel}")
+            .WithHtmlPart(html)
+            .WithAttachment(new Attachment(
+                $"Koekjesverkoop_2026_Bestellingen_{reportDate:yyyyMMdd}.xlsx",
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                Convert.ToBase64String(excelBytes)));
+
+        foreach (var recipient in recipients)
+            builder = builder.WithTo(new SendContact(recipient));
+
+        await Send(builder.Build(), $"cookie-sale report to {recipients.Count} recipient(s)");
+        _logger.LogInformation(
+            "Cookie-sale report sent to {Count} recipient(s).",
+            recipients.Count);
+    }
 }

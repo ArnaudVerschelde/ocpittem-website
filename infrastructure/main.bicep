@@ -1,7 +1,7 @@
-# ============================================================
-# OC Pittem — Azure Infrastructure (Bicep) — West Europe
-# Deploy: az deployment group create -g rg-ocpittem -f infrastructure/main.bicep -p infrastructure/main.parameters.json
-# ============================================================
+// ============================================================
+// OC Pittem — Azure Infrastructure (Bicep) — West Europe
+// Deploy: az deployment group create -g rg-ocpittem -f infrastructure/main.bicep -p infrastructure/main.parameters.json
+// ============================================================
 
 @description('Location for all resources. Use westeurope to maximize service compatibility.')
 param location string = 'westeurope'
@@ -31,25 +31,51 @@ param enablePurgeProtection bool = true
 // ---- App settings (non-secret) ----
 param appFrontendUrl string = 'https://ocpittem.be'
 param appContactEmail string = 'oudercomitepittem@gmail.com'
-param mailjetFromEmail string = 'oudercomitepittem@gmail.com'
+param appReportRecipients string = ''
+param appCookieReportRecipients string = ''
+param emailEnabled bool = true
+@allowed([
+  'Mailjet'
+  'Smtp'
+])
+param emailProvider string = 'Mailjet'
+param mailjetFromEmail string = 'oudercomite@ocpittem.be'
 param mailjetFromName string = 'Oudercomité met Pit'
-param mailjetContactFromEmail string = 'oudercomitepittem@gmail.com'
+param mailjetContactFromEmail string = 'oudercomitepittem@ocpittem.be'
 param mailjetContactFromName string = 'Oudercomité met Pit'
 param mailjetTicketFromEmail string = 'balparental@ocpittem.be'
-param mailjetTicketFromName string = 'Oudercomité met Pit — Bal Parental'
-param stripePriceIdToegangsticket string = 'price_xxx'
-param stripePriceIdEtenParty string = 'price_xxx'
-param stripePriceIdDrankkaart10 string = 'price_xxx'
-param stripePriceIdDrankkaart20 string = 'price_xxx'
-param stripePriceIdSponsorBrons string = 'price_xxx'
-param stripePriceIdSponsorZilver string = 'price_xxx'
-param stripePriceIdSponsorGoud string = 'price_xxx'
+param mailjetTicketFromName string = 'Bal Parental'
+param smtpHost string = 'smtp-auth.mailprotect.be'
+@minValue(1)
+@maxValue(65535)
+param smtpPort int = 587
+param smtpUsername string = 'balparental@ocpittem.be'
+param smtpEnableSsl bool = true
+param stripePriceIdToegangsticket string
+param stripePriceIdEtenParty string
+param stripePriceIdDrankkaart10 string
+param stripePriceIdDrankkaart20 string
+param stripePriceIdSponsorBrons string
+param stripePriceIdSponsorZilver string
+param stripePriceIdSponsorGoud string
+param stripePriceIdCookieCoteDor string
+param stripePriceIdCookieLotus string
 
 // ---- Table names ----
 param tableNameOrders string = 'Orders'
+param tableNameCookieOrders string = 'CookieOrders'
 param tableNameTickets string = 'Tickets'
 param tableNameWebhookEvents string = 'WebhookEvents'
 param tableNameSponsors string = 'SponsorRequests'
+param blobContainerTickets string = 'ticket-pdfs'
+param sponsorAttestationSignatureContainerName string = 'document-assets'
+param sponsorAttestationSignatureBlobName string = 'sponsorattest-2026.png'
+
+// ---- Deliberate function states ----
+param disableBalParentalAdminFunctions bool = true
+param disableBalParentalSalesFunctions bool = true
+param disableBalParentalReportFunctions bool = true
+param disableTicketValidation bool = true
 
 // ---- Key Vault secret names (values are set AFTER deployment) ----
 // These params hold the *names* of secrets, not actual secret values — linter warnings are false positives.
@@ -58,9 +84,13 @@ param kvSecretStripeSecretKeyName string = 'stripe-secret-key'
 #disable-next-line secure-secrets-in-params
 param kvSecretStripeWebhookSecretName string = 'stripe-webhook-secret'
 #disable-next-line secure-secrets-in-params
-param kvSecretMailjetApiKeyName string = 'mailjet-api-key'
+param kvSecretMailjetApiKeyName string = 'sendgrid-api-key'
 #disable-next-line secure-secrets-in-params
-param kvSecretMailjetApiSecretName string = 'mailjet-api-secret'
+param kvSecretMailjetApiSecretName string = 'sendgrid-api-secret'
+#disable-next-line secure-secrets-in-params
+param kvSecretSmtpPasswordName string = 'smtp-mailbox-password'
+#disable-next-line secure-secrets-in-params
+param kvSecretTicketHmacSecretName string = 'ticket-hmac-secret'
 
 // ---- CORS ----
 param corsAllowedOrigins array = [
@@ -95,6 +125,10 @@ resource tableService 'Microsoft.Storage/storageAccounts/tableServices@2023-05-0
 resource tableOrders 'Microsoft.Storage/storageAccounts/tableServices/tables@2023-05-01' = {
   parent: tableService
   name: tableNameOrders
+}
+resource tableCookieOrders 'Microsoft.Storage/storageAccounts/tableServices/tables@2023-05-01' = {
+  parent: tableService
+  name: tableNameCookieOrders
 }
 resource tableTickets 'Microsoft.Storage/storageAccounts/tableServices/tables@2023-05-01' = {
   parent: tableService
@@ -162,6 +196,8 @@ var stripeSecretKeyUri = '${kvBaseUri}secrets/${kvSecretStripeSecretKeyName}'
 var stripeWebhookSecretUri = '${kvBaseUri}secrets/${kvSecretStripeWebhookSecretName}'
 var mailjetApiKeyUri = '${kvBaseUri}secrets/${kvSecretMailjetApiKeyName}'
 var mailjetApiSecretUri = '${kvBaseUri}secrets/${kvSecretMailjetApiSecretName}'
+var smtpPasswordUri = '${kvBaseUri}secrets/${kvSecretSmtpPasswordName}'
+var ticketHmacSecretUri = '${kvBaseUri}secrets/${kvSecretTicketHmacSecretName}'
 
 // ============================================================
 // App Service Plan (Flex Consumption, Linux)
@@ -223,8 +259,12 @@ resource functionApp 'Microsoft.Web/sites@2023-12-01' = {
         { name: 'Stripe__WebhookSecret', value: '@Microsoft.KeyVault(SecretUri=${stripeWebhookSecretUri})' }
         { name: 'Mailjet__ApiKey', value: '@Microsoft.KeyVault(SecretUri=${mailjetApiKeyUri})' }
         { name: 'Mailjet__ApiSecret', value: '@Microsoft.KeyVault(SecretUri=${mailjetApiSecretUri})' }
+        { name: 'Smtp__Password', value: '@Microsoft.KeyVault(SecretUri=${smtpPasswordUri})' }
+        { name: 'App__TicketHmacSecret', value: '@Microsoft.KeyVault(SecretUri=${ticketHmacSecretUri})' }
 
         // Non-secrets
+        { name: 'Email__Enabled', value: string(emailEnabled) }
+        { name: 'Email__Provider', value: emailProvider }
         { name: 'Stripe__PriceIdToegangsticket', value: stripePriceIdToegangsticket }
         { name: 'Stripe__PriceIdEtenParty', value: stripePriceIdEtenParty }
         { name: 'Stripe__PriceIdDrankkaart10', value: stripePriceIdDrankkaart10 }
@@ -232,20 +272,54 @@ resource functionApp 'Microsoft.Web/sites@2023-12-01' = {
         { name: 'Stripe__PriceIdSponsorBrons', value: stripePriceIdSponsorBrons }
         { name: 'Stripe__PriceIdSponsorZilver', value: stripePriceIdSponsorZilver }
         { name: 'Stripe__PriceIdSponsorGoud', value: stripePriceIdSponsorGoud }
+        { name: 'Stripe__PriceIdCookieCoteDor', value: stripePriceIdCookieCoteDor }
+        { name: 'Stripe__PriceIdCookieLotus', value: stripePriceIdCookieLotus }
         { name: 'Mailjet__FromEmail', value: mailjetFromEmail }
         { name: 'Mailjet__FromName', value: mailjetFromName }
         { name: 'Mailjet__ContactFromEmail', value: mailjetContactFromEmail }
         { name: 'Mailjet__ContactFromName', value: mailjetContactFromName }
         { name: 'Mailjet__TicketFromEmail', value: mailjetTicketFromEmail }
         { name: 'Mailjet__TicketFromName', value: mailjetTicketFromName }
+        { name: 'Smtp__Host', value: smtpHost }
+        { name: 'Smtp__Port', value: string(smtpPort) }
+        { name: 'Smtp__Username', value: smtpUsername }
+        { name: 'Smtp__EnableSsl', value: string(smtpEnableSsl) }
         { name: 'App__FrontendUrl', value: appFrontendUrl }
         { name: 'App__ContactEmail', value: appContactEmail }
+        { name: 'App__ReportRecipients', value: appReportRecipients }
+        { name: 'App__CookieReportRecipients', value: appCookieReportRecipients }
 
         // Table names
         { name: 'Storage__TableNameOrders', value: tableNameOrders }
+        { name: 'Storage__TableNameCookieOrders', value: tableNameCookieOrders }
         { name: 'Storage__TableNameTickets', value: tableNameTickets }
         { name: 'Storage__TableNameWebhookEvents', value: tableNameWebhookEvents }
         { name: 'Storage__TableNameSponsors', value: tableNameSponsors }
+        { name: 'Storage__BlobContainerTickets', value: blobContainerTickets }
+        { name: 'SponsorAttestation__SignatureContainerName', value: sponsorAttestationSignatureContainerName }
+        { name: 'SponsorAttestation__SignatureBlobName', value: sponsorAttestationSignatureBlobName }
+
+        // Deliberately disabled legacy/admin Bal Parental functions
+        { name: 'AzureWebJobs.AdminCreateAndPaySponsor.Disabled', value: string(disableBalParentalAdminFunctions) }
+        { name: 'AzureWebJobs.AdminCreateAndPayTicketOrder.Disabled', value: string(disableBalParentalAdminFunctions) }
+        { name: 'AzureWebJobs.AdminMarkSponsorPaid.Disabled', value: string(disableBalParentalAdminFunctions) }
+        { name: 'AzureWebJobs.AdminResendSponsorEmail.Disabled', value: string(disableBalParentalAdminFunctions) }
+        { name: 'AzureWebJobs.CreateTicketCheckout.Disabled', value: string(disableBalParentalSalesFunctions) }
+        { name: 'AzureWebJobs.SponsorCheckout.Disabled', value: string(disableBalParentalSalesFunctions) }
+        { name: 'AzureWebJobs.SponsorLogoPackage.Disabled', value: string(disableBalParentalSalesFunctions) }
+        { name: 'AzureWebJobs.SponsorLogoUpload.Disabled', value: string(disableBalParentalSalesFunctions) }
+        { name: 'AzureWebJobs.ValidateTicket.Disabled', value: string(disableTicketValidation) }
+        { name: 'AzureWebJobs.DailyReport.Disabled', value: string(disableBalParentalReportFunctions) }
+        { name: 'AzureWebJobs.DailyReportManual.Disabled', value: string(disableBalParentalReportFunctions) }
+
+        // Required cookie-sale production functions
+        { name: 'AzureWebJobs.GetCookieSaleConfig.Disabled', value: 'false' }
+        { name: 'AzureWebJobs.CreateCookieSaleCheckout.Disabled', value: 'false' }
+        { name: 'AzureWebJobs.GetCookieSaleOrderStatus.Disabled', value: 'false' }
+        { name: 'AzureWebJobs.StripeWebhook.Disabled', value: 'false' }
+        { name: 'AzureWebJobs.CookieSaleDailyReport.Disabled', value: 'false' }
+        { name: 'AzureWebJobs.CookieSaleDailyReportManual.Disabled', value: 'false' }
+        { name: 'AzureWebJobs.Health.Disabled', value: 'false' }
       ]
     }
   }

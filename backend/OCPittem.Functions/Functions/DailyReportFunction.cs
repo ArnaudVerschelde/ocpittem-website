@@ -11,7 +11,9 @@ public class DailyReportFunction
     private readonly IDailyReportService _reportService;
     private readonly ILogger<DailyReportFunction> _logger;
 
-    public DailyReportFunction(IDailyReportService reportService, ILogger<DailyReportFunction> logger)
+    public DailyReportFunction(
+        IDailyReportService reportService,
+        ILogger<DailyReportFunction> logger)
     {
         _reportService = reportService;
         _logger = logger;
@@ -31,10 +33,10 @@ public class DailyReportFunction
 
     [Function("DailyReportManual")]
     public async Task<IActionResult> RunManual(
-        [HttpTrigger(AuthorizationLevel.Function, "post", Route = "manage/report/send")] HttpRequest req)
+        [HttpTrigger(AuthorizationLevel.Function, "post", Route = "manage/report/bal-parental/send")] HttpRequest req)
     {
-        _logger.LogInformation("DailyReport manually triggered at {Time} UTC.", DateTime.UtcNow);
+        _logger.LogInformation("Bal Parental report manually triggered at {Time} UTC.", DateTime.UtcNow);
         await _reportService.SendDailyReportAsync();
-        return new OkObjectResult(new { message = "Dagelijks rapport verstuurd." });
+        return new OkObjectResult(new { message = "Bal Parental-rapport verstuurd." });
     }
 }

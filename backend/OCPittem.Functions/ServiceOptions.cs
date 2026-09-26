@@ -11,6 +11,8 @@ public class StripeOptions
     public string PriceIdSponsorBrons { get; init; } = "";
     public string PriceIdSponsorZilver { get; init; } = "";
     public string PriceIdSponsorGoud { get; init; } = "";
+    public string PriceIdCookieCoteDor { get; init; } = "";
+    public string PriceIdCookieLotus { get; init; } = "";
 }
 
 public class MailjetOptions
@@ -46,14 +48,25 @@ public class AppOptions
     public string ContactEmail { get; init; } = "";
     public string TicketHmacSecret { get; init; } = "";
     public string ReportRecipients { get; init; } = "";
+    public string CookieReportRecipients { get; init; } = "";
 
     public IReadOnlyList<string> GetReportRecipients() =>
-        ReportRecipients.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        SplitRecipients(ReportRecipients);
+
+    public IReadOnlyList<string> GetCookieReportRecipients()
+    {
+        var cookieRecipients = SplitRecipients(CookieReportRecipients);
+        return cookieRecipients.Count > 0 ? cookieRecipients : GetReportRecipients();
+    }
+
+    private static IReadOnlyList<string> SplitRecipients(string recipients) =>
+        recipients.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
 }
 
 public class StorageOptions
 {
     public string TableNameOrders { get; init; } = "Orders";
+    public string TableNameCookieOrders { get; init; } = "CookieOrders";
     public string TableNameTickets { get; init; } = "Tickets";
     public string TableNameWebhookEvents { get; init; } = "WebhookEvents";
     public string TableNameSponsors { get; init; } = "SponsorRequests";

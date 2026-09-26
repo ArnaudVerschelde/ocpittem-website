@@ -78,6 +78,7 @@ var host = new HostBuilder()
             return new SponsorAttestationService(blobServiceClient, opts, logger);
         });
         services.AddSingleton<IDailyReportService, DailyReportService>();
+        services.AddSingleton<ICookieSaleReportService, CookieSaleReportService>();
     })
     .Build();
 

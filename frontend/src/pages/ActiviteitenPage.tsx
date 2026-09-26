@@ -39,10 +39,10 @@ const events = [
   },
   {
     title: 'Koekjesverkoop 2026',
-    date: 'Najaar 2026',
+    date: 'donderdag 10 december 2026',
     description:
         'Onze jaarlijkse koekjesverkoop. Bestel heerlijke koekjes en steun daarmee de school!',
-    cta: null,
+    cta: { label: 'Bestel je koekjes', to: '/koekjesverkoop' },
     galleryTo: null,
     ended: false,
     color: 'accent',

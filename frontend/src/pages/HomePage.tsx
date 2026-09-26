@@ -75,6 +75,27 @@ export default function HomePage() {
       </div>
       )}
 
+      {/* Koekjesverkoop promo */}
+      <div className="relative overflow-hidden bg-gradient-to-br from-amber-50 via-orange-50 to-yellow-100">
+        <div className="absolute -right-16 -top-20 h-64 w-64 rounded-full bg-amber-300/20" />
+        <div className="relative mx-auto flex max-w-7xl flex-col items-center gap-6 px-4 py-14 text-center sm:px-6 lg:flex-row lg:px-8 lg:text-left">
+          <div className="flex-1">
+            <span className="inline-flex rounded-full bg-amber-200 px-3 py-1 text-xs font-semibold tracking-wide text-amber-900">
+              10 december 2026
+            </span>
+            <h2 className="mt-3 text-3xl font-extrabold tracking-tight text-gray-900 sm:text-4xl">
+              Koekjesverkoop – 10 december
+            </h2>
+            <p className="mt-3 max-w-xl text-base text-gray-600">
+              Bestel Côte d'Or- en Lotuspakketten en steun de activiteiten voor onze kinderen.
+            </p>
+          </div>
+          <Link to="/koekjesverkoop" className="btn-primary flex-shrink-0">
+            Bestel je koekjes
+          </Link>
+        </div>
+      </div>
+
       {/* Kort overzicht */}
       <Section>
         <div className="text-center">

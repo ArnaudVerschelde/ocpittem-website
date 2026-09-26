@@ -1,6 +1,6 @@
 # OC Pittem Website — [ocpittem.be](https://ocpittem.be)
 
-Moderne website voor het **Oudercomité met Pit** (Pittem) met online ticketverkoop, sponsorpakketten, QR-ticketvalidatie en contactformulier.
+Moderne website voor het **Oudercomité met Pit** (Pittem) met online ticketverkoop, koekjesbestellingen, sponsorpakketten, QR-ticketvalidatie en contactformulier.
 
 De applicatie bestaat uit een **React single-page app** (frontend), een **Azure Functions API** (.NET 8 isolated) en een volledig via **Bicep** beschreven **Azure-infrastructuur**. Betalingen verlopen via **Stripe**, e-mails via **Mailjet** en tickets/orders worden opgeslagen in **Azure Table Storage**.
 
@@ -39,8 +39,9 @@ De applicatie bestaat uit een **React single-page app** (frontend), een **Azure 
 - **Ticketverkoop** — de SPA roept `POST /api/tickets/create-checkout` aan → de Function maakt een Stripe Checkout Session → na betaling stuurt Stripe een webhook (`StripeWebhookFunction`) → de Function slaat de order/tickets op in Table Storage, genereert een PDF-ticket met QR-code (QuestPDF + QRCoder) en verstuurt dit via Mailjet.
 - **Ticketvalidatie** — de `/scan`-pagina scant een QR-code (html5-qrcode) en valideert deze via `GET /api/tickets/validate?code=...`.
 - **Sponsors** — sponsoraanvragen, betaling, logo-upload en fiscale attesten worden afgehandeld door de sponsor-functions en opgeslagen in Blob/Table Storage.
+- **Koekjesverkoop 2026** — de pagina `/koekjesverkoop` maakt een Pending bestelling vóór Stripe Checkout, bevestigt betalingen via de gedeelde Stripe-webhook en verstuurt een bevestiging via de bestaande e-mailservice.
 - **Contact** — `POST /api/contact` verstuurt een e-mail naar het oudercomité.
-- **Dagrapport** — een timer-triggered Function (`DailyReportFunction`) bouwt dagelijkse verkoopstatistieken op.
+- **Dagrapporten** — afzonderlijke timer-functions versturen het bestaande Bal Parental rapport en het Paid-only koekjesrapport met een overzicht en werkblad per klas.
 
 ---
 
@@ -98,13 +99,19 @@ De applicatie bestaat uit een **React single-page app** (frontend), een **Azure 
 | Methode & pad | Function | Beschrijving |
 |---------------|----------|--------------|
 | `POST /api/tickets/create-checkout` | `TicketOrderFunction` | Start Stripe Checkout voor tickets |
+| `GET /api/cookie-sale/config` | `CookieSaleOrderFunction` | Publieke product- en klassenconfiguratie |
+| `POST /api/cookie-sale/create-checkout` | `CookieSaleOrderFunction` | Start Stripe Checkout voor koekjes |
+| `GET /api/cookie-sale/order-status` | `CookieSaleOrderFunction` | Geeft minimale betaalstatus voor de returnpagina |
 | *(Stripe webhook)* | `StripeWebhookFunction` | Verwerkt Stripe-events, genereert tickets & mailt |
 | `GET  /api/tickets/validate` | `TicketValidateFunction` | Valideert een ticket-QR aan de ingang |
 | `POST /api/contact` | `ContactFunction` | Verstuurt contactbericht via e-mail |
 | `POST /api/sponsors/...` | `SponsorRequestFunction` e.a. | Sponsoraanvraag, betaling, logo-upload, attest |
 | `GET  /api/gallery/...` | `GalleryFunction` | Levert sfeerbeelden-galerij |
 | `GET  /api/health` | `HealthFunction` | Health check |
-| *(timer)* | `DailyReportFunction` | Dagelijks verkooprapport |
+| `POST /api/manage/report/bal-parental/send` | `DailyReportFunction` | Verstuurt alleen het Bal Parental rapport |
+| `POST /api/manage/report/cookie-sale/send` | `CookieSaleReportFunction` | Verstuurt alleen het koekjesverkooprapport |
+| *(timer)* | `DailyReportFunction` | Dagelijks Bal Parental rapport |
+| *(timer)* | `CookieSaleReportFunction` | Dagelijks koekjesverkooprapport |
 
 > De `Admin*`-functions bieden beheeracties (manueel order/sponsor aanmaken, als betaald markeren, e-mail opnieuw versturen).
 
@@ -139,6 +146,13 @@ func start
 - **Frontend**: kopieer `frontend/.env.example` naar `frontend/.env`
   - `VITE_API_BASE_URL` — basis-URL van de API (standaard `/api`)
 - **Backend**: pas `backend/OCPittem.Functions/local.settings.json` aan met jouw Stripe- en Mailjet-keys. Configuratie is gegroepeerd per sectie (`Stripe`, `Mailjet`, `Email`, `Smtp`, `App`, `Storage`, `SponsorAttestation`) en wordt in `Program.cs` gebonden aan strongly-typed options.
+
+### Koekjesverkoop 2026 configureren
+
+- Vul de definitieve, door de school bevestigde klassen in bij `CookieSale2026Catalog.AllowedClasses`. Dit is bewust de enige bron voor frontend- en backendvalidatie. Zolang de lijst leeg is, blijft de publieke pagina zichtbaar maar is bestellen uitgeschakeld.
+- Vervang `Stripe__PriceIdCookieCoteDor` en `Stripe__PriceIdCookieLotus` door echte Stripe Price IDs voor respectievelijk €11 en €9. De meegeleverde `price_xxx`-waarden zijn alleen placeholders.
+- De bestellingen worden opgeslagen in de bestaande Storage Account, tabel `CookieOrders`.
+- De aparte dagelijkse koekjesrapportmail gebruikt `App__CookieReportRecipients`. Als deze instelling leeg is, valt ze voor achterwaartse compatibiliteit terug op `App__ReportRecipients`.
 
 ---
 

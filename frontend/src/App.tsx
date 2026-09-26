@@ -12,6 +12,9 @@ import PaymentSuccessPage from './pages/PaymentSuccessPage';
 import PaymentCancelPage from './pages/PaymentCancelPage';
 import ScanPage from './pages/ScanPage';
 import PrivacyPage from './pages/PrivacyPage';
+import CookieSalePage from './pages/CookieSalePage';
+import CookieSalePaymentSuccessPage from './pages/CookieSalePaymentSuccessPage';
+import CookieSalePaymentCancelPage from './pages/CookieSalePaymentCancelPage';
 import { BAL_PARENTAL_ACTIVE } from './config/balParental';
 
 function App() {
@@ -37,10 +40,13 @@ function App() {
                     <Route path="bal-parental" element={<BalParentalPage />} />
                 )}
                 <Route path="contact" element={<ContactPage />} />
+                <Route path="koekjesverkoop" element={<CookieSalePage />} />
 
                 {/* Stripe return pages */}
                 <Route path="betaling/success" element={<PaymentSuccessPage />} />
                 <Route path="betaling/cancel" element={<PaymentCancelPage />} />
+                <Route path="koekjesverkoop/betaling/success" element={<CookieSalePaymentSuccessPage />} />
+                <Route path="koekjesverkoop/betaling/cancel" element={<CookieSalePaymentCancelPage />} />
 
                 <Route path="*" element={<NotFoundPage />} />
 

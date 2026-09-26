@@ -27,6 +27,12 @@ namespace OCPittem.Functions.Services
             IReadOnlyList<TicketPdfData> tickets,
             byte[]? pdfAttachment = null,
             byte[]? attestationPdf = null);
+        Task SendCookieSaleConfirmationAsync(CookieSaleConfirmationData data);
         Task SendDailyReportAsync(IReadOnlyList<string> recipients, byte[] excelBytes, DailyReportStats stats, DateTime reportDate);
+        Task SendCookieSaleDailyReportAsync(
+            IReadOnlyList<string> recipients,
+            byte[] excelBytes,
+            CookieSaleReportStats stats,
+            DateTime reportDate);
     }
 }
