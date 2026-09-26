@@ -232,7 +232,7 @@ export default function CookieSalePage() {
             <h2 className="mt-5 section-title">Samen smullen, samen steunen</h2>
             <p className="section-subtitle">
               Met je bestelling steun je rechtstreeks de activiteiten die OC Pittem organiseert
-              voor de kinderen van basisschool PIT!.
+              voor de kinderen van basisschool PIT!
             </p>
 
             <div className="mt-8 grid gap-5 sm:grid-cols-2">
