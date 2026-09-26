@@ -211,7 +211,6 @@ export default function CookieSalePage() {
 
         <div className="relative mx-auto max-w-7xl px-4 py-20 sm:px-6 sm:py-28 lg:px-8">
           <div className="max-w-2xl">
-            <div className="mb-6 h-1 w-16 rounded-full bg-primary-300" />
             <h1 className="font-display text-4xl font-extrabold tracking-tight text-white drop-shadow-sm sm:text-5xl lg:text-6xl">
               Koekjesverkoop
             </h1>
