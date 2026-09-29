@@ -10,4 +10,5 @@ public sealed record CookieSalePublicConfigResponse(
     string EventDate,
     int MaximumTotalPackages,
     IReadOnlyList<string> Classes,
+    IReadOnlyList<string> StaffCategories,
     IReadOnlyList<CookieSaleProductResponse> Products);

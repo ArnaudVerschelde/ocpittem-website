@@ -54,14 +54,19 @@ export interface CookieSaleConfig {
   eventDate: string;
   maximumTotalPackages: number;
   classes: string[];
+  staffCategories: string[];
   products: CookieSaleProduct[];
 }
 
+export type CookieSaleOrderType = 'student' | 'staff';
+
 export interface CreateCookieSaleCheckoutRequest {
   name: string;
-  studentName: string;
+  orderType: CookieSaleOrderType;
+  studentName?: string;
   email: string;
-  className: string;
+  className?: string;
+  staffCategory?: string;
   coteDorQuantity: number;
   lotusQuantity: number;
 }

@@ -44,6 +44,7 @@ public class CookieSaleOrderFunction
             EventDate: CookieSale2026Catalog.EventDate.ToString("yyyy-MM-dd"),
             MaximumTotalPackages: CookieSale2026Catalog.MaximumTotalPackages,
             Classes: _allowedClasses,
+            StaffCategories: CookieSale2026Catalog.StaffCategories,
             Products:
             [
                 new("coteDor", CookieSale2026Catalog.CoteDorLabel, CookieSale2026Catalog.CoteDorUnitPriceCents),
@@ -90,9 +91,11 @@ public class CookieSaleOrderFunction
             OrderId = orderId,
             ConfirmationNumber = ConfirmationNumberGenerator.Generate(),
             Name = validatedOrder!.Name,
-            StudentName = validatedOrder.StudentName,
+            OrderType = validatedOrder.OrderType,
+            StudentName = validatedOrder.StudentName ?? string.Empty,
             Email = validatedOrder.Email,
-            ClassName = validatedOrder.ClassName,
+            ClassName = validatedOrder.ClassName ?? string.Empty,
+            StaffCategory = validatedOrder.StaffCategory ?? string.Empty,
             CoteDorQuantity = validatedOrder.CoteDorQuantity,
             LotusQuantity = validatedOrder.LotusQuantity,
             TotalPackages = validatedOrder.TotalPackages,

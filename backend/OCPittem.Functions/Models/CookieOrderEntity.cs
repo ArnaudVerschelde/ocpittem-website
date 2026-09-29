@@ -14,9 +14,11 @@ public class CookieOrderEntity : ITableEntity
     public DateTimeOffset CreatedUtc { get; set; } = DateTimeOffset.UtcNow;
     public DateTimeOffset? PaidUtc { get; set; }
     public string Name { get; set; } = string.Empty;
+    public string OrderType { get; set; } = string.Empty;
     public string StudentName { get; set; } = string.Empty;
     public string Email { get; set; } = string.Empty;
     public string ClassName { get; set; } = string.Empty;
+    public string StaffCategory { get; set; } = string.Empty;
     public int CoteDorQuantity { get; set; }
     public int LotusQuantity { get; set; }
     public int TotalPackages { get; set; }

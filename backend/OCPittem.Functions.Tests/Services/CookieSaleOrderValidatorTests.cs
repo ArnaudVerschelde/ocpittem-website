@@ -98,6 +98,63 @@ public class CookieSaleOrderValidatorTests
     }
 
     [Fact]
+    public void TryValidate_StaffOrder_DoesNotRequireStudentOrClass()
+    {
+        var request = CreateRequest(1, 0) with
+        {
+            OrderType = CookieSale2026Catalog.StaffOrderType,
+            StudentName = null,
+            ClassName = null,
+            StaffCategory = "zorg",
+        };
+
+        var valid = CookieSaleOrderValidator.TryValidate(request, Classes, out var order, out _);
+
+        Assert.True(valid);
+        Assert.Equal(CookieSale2026Catalog.StaffOrderType, order!.OrderType);
+        Assert.Null(order.StudentName);
+        Assert.Null(order.ClassName);
+        Assert.Equal("Zorg", order.StaffCategory);
+    }
+
+    [Fact]
+    public void TryValidate_StaffOrderWithoutCategory_IsRejected()
+    {
+        var request = CreateRequest(1, 0) with
+        {
+            OrderType = CookieSale2026Catalog.StaffOrderType,
+            StudentName = null,
+            ClassName = null,
+            StaffCategory = null,
+        };
+
+        var valid = CookieSaleOrderValidator.TryValidate(request, Classes, out _, out _);
+
+        Assert.False(valid);
+    }
+
+    [Fact]
+    public void TryValidate_MissingOrderType_TreatsLegacyRequestAsStudentOrder()
+    {
+        var request = CreateRequest(1, 0) with { OrderType = null };
+
+        var valid = CookieSaleOrderValidator.TryValidate(request, Classes, out var order, out _);
+
+        Assert.True(valid);
+        Assert.Equal(CookieSale2026Catalog.StudentOrderType, order!.OrderType);
+    }
+
+    [Fact]
+    public void TryValidate_UnknownOrderType_IsRejected()
+    {
+        var request = CreateRequest(1, 0) with { OrderType = "unknown" };
+
+        var valid = CookieSaleOrderValidator.TryValidate(request, Classes, out _, out _);
+
+        Assert.False(valid);
+    }
+
+    [Fact]
     public void TryValidate_StudentName_IsTrimmed()
     {
         var request = CreateRequest(1, 0) with { StudentName = "  Leerling Test  " };
@@ -111,9 +168,11 @@ public class CookieSaleOrderValidatorTests
     private static CreateCookieSaleCheckoutRequest CreateRequest(int coteDorQuantity, int lotusQuantity) =>
         new(
             Name: "Test Ouder",
+            OrderType: CookieSale2026Catalog.StudentOrderType,
             StudentName: "Test Leerling",
             Email: "ouder@example.com",
             ClassName: "Testklas",
+            StaffCategory: null,
             CoteDorQuantity: coteDorQuantity,
             LotusQuantity: lotusQuantity);
 }

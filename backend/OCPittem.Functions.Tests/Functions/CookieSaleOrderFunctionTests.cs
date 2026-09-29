@@ -29,6 +29,7 @@ public class CookieSaleOrderFunctionTests
         var config = Assert.IsType<CookieSalePublicConfigResponse>(ok.Value);
         Assert.False(config.Enabled);
         Assert.Empty(config.Classes);
+        Assert.Equal(7, config.StaffCategories.Count);
     }
 
     [Fact]
@@ -68,8 +69,10 @@ public class CookieSaleOrderFunctionTests
                 order.PaymentStatus == nameof(CookieOrderStatus.Pending)
                 && order.TotalAmountCents == 3100
                 && order.TotalPackages == 3
+                && order.OrderType == "student"
                 && order.ClassName == "Testklas"
                 && order.StudentName == "Test Leerling"
+                && order.StaffCategory == ""
                 && order.ConfirmationNumber.StartsWith("KV26-")));
             _stripe.CreateCookieSaleCheckoutSessionAsync(
                 Arg.Any<string>(),
@@ -80,6 +83,43 @@ public class CookieSaleOrderFunctionTests
 
         await _storage.Received(1)
             .SetCookieOrderStripeSessionAsync(Arg.Any<string>(), "cs_test_cookie");
+    }
+
+    [Fact]
+    public async Task CreateCheckout_ValidStaffRequest_PersistsAndReachesStripe()
+    {
+        var sut = CreateSut(["Testklas"]);
+        var request = HttpRequestHelper.CreateJsonRequest(new
+        {
+            name = "Test Personeelslid",
+            orderType = "staff",
+            email = "personeel@example.com",
+            staffCategory = "Zorg",
+            coteDorQuantity = 1,
+            lotusQuantity = 0,
+        });
+        _stripe.CreateCookieSaleCheckoutSessionAsync(
+                Arg.Any<string>(),
+                "personeel@example.com",
+                1,
+                0)
+            .Returns(new StripeCheckoutResult("https://checkout.stripe.test/staff", "cs_test_staff"));
+
+        var result = await sut.CreateCheckout(request);
+
+        Assert.IsType<OkObjectResult>(result);
+        await _storage.Received(1).SaveCookieOrderAsync(
+            Arg.Is<CookieOrderEntity>(order =>
+                order.OrderType == "staff"
+                && order.StudentName == ""
+                && order.ClassName == ""
+                && order.StaffCategory == "Zorg"
+                && order.TotalAmountCents == 1100));
+        await _stripe.Received(1).CreateCookieSaleCheckoutSessionAsync(
+            Arg.Any<string>(),
+            "personeel@example.com",
+            1,
+            0);
     }
 
     [Fact]
@@ -146,6 +186,7 @@ public class CookieSaleOrderFunctionTests
         HttpRequestHelper.CreateJsonRequest(new
         {
             name = "Test Ouder",
+            orderType = "student",
             studentName = "  Test Leerling  ",
             email = "ouder@example.com",
             className = "Testklas",

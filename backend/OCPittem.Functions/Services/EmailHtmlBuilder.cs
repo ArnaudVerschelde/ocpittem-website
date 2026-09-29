@@ -1,5 +1,6 @@
 using System.Net;
 using System.Text;
+using OCPittem.Functions.Configuration;
 using OCPittem.Functions.Models;
 
 namespace OCPittem.Functions.Services;
@@ -72,9 +73,15 @@ internal static class EmailHtmlBuilder
     internal static string BuildCookieSaleConfirmationHtml(CookieSaleConfirmationData data)
     {
         var safeName = WebUtility.HtmlEncode(data.Name);
-        var safeStudentName = WebUtility.HtmlEncode(data.StudentName);
         var safeConfirmationNumber = WebUtility.HtmlEncode(data.ConfirmationNumber);
-        var safeClassName = WebUtility.HtmlEncode(data.ClassName);
+        var isStaffOrder = string.Equals(
+            data.OrderType,
+            CookieSale2026Catalog.StaffOrderType,
+            StringComparison.OrdinalIgnoreCase);
+        var orderDetails = isStaffOrder
+            ? $"<strong>Personeelsgroep:</strong> {WebUtility.HtmlEncode(data.StaffCategory)}"
+            : $@"<strong>Naam leerling:</strong> {WebUtility.HtmlEncode(data.StudentName)}<br/>
+                   <strong>Klas:</strong> {WebUtility.HtmlEncode(data.ClassName)}";
         var lines = new StringBuilder();
 
         if (data.CoteDorQuantity > 0)
@@ -82,8 +89,8 @@ internal static class EmailHtmlBuilder
             lines.AppendLine($@"
                 <tr>
                     <td style=""padding:8px 10px;"">Côte d'Or pakket</td>
-                    <td style=""padding:8px 10px;text-align:right;"">{data.CoteDorQuantity} x &euro;11,00</td>
-                    <td style=""padding:8px 10px;text-align:right;"">{FormatEuroCents(data.CoteDorQuantity * 1100)}</td>
+                    <td style=""padding:8px 10px;text-align:right;"">{data.CoteDorQuantity} x {FormatEuroCents(CookieSale2026Catalog.CoteDorUnitPriceCents)}</td>
+                    <td style=""padding:8px 10px;text-align:right;"">{FormatEuroCents(data.CoteDorQuantity * CookieSale2026Catalog.CoteDorUnitPriceCents)}</td>
                 </tr>");
         }
 
@@ -92,8 +99,8 @@ internal static class EmailHtmlBuilder
             lines.AppendLine($@"
                 <tr style=""background:#f8fafc;"">
                     <td style=""padding:8px 10px;"">Lotus pakket</td>
-                    <td style=""padding:8px 10px;text-align:right;"">{data.LotusQuantity} x &euro;9,00</td>
-                    <td style=""padding:8px 10px;text-align:right;"">{FormatEuroCents(data.LotusQuantity * 900)}</td>
+                    <td style=""padding:8px 10px;text-align:right;"">{data.LotusQuantity} x {FormatEuroCents(CookieSale2026Catalog.LotusUnitPriceCents)}</td>
+                    <td style=""padding:8px 10px;text-align:right;"">{FormatEuroCents(data.LotusQuantity * CookieSale2026Catalog.LotusUnitPriceCents)}</td>
                 </tr>");
         }
 
@@ -105,8 +112,7 @@ internal static class EmailHtmlBuilder
                 <p>Beste {safeName},</p>
                 <p>Bedankt voor je bestelling voor de koekjesverkoop van OC Pittem.</p>
                 <p><strong>Bevestigingsnummer:</strong> {safeConfirmationNumber}<br/>
-                   <strong>Naam leerling:</strong> {safeStudentName}<br/>
-                   <strong>Klas:</strong> {safeClassName}</p>
+                   {orderDetails}</p>
                 <table style=""border-collapse:collapse;width:100%;font-size:14px;margin-top:18px;"">
                     <thead>
                         <tr style=""background:#13A2A3;color:white;"">

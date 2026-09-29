@@ -1,7 +1,7 @@
-import { FormEvent, useEffect, useMemo, useState } from 'react';
+import { FormEvent, useEffect, useId, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import Section from '../components/Section';
-import { api, CookieSaleConfig } from '../services/api';
+import { api, CookieSaleConfig, CookieSaleOrderType } from '../services/api';
 import coteDorPackage from '../assets/cookies/cote-dor-package.webp';
 import lotusPackage from '../assets/cookies/lotus-package.webp';
 
@@ -11,6 +11,7 @@ interface ProductCardProps {
   name: string;
   description: string;
   price: string;
+  contents: string[];
 }
 
 function ProductCard({
@@ -19,20 +20,56 @@ function ProductCard({
   name,
   description,
   price,
+  contents,
 }: ProductCardProps) {
+  const [showContents, setShowContents] = useState(false);
+  const contentsId = useId();
+  const contentsHeadingId = useId();
+
+  const toggleContents = () => setShowContents((current) => !current);
+
   return (
     <article className="group overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-lg shadow-gray-900/5 ring-1 ring-gray-100 transition duration-200 hover:-translate-y-0.5 hover:shadow-xl hover:shadow-gray-900/10">
-      <div className="flex h-52 items-center justify-center bg-gradient-to-br from-amber-50 via-orange-50/60 to-yellow-50 p-5">
+      <button
+        type="button"
+        aria-expanded={showContents}
+        aria-controls={contentsId}
+        aria-label={`${showContents ? 'Verberg' : 'Bekijk'} inhoud van ${name}`}
+        onClick={toggleContents}
+        className="flex h-52 w-full items-center justify-center bg-gradient-to-br from-amber-50 via-orange-50/60 to-yellow-50 p-5 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-inset focus-visible:ring-primary-300"
+      >
         <img
           src={imageSrc}
           alt={imageAlt}
           className="h-full w-full object-contain drop-shadow-[0_12px_16px_rgba(120,53,15,0.12)] transition duration-300 group-hover:scale-[1.02]"
         />
-      </div>
+      </button>
       <div className="border-t border-gray-100 p-5">
         <h3 className="text-lg font-bold text-gray-900">{name}</h3>
         <p className="mt-1 min-h-10 text-sm leading-relaxed text-gray-500">{description}</p>
         <p className="mt-4 text-2xl font-extrabold text-primary-600">{price}</p>
+        <button
+          type="button"
+          aria-expanded={showContents}
+          aria-controls={contentsId}
+          onClick={toggleContents}
+          className="mt-4 inline-flex min-h-11 items-center rounded-lg font-semibold text-primary-700 underline decoration-primary-300 underline-offset-4 hover:text-primary-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-400 focus-visible:ring-offset-2"
+        >
+          {showContents ? 'Verberg inhoud' : 'Bekijk inhoud'}
+        </button>
+        {showContents && (
+          <div
+            id={contentsId}
+            role="region"
+            aria-labelledby={contentsHeadingId}
+            className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-gray-700"
+          >
+            <h4 id={contentsHeadingId} className="font-bold text-gray-900">Inhoud van het pakket</h4>
+            <ul className="mt-2 list-disc space-y-1 pl-5">
+              {contents.map((item) => <li key={item}>{item}</li>)}
+            </ul>
+          </div>
+        )}
       </div>
     </article>
   );
@@ -102,9 +139,11 @@ export default function CookieSalePage() {
   const [config, setConfig] = useState<CookieSaleConfig | null>(null);
   const [configError, setConfigError] = useState('');
   const [name, setName] = useState('');
+  const [orderType, setOrderType] = useState<CookieSaleOrderType>('student');
   const [studentName, setStudentName] = useState('');
   const [email, setEmail] = useState('');
   const [className, setClassName] = useState('');
+  const [staffCategory, setStaffCategory] = useState('');
   const [coteDorQuantity, setCoteDorQuantity] = useState(0);
   const [lotusQuantity, setLotusQuantity] = useState(0);
   const [submitting, setSubmitting] = useState(false);
@@ -153,8 +192,18 @@ export default function CookieSalePage() {
       return;
     }
 
-    if (!name.trim() || !studentName.trim() || !email.trim() || !className) {
-      setSubmitError('Vul de naam van de besteller en leerling, het e-mailadres en de klas in.');
+    if (!name.trim() || !email.trim()) {
+      setSubmitError('Vul de naam van de besteller en het e-mailadres in.');
+      return;
+    }
+
+    if (orderType === 'student' && (!studentName.trim() || !className)) {
+      setSubmitError('Vul de naam van de leerling en de klas in.');
+      return;
+    }
+
+    if (orderType === 'staff' && !staffCategory) {
+      setSubmitError('Kies je personeelsgroep.');
       return;
     }
 
@@ -171,10 +220,12 @@ export default function CookieSalePage() {
     setSubmitting(true);
     try {
       const response = await api.createCookieSaleCheckout({
-        name,
-        studentName: studentName.trim(),
-        email,
-        className,
+        name: name.trim(),
+        orderType,
+        studentName: orderType === 'student' ? studentName.trim() : undefined,
+        email: email.trim(),
+        className: orderType === 'student' ? className : undefined,
+        staffCategory: orderType === 'staff' ? staffCategory : undefined,
         coteDorQuantity,
         lotusQuantity,
       });
@@ -242,6 +293,17 @@ export default function CookieSalePage() {
                 name="Côte d'Or pakket"
                 description="Een assortiment Côte d'Or chocolade."
                 price={formatPrice(coteDorPrice)}
+                contents={[
+                  "1 x Côte d'Or mini bouchée",
+                  "1 x Côte d'Or reep Double Lait",
+                  "1 x Côte d'Or reep banaan-melk",
+                  "1 x Côte d'Or reep kokosnoot",
+                  "1 x Côte d'Or bouchée wit",
+                  "1 x Côte d'Or tablet melk",
+                  "1 x Côte d'Or reep wit praliné",
+                  "1 x Côte d'Or Nougatti",
+                  "1 x Côte d'Or Bouchée Melk",
+                ]}
               />
               <ProductCard
                 imageSrc={lotusPackage}
@@ -249,6 +311,18 @@ export default function CookieSalePage() {
                 name="Lotus pakket"
                 description="Een assortiment bekende Lotus-koekjes."
                 price={formatPrice(lotusPrice)}
+                contents={[
+                  '2 x mini Suzy Luikse wafel',
+                  '2 x mini frangipane',
+                  '2 x Suzy vanillewafel',
+                  '2 x Zebra',
+                  '1 x Lotus Biscoff speculoos',
+                  '2 x Lotus Biscoff speculoospasta',
+                  '2 x Dinosaurus minis granen',
+                  '2 x Cake Donut Choco Mania',
+                  '2 x mini madeleine',
+                  '2 x madeleine chocolade',
+                ]}
               />
             </div>
           </div>
@@ -277,8 +351,43 @@ export default function CookieSalePage() {
             )}
 
             <form onSubmit={handleSubmit} className="mt-6 space-y-5">
+              <fieldset disabled={!orderingAvailable}>
+                <legend className="block text-sm font-medium text-gray-700">Ik bestel als</legend>
+                <div className="mt-2 grid gap-3 sm:grid-cols-2">
+                  <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-gray-200 p-3 hover:bg-gray-50">
+                    <input
+                      type="radio"
+                      name="cookie-order-type"
+                      value="student"
+                      checked={orderType === 'student'}
+                      onChange={() => {
+                        setOrderType('student');
+                        setStaffCategory('');
+                      }}
+                      className="mt-1 h-4 w-4 border-gray-300 text-primary-600 focus:ring-primary-500"
+                    />
+                    <span className="text-sm font-medium text-gray-800">Ouder / familie van een leerling</span>
+                  </label>
+                  <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-gray-200 p-3 hover:bg-gray-50">
+                    <input
+                      type="radio"
+                      name="cookie-order-type"
+                      value="staff"
+                      checked={orderType === 'staff'}
+                      onChange={() => {
+                        setOrderType('staff');
+                        setStudentName('');
+                        setClassName('');
+                      }}
+                      className="mt-1 h-4 w-4 border-gray-300 text-primary-600 focus:ring-primary-500"
+                    />
+                    <span className="text-sm font-medium text-gray-800">Personeelslid</span>
+                  </label>
+                </div>
+              </fieldset>
+
               <div>
-                <label htmlFor="cookie-name" className="block text-sm font-medium text-gray-700">Naam ouder / besteller</label>
+                <label htmlFor="cookie-name" className="block text-sm font-medium text-gray-700">Naam besteller</label>
                 <input
                   id="cookie-name"
                   type="text"
@@ -290,18 +399,20 @@ export default function CookieSalePage() {
                 />
               </div>
 
-              <div>
-                <label htmlFor="cookie-student-name" className="block text-sm font-medium text-gray-700">Naam leerling</label>
-                <input
-                  id="cookie-student-name"
-                  type="text"
-                  required
-                  disabled={!orderingAvailable}
-                  value={studentName}
-                  onChange={(event) => setStudentName(event.target.value)}
-                  className="mt-1 block w-full rounded-lg border border-gray-300 px-4 py-2.5 text-gray-900 shadow-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-200 disabled:bg-gray-100"
-                />
-              </div>
+              {orderType === 'student' && (
+                <div>
+                  <label htmlFor="cookie-student-name" className="block text-sm font-medium text-gray-700">Naam leerling</label>
+                  <input
+                    id="cookie-student-name"
+                    type="text"
+                    required
+                    disabled={!orderingAvailable}
+                    value={studentName}
+                    onChange={(event) => setStudentName(event.target.value)}
+                    className="mt-1 block w-full rounded-lg border border-gray-300 px-4 py-2.5 text-gray-900 shadow-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-200 disabled:bg-gray-100"
+                  />
+                </div>
+              )}
 
               <div>
                 <label htmlFor="cookie-email" className="block text-sm font-medium text-gray-700">E-mailadres</label>
@@ -316,22 +427,41 @@ export default function CookieSalePage() {
                 />
               </div>
 
-              <div>
-                <label htmlFor="cookie-class" className="block text-sm font-medium text-gray-700">Klas</label>
-                <select
-                  id="cookie-class"
-                  required
-                  disabled={!orderingAvailable}
-                  value={className}
-                  onChange={(event) => setClassName(event.target.value)}
-                  className="mt-1 block w-full rounded-lg border border-gray-300 px-4 py-2.5 text-gray-900 shadow-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-200 disabled:bg-gray-100"
-                >
-                  <option value="">Kies een klas</option>
-                  {config?.classes.map((classOption) => (
-                    <option key={classOption} value={classOption}>{classOption}</option>
-                  ))}
-                </select>
-              </div>
+              {orderType === 'student' ? (
+                <div>
+                  <label htmlFor="cookie-class" className="block text-sm font-medium text-gray-700">Klas</label>
+                  <select
+                    id="cookie-class"
+                    required
+                    disabled={!orderingAvailable}
+                    value={className}
+                    onChange={(event) => setClassName(event.target.value)}
+                    className="mt-1 block w-full rounded-lg border border-gray-300 px-4 py-2.5 text-gray-900 shadow-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-200 disabled:bg-gray-100"
+                  >
+                    <option value="">Kies een klas</option>
+                    {config?.classes.map((classOption) => (
+                      <option key={classOption} value={classOption}>{classOption}</option>
+                    ))}
+                  </select>
+                </div>
+              ) : (
+                <div>
+                  <label htmlFor="cookie-staff-category" className="block text-sm font-medium text-gray-700">Personeelsgroep</label>
+                  <select
+                    id="cookie-staff-category"
+                    required
+                    disabled={!orderingAvailable}
+                    value={staffCategory}
+                    onChange={(event) => setStaffCategory(event.target.value)}
+                    className="mt-1 block w-full rounded-lg border border-gray-300 px-4 py-2.5 text-gray-900 shadow-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-200 disabled:bg-gray-100"
+                  >
+                    <option value="">Kies een personeelsgroep</option>
+                    {config?.staffCategories?.map((category) => (
+                      <option key={category} value={category}>{category}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
 
               <div className="space-y-3">
                 <QuantitySelector

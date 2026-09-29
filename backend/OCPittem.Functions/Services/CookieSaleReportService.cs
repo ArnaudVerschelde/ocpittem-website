@@ -1,6 +1,7 @@
 using ClosedXML.Excel;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using OCPittem.Functions.Configuration;
 using OCPittem.Functions.Models;
 
 namespace OCPittem.Functions.Services;
@@ -59,13 +60,17 @@ public class CookieSaleReportService : ICookieSaleReportService
     {
         var paidOrders = orders
             .Where(order => order.PaymentStatus == nameof(CookieOrderStatus.Paid))
-            .OrderBy(order => order.ClassName, StringComparer.OrdinalIgnoreCase)
+            .OrderBy(IsStaffOrder)
+            .ThenBy(
+                order => IsStaffOrder(order) ? order.StaffCategory : order.ClassName,
+                StringComparer.OrdinalIgnoreCase)
             .ThenBy(order => order.Name, StringComparer.OrdinalIgnoreCase)
             .ToList();
 
         using var workbook = new XLWorkbook();
         BuildOverviewWorksheet(workbook, paidOrders);
-        BuildClassWorksheets(workbook, paidOrders);
+        BuildClassWorksheets(workbook, paidOrders.Where(order => !IsStaffOrder(order)).ToList());
+        BuildStaffWorksheet(workbook, paidOrders.Where(IsStaffOrder).ToList());
 
         using var stream = new MemoryStream();
         workbook.SaveAs(stream);
@@ -89,6 +94,8 @@ public class CookieSaleReportService : ICookieSaleReportService
             "Totaal pakketten",
             "Totaalbedrag",
             "Betaald op",
+            "Besteltype",
+            "Personeelsgroep",
         ];
         WriteHeader(worksheet, headers);
 
@@ -110,6 +117,8 @@ public class CookieSaleReportService : ICookieSaleReportService
                 worksheet.Cell(row, 10).Value = order.PaidUtc.Value.UtcDateTime;
                 worksheet.Cell(row, 10).Style.DateFormat.Format = "dd/MM/yyyy HH:mm";
             }
+            worksheet.Cell(row, 11).Value = IsStaffOrder(order) ? "Personeel" : "Leerling";
+            worksheet.Cell(row, 12).Value = IsStaffOrder(order) ? order.StaffCategory : string.Empty;
             row++;
         }
 
@@ -135,7 +144,11 @@ public class CookieSaleReportService : ICookieSaleReportService
         XLWorkbook workbook,
         IReadOnlyList<CookieOrderEntity> orders)
     {
-        var usedNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "Overzicht" };
+        var usedNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+        {
+            "Overzicht",
+            "Personeel",
+        };
 
         foreach (var classGroup in orders.GroupBy(order => order.ClassName, StringComparer.OrdinalIgnoreCase))
         {
@@ -197,6 +210,129 @@ public class CookieSaleReportService : ICookieSaleReportService
 
             FormatWorksheet(worksheet, headers.Length);
         }
+    }
+
+    private static void BuildStaffWorksheet(
+        XLWorkbook workbook,
+        IReadOnlyList<CookieOrderEntity> orders)
+    {
+        var worksheet = workbook.Worksheets.Add("Personeel");
+        string[] headers =
+        [
+            "Bevestigingsnummer",
+            "Naam besteller",
+            "Personeelsgroep",
+            "E-mail",
+            "Côte d'Or",
+            "Lotus",
+            "Totaal pakketten",
+            "Totaalbedrag",
+            "Betaalstatus",
+            "Betaald op",
+        ];
+        WriteHeader(worksheet, headers);
+
+        var staffOrders = orders
+            .OrderBy(order => GetStaffCategoryOrder(order.StaffCategory))
+            .ThenBy(order => order.StaffCategory, StringComparer.OrdinalIgnoreCase)
+            .ThenBy(order => order.Name, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+        var row = 2;
+
+        foreach (var order in staffOrders)
+        {
+            worksheet.Cell(row, 1).Value = order.ConfirmationNumber;
+            worksheet.Cell(row, 2).Value = order.Name;
+            worksheet.Cell(row, 3).Value = order.StaffCategory;
+            worksheet.Cell(row, 4).Value = order.Email;
+            worksheet.Cell(row, 5).Value = order.CoteDorQuantity;
+            worksheet.Cell(row, 6).Value = order.LotusQuantity;
+            worksheet.Cell(row, 7).Value = order.TotalPackages;
+            worksheet.Cell(row, 8).Value = order.TotalAmountCents / 100m;
+            worksheet.Cell(row, 8).Style.NumberFormat.Format = "€ #,##0.00";
+            worksheet.Cell(row, 9).Value = order.PaymentStatus;
+            if (order.PaidUtc.HasValue)
+            {
+                worksheet.Cell(row, 10).Value = order.PaidUtc.Value.UtcDateTime;
+                worksheet.Cell(row, 10).Style.DateFormat.Format = "dd/MM/yyyy HH:mm";
+            }
+            row++;
+        }
+
+        var totalsRow = row + 1;
+        worksheet.Cell(totalsRow, 1).Value = "TOTALEN";
+        worksheet.Cell(totalsRow, 1).Style.Font.Bold = true;
+        WriteSummaryValue(worksheet, totalsRow, 7, "Bestellingen", staffOrders.Count);
+        WriteSummaryValue(
+            worksheet,
+            totalsRow + 1,
+            7,
+            "Côte d'Or",
+            staffOrders.Sum(order => order.CoteDorQuantity));
+        WriteSummaryValue(
+            worksheet,
+            totalsRow + 2,
+            7,
+            "Lotus",
+            staffOrders.Sum(order => order.LotusQuantity));
+        WriteSummaryValue(
+            worksheet,
+            totalsRow + 3,
+            7,
+            "Totaal pakketten",
+            staffOrders.Sum(order => order.TotalPackages));
+        WriteSummaryValue(
+            worksheet,
+            totalsRow + 4,
+            7,
+            "Omzet",
+            staffOrders.Sum(order => order.TotalAmountCents) / 100m,
+            currency: true);
+
+        var categorySummaryRow = totalsRow + 7;
+        worksheet.Cell(categorySummaryRow, 1).Value = "SAMENVATTING PER PERSONEELSGROEP";
+        worksheet.Cell(categorySummaryRow, 1).Style.Font.Bold = true;
+        worksheet.Range(categorySummaryRow, 1, categorySummaryRow, 6).Merge();
+
+        string[] categoryHeaders =
+        [
+            "Personeelsgroep",
+            "Bestellingen",
+            "Côte d'Or",
+            "Lotus",
+            "Totaal pakketten",
+            "Omzet",
+        ];
+        for (var column = 1; column <= categoryHeaders.Length; column++)
+        {
+            var cell = worksheet.Cell(categorySummaryRow + 1, column);
+            cell.Value = categoryHeaders[column - 1];
+            cell.Style.Font.Bold = true;
+            cell.Style.Fill.BackgroundColor = XLColor.FromHtml("#E0F7F7");
+        }
+
+        var categoryRow = categorySummaryRow + 2;
+        foreach (var categoryGroup in staffOrders
+                     .GroupBy(
+                         order => string.IsNullOrWhiteSpace(order.StaffCategory)
+                             ? "Onbekend"
+                             : order.StaffCategory,
+                         StringComparer.OrdinalIgnoreCase)
+                     .OrderBy(group => GetStaffCategoryOrder(group.Key))
+                     .ThenBy(group => group.Key, StringComparer.OrdinalIgnoreCase))
+        {
+            worksheet.Cell(categoryRow, 1).Value = categoryGroup.Key;
+            worksheet.Cell(categoryRow, 2).Value = categoryGroup.Count();
+            worksheet.Cell(categoryRow, 3).Value = categoryGroup.Sum(order => order.CoteDorQuantity);
+            worksheet.Cell(categoryRow, 4).Value = categoryGroup.Sum(order => order.LotusQuantity);
+            worksheet.Cell(categoryRow, 5).Value = categoryGroup.Sum(order => order.TotalPackages);
+            worksheet.Cell(categoryRow, 6).Value =
+                categoryGroup.Sum(order => order.TotalAmountCents) / 100m;
+            worksheet.Cell(categoryRow, 6).Style.NumberFormat.Format = "€ #,##0.00";
+            categoryRow++;
+        }
+
+        FormatWorksheet(worksheet, headers.Length);
     }
 
     private static void WriteHeader(IXLWorksheet worksheet, IReadOnlyList<string> headers)
@@ -262,5 +398,27 @@ public class CookieSaleReportService : ICookieSaleReportService
         }
 
         return candidate;
+    }
+
+    private static bool IsStaffOrder(CookieOrderEntity order) =>
+        string.Equals(
+            order.OrderType,
+            CookieSale2026Catalog.StaffOrderType,
+            StringComparison.OrdinalIgnoreCase);
+
+    private static int GetStaffCategoryOrder(string category)
+    {
+        for (var index = 0; index < CookieSale2026Catalog.StaffCategories.Count; index++)
+        {
+            if (string.Equals(
+                    CookieSale2026Catalog.StaffCategories[index],
+                    category,
+                    StringComparison.OrdinalIgnoreCase))
+            {
+                return index;
+            }
+        }
+
+        return CookieSale2026Catalog.StaffCategories.Count;
     }
 }

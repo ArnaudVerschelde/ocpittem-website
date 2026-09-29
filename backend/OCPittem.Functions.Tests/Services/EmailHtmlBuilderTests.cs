@@ -309,9 +309,11 @@ public class EmailHtmlBuilderTests
             OrderId: "order-1",
             ConfirmationNumber: "KV26-23456789ABCD",
             Name: "<Ouder>",
+            OrderType: "student",
             StudentName: "Leerling & Test",
             Email: "ouder@example.com",
             ClassName: "Klas & test",
+            StaffCategory: null,
             CoteDorQuantity: 2,
             LotusQuantity: 1,
             TotalPackages: 3,
@@ -327,5 +329,30 @@ public class EmailHtmlBuilderTests
         Assert.Contains("2 x &euro;11,00", html);
         Assert.Contains("1 x &euro;9,00", html);
         Assert.Contains("&euro;31,00", html);
+    }
+
+    [Fact]
+    public void BuildCookieSaleConfirmationHtml_StaffOrderShowsCategoryWithoutPupilFields()
+    {
+        var data = new CookieSaleConfirmationData(
+            OrderId: "order-2",
+            ConfirmationNumber: "KV26-STAFF2345678",
+            Name: "Personeelslid",
+            OrderType: "staff",
+            StudentName: null,
+            Email: "personeel@example.com",
+            ClassName: null,
+            StaffCategory: "Administratie / directie",
+            CoteDorQuantity: 0,
+            LotusQuantity: 1,
+            TotalPackages: 1,
+            TotalAmountCents: 900);
+
+        var html = EmailHtmlBuilder.BuildCookieSaleConfirmationHtml(data);
+
+        Assert.Contains("Personeelsgroep", html);
+        Assert.Contains("Administratie / directie", html);
+        Assert.DoesNotContain("Naam leerling", html);
+        Assert.DoesNotContain("<strong>Klas:", html);
     }
 }

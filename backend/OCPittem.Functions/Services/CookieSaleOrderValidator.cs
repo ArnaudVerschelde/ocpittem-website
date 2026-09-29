@@ -30,10 +30,14 @@ internal static class CookieSaleOrderValidator
             return false;
         }
 
-        var studentName = request.StudentName?.Trim() ?? string.Empty;
-        if (studentName.Length == 0 || studentName.Length > MaximumNameLength)
+        var orderType = request.OrderType?.Trim().ToLowerInvariant();
+        if (string.IsNullOrEmpty(orderType))
+            orderType = CookieSale2026Catalog.StudentOrderType;
+
+        if (orderType is not CookieSale2026Catalog.StudentOrderType
+            and not CookieSale2026Catalog.StaffOrderType)
         {
-            error = "Vul een geldige naam van de leerling in.";
+            error = "Kies of je bestelt voor een leerling of als personeelslid.";
             return false;
         }
 
@@ -47,14 +51,40 @@ internal static class CookieSaleOrderValidator
             return false;
         }
 
-        var requestedClass = request.ClassName?.Trim() ?? string.Empty;
-        var canonicalClass = allowedClasses.FirstOrDefault(
-            className => string.Equals(className, requestedClass, StringComparison.OrdinalIgnoreCase));
-
-        if (canonicalClass is null)
+        string? studentName = null;
+        string? canonicalClass = null;
+        string? canonicalStaffCategory = null;
+        if (orderType == CookieSale2026Catalog.StudentOrderType)
         {
-            error = "Kies een geldige klas.";
-            return false;
+            studentName = request.StudentName?.Trim() ?? string.Empty;
+            if (studentName.Length == 0 || studentName.Length > MaximumNameLength)
+            {
+                error = "Vul een geldige naam van de leerling in.";
+                return false;
+            }
+
+            var requestedClass = request.ClassName?.Trim() ?? string.Empty;
+            canonicalClass = allowedClasses.FirstOrDefault(
+                className => string.Equals(className, requestedClass, StringComparison.OrdinalIgnoreCase));
+            if (canonicalClass is null)
+            {
+                error = "Kies een geldige klas.";
+                return false;
+            }
+        }
+        else
+        {
+            var requestedStaffCategory = request.StaffCategory?.Trim() ?? string.Empty;
+            canonicalStaffCategory = CookieSale2026Catalog.StaffCategories.FirstOrDefault(
+                category => string.Equals(
+                    category,
+                    requestedStaffCategory,
+                    StringComparison.OrdinalIgnoreCase));
+            if (canonicalStaffCategory is null)
+            {
+                error = "Kies een geldige personeelsgroep.";
+                return false;
+            }
         }
 
         if (request.CoteDorQuantity < 0 || request.LotusQuantity < 0)
@@ -80,9 +110,11 @@ internal static class CookieSaleOrderValidator
 
         order = new ValidatedCookieSaleOrder(
             name,
+            orderType,
             studentName,
             email,
             canonicalClass,
+            canonicalStaffCategory,
             request.CoteDorQuantity,
             request.LotusQuantity,
             totalPackages,

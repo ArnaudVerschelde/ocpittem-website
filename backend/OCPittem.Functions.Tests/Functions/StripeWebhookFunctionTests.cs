@@ -308,6 +308,7 @@ public class StripeWebhookFunctionTests
         await _email.Received(1).SendCookieSaleConfirmationAsync(
             Arg.Is<CookieSaleConfirmationData>(data =>
                 data.ConfirmationNumber == "KV26-23456789ABCD"
+                && data.OrderType == "student"
                 && data.StudentName == "Test Leerling"
                 && data.TotalAmountCents == 3100));
         await _storage.Received(1).MarkCookieOrderConfirmationEmailSentAsync(
@@ -458,6 +459,7 @@ public class StripeWebhookFunctionTests
         OrderId = "cookie-order-1",
         ConfirmationNumber = "KV26-23456789ABCD",
         Name = "Test Ouder",
+        OrderType = "student",
         StudentName = "Test Leerling",
         Email = "ouder@example.com",
         ClassName = "Testklas",
