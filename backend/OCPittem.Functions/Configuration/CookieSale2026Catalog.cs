@@ -8,6 +8,7 @@ public static class CookieSale2026Catalog
     public const string LotusLabel = "Lotus pakket";
     public const string StudentOrderType = "student";
     public const string StaffOrderType = "staff";
+    public const string SupporterOrderType = "supporter";
     public const int CoteDorUnitPriceCents = 1100;
     public const int LotusUnitPriceCents = 900;
     public const int MaximumTotalPackages = 50;

@@ -35,9 +35,10 @@ internal static class CookieSaleOrderValidator
             orderType = CookieSale2026Catalog.StudentOrderType;
 
         if (orderType is not CookieSale2026Catalog.StudentOrderType
-            and not CookieSale2026Catalog.StaffOrderType)
+            and not CookieSale2026Catalog.StaffOrderType
+            and not CookieSale2026Catalog.SupporterOrderType)
         {
-            error = "Kies of je bestelt voor een leerling of als personeelslid.";
+            error = "Kies of je bestelt voor een leerling, als personeelslid of als sympathisant.";
             return false;
         }
 
@@ -72,7 +73,7 @@ internal static class CookieSaleOrderValidator
                 return false;
             }
         }
-        else
+        else if (orderType == CookieSale2026Catalog.StaffOrderType)
         {
             var requestedStaffCategory = request.StaffCategory?.Trim() ?? string.Empty;
             canonicalStaffCategory = CookieSale2026Catalog.StaffCategories.FirstOrDefault(

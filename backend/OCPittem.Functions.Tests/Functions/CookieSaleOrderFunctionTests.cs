@@ -123,6 +123,48 @@ public class CookieSaleOrderFunctionTests
     }
 
     [Fact]
+    public async Task CreateCheckout_ValidSupporterRequest_PersistsWithoutPupilOrStaffFieldsAndReachesStripe()
+    {
+        var sut = CreateSut(["Testklas"]);
+        var request = HttpRequestHelper.CreateJsonRequest(new
+        {
+            name = "Test Sympathisant",
+            orderType = "supporter",
+            email = "sympathisant@example.com",
+            coteDorQuantity = 1,
+            lotusQuantity = 2,
+        });
+        _stripe.CreateCookieSaleCheckoutSessionAsync(
+                Arg.Any<string>(),
+                "sympathisant@example.com",
+                1,
+                2)
+            .Returns(new StripeCheckoutResult("https://checkout.stripe.test/supporter", "cs_test_supporter"));
+
+        var result = await sut.CreateCheckout(request);
+
+        var ok = Assert.IsType<OkObjectResult>(result);
+        var response = Assert.IsType<CreateCheckoutResponse>(ok.Value);
+        Assert.Equal("https://checkout.stripe.test/supporter", response.CheckoutUrl);
+        await _storage.Received(1).SaveCookieOrderAsync(
+            Arg.Is<CookieOrderEntity>(order =>
+                order.OrderType == "supporter"
+                && order.Name == "Test Sympathisant"
+                && order.StudentName == ""
+                && order.ClassName == ""
+                && order.StaffCategory == ""
+                && order.TotalPackages == 3
+                && order.TotalAmountCents == 2900));
+        await _stripe.Received(1).CreateCookieSaleCheckoutSessionAsync(
+            Arg.Any<string>(),
+            "sympathisant@example.com",
+            1,
+            2);
+        await _storage.Received(1)
+            .SetCookieOrderStripeSessionAsync(Arg.Any<string>(), "cs_test_supporter");
+    }
+
+    [Fact]
     public async Task CreateCheckout_InvalidClass_ReturnsBadRequest()
     {
         var sut = CreateSut(["Andere klas"]);

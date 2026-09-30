@@ -58,7 +58,7 @@ export interface CookieSaleConfig {
   products: CookieSaleProduct[];
 }
 
-export type CookieSaleOrderType = 'student' | 'staff';
+export type CookieSaleOrderType = 'student' | 'staff' | 'supporter';
 
 export interface CreateCookieSaleCheckoutRequest {
   name: string;

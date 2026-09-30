@@ -142,6 +142,98 @@ public class CookieSaleReportServiceTests
     }
 
     [Fact]
+    public void BuildExcel_SeparatesSupportersAndIncludesThemInGlobalTotals()
+    {
+        var studentOrder = CreateOrder("KV26-STUDENT00001", "Klas A", "Anna", 1, 0, CookieOrderStatus.Paid);
+        var legacyStudentOrder = CreateOrder(
+            "KV26-LEGACY000001",
+            "Klas A",
+            "Bram",
+            0,
+            1,
+            CookieOrderStatus.Paid,
+            orderType: "");
+        var staffOrder = CreateOrder(
+            "KV26-STAFF0000001",
+            "",
+            "Sara",
+            0,
+            2,
+            CookieOrderStatus.Paid,
+            orderType: "staff",
+            staffCategory: "Zorg");
+        var supporterOrder = CreateOrder(
+            "KV26-SUPPORTER001",
+            "",
+            "Sven",
+            2,
+            1,
+            CookieOrderStatus.Paid,
+            orderType: "supporter");
+        var pendingSupporterOrder = CreateOrder(
+            "KV26-SUPPENDING01",
+            "",
+            "Pending",
+            5,
+            5,
+            CookieOrderStatus.Pending,
+            orderType: "supporter");
+
+        var bytes = CookieSaleReportService.BuildExcel(
+            [supporterOrder, staffOrder, studentOrder, legacyStudentOrder, pendingSupporterOrder]);
+
+        using var workbook = new XLWorkbook(new MemoryStream(bytes));
+        Assert.Equal(
+            ["Overzicht", "Klas A", "Personeel", "Sympathisanten"],
+            workbook.Worksheets.Select(worksheet => worksheet.Name).ToArray());
+
+        var overview = workbook.Worksheet("Overzicht");
+        Assert.Equal("KV26-SUPPORTER001", overview.Cell(5, 1).GetString());
+        Assert.Equal("Sympathisant", overview.Cell(5, 11).GetString());
+        Assert.Equal(string.Empty, overview.Cell(5, 12).GetString());
+        Assert.DoesNotContain(overview.CellsUsed(), cell => cell.GetString() == "KV26-SUPPENDING01");
+        AssertSummaryValue(overview, "Bestellingen", 4m);
+        AssertSummaryValue(overview, "Côte d'Or", 3m);
+        AssertSummaryValue(overview, "Lotus", 4m);
+        AssertSummaryValue(overview, "Totaal pakketten", 7m);
+        AssertSummaryValue(overview, "Totale omzet", 69m);
+
+        var supporters = workbook.Worksheet("Sympathisanten");
+        Assert.Equal("Bevestigingsnummer", supporters.Cell(1, 1).GetString());
+        Assert.Equal("Betaalstatus", supporters.Cell(1, 8).GetString());
+        Assert.Equal("KV26-SUPPORTER001", supporters.Cell(2, 1).GetString());
+        Assert.Equal("Sven", supporters.Cell(2, 2).GetString());
+        Assert.Equal("sven@example.com", supporters.Cell(2, 3).GetString());
+        Assert.Equal(2, supporters.Cell(2, 4).GetValue<int>());
+        Assert.Equal(1, supporters.Cell(2, 5).GetValue<int>());
+        Assert.Equal(3, supporters.Cell(2, 6).GetValue<int>());
+        Assert.Equal(31m, supporters.Cell(2, 7).GetValue<decimal>());
+        Assert.Equal(nameof(CookieOrderStatus.Paid), supporters.Cell(2, 8).GetString());
+        Assert.False(supporters.Cell(2, 9).IsEmpty());
+        Assert.DoesNotContain(supporters.CellsUsed(), cell => cell.GetString() == "KV26-STUDENT00001");
+        Assert.DoesNotContain(supporters.CellsUsed(), cell => cell.GetString() == "KV26-STAFF0000001");
+        Assert.DoesNotContain(supporters.CellsUsed(), cell => cell.GetString() == "KV26-SUPPENDING01");
+        AssertSummaryValue(supporters, "Bestellingen", 1m);
+        AssertSummaryValue(supporters, "Côte d'Or", 2m);
+        AssertSummaryValue(supporters, "Lotus", 1m);
+        AssertSummaryValue(supporters, "Totaal pakketten", 3m);
+        AssertSummaryValue(supporters, "Omzet", 31m);
+
+        var classSheet = workbook.Worksheet("Klas A");
+        Assert.Contains(classSheet.CellsUsed(), cell => cell.GetString() == "KV26-STUDENT00001");
+        Assert.Contains(classSheet.CellsUsed(), cell => cell.GetString() == "KV26-LEGACY000001");
+        Assert.DoesNotContain(classSheet.CellsUsed(), cell => cell.GetString() == "KV26-SUPPORTER001");
+        Assert.False(workbook.Worksheets.TryGetWorksheet("Klas", out _));
+
+        var staffSheet = workbook.Worksheet("Personeel");
+        Assert.Contains(staffSheet.CellsUsed(), cell => cell.GetString() == "KV26-STAFF0000001");
+        Assert.Contains(staffSheet.CellsUsed(), cell => cell.GetString() == "SAMENVATTING PER PERSONEELSGROEP");
+        Assert.DoesNotContain(staffSheet.CellsUsed(), cell => cell.GetString() == "KV26-SUPPORTER001");
+        AssertSummaryValue(staffSheet, "Bestellingen", 1m);
+        AssertSummaryValue(staffSheet, "Omzet", 18m);
+    }
+
+    [Fact]
     public void BuildExcel_WritesCorrectGlobalAndClassTotals()
     {
         var bytes = CookieSaleReportService.BuildExcel(
@@ -251,7 +343,7 @@ public class CookieSaleReportServiceTests
             OrderType = orderType,
             ClassName = className,
             Name = name,
-            StudentName = orderType == "staff" ? "" : $"Leerling {name}",
+            StudentName = orderType is "staff" or "supporter" ? "" : $"Leerling {name}",
             StaffCategory = staffCategory,
             Email = $"{name.ToLowerInvariant()}@example.com",
             CoteDorQuantity = coteDorQuantity,

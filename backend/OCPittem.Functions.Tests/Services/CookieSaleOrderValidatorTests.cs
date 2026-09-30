@@ -134,6 +134,62 @@ public class CookieSaleOrderValidatorTests
     }
 
     [Fact]
+    public void TryValidate_SupporterOrder_RequiresOnlyNameEmailAndQuantities()
+    {
+        var request = CreateRequest(1, 2) with
+        {
+            OrderType = CookieSale2026Catalog.SupporterOrderType,
+            StudentName = null,
+            ClassName = null,
+            StaffCategory = null,
+        };
+
+        var valid = CookieSaleOrderValidator.TryValidate(request, Classes, out var order, out _);
+
+        Assert.True(valid);
+        Assert.Equal(CookieSale2026Catalog.SupporterOrderType, order!.OrderType);
+        Assert.Null(order.StudentName);
+        Assert.Null(order.ClassName);
+        Assert.Null(order.StaffCategory);
+        Assert.Equal(3, order.TotalPackages);
+    }
+
+    [Fact]
+    public void TryValidate_SupporterOrder_IgnoresPupilAndStaffFields()
+    {
+        var request = CreateRequest(1, 0) with
+        {
+            OrderType = "  Supporter ",
+            StudentName = "Leerling",
+            ClassName = "Onbekende klas",
+            StaffCategory = "Onbekend",
+        };
+
+        var valid = CookieSaleOrderValidator.TryValidate(request, Classes, out var order, out _);
+
+        Assert.True(valid);
+        Assert.Equal(CookieSale2026Catalog.SupporterOrderType, order!.OrderType);
+        Assert.Null(order.StudentName);
+        Assert.Null(order.ClassName);
+        Assert.Null(order.StaffCategory);
+    }
+
+    [Fact]
+    public void TryValidate_SupporterOrderWithoutPackages_IsRejected()
+    {
+        var request = CreateRequest(0, 0) with
+        {
+            OrderType = CookieSale2026Catalog.SupporterOrderType,
+            StudentName = null,
+            ClassName = null,
+        };
+
+        var valid = CookieSaleOrderValidator.TryValidate(request, Classes, out _, out _);
+
+        Assert.False(valid);
+    }
+
+    [Fact]
     public void TryValidate_MissingOrderType_TreatsLegacyRequestAsStudentOrder()
     {
         var request = CreateRequest(1, 0) with { OrderType = null };

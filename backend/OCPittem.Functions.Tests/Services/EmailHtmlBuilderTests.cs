@@ -355,4 +355,31 @@ public class EmailHtmlBuilderTests
         Assert.DoesNotContain("Naam leerling", html);
         Assert.DoesNotContain("<strong>Klas:", html);
     }
+
+    [Fact]
+    public void BuildCookieSaleConfirmationHtml_SupporterOrderShowsOrderTypeWithoutPupilOrStaffFields()
+    {
+        var data = new CookieSaleConfirmationData(
+            OrderId: "order-3",
+            ConfirmationNumber: "KV26-SUPP23456789",
+            Name: "Sympathisant",
+            OrderType: "supporter",
+            StudentName: null,
+            Email: "sympathisant@example.com",
+            ClassName: null,
+            StaffCategory: null,
+            CoteDorQuantity: 1,
+            LotusQuantity: 0,
+            TotalPackages: 1,
+            TotalAmountCents: 1100);
+
+        var html = EmailHtmlBuilder.BuildCookieSaleConfirmationHtml(data);
+
+        Assert.Contains("KV26-SUPP23456789", html);
+        Assert.Contains("<strong>Besteltype:</strong> Sympathisant", html);
+        Assert.Contains("&euro;11,00", html);
+        Assert.DoesNotContain("Naam leerling", html);
+        Assert.DoesNotContain("<strong>Klas:", html);
+        Assert.DoesNotContain("Personeelsgroep", html);
+    }
 }

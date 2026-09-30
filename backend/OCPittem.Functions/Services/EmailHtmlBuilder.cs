@@ -78,9 +78,15 @@ internal static class EmailHtmlBuilder
             data.OrderType,
             CookieSale2026Catalog.StaffOrderType,
             StringComparison.OrdinalIgnoreCase);
+        var isSupporterOrder = string.Equals(
+            data.OrderType,
+            CookieSale2026Catalog.SupporterOrderType,
+            StringComparison.OrdinalIgnoreCase);
         var orderDetails = isStaffOrder
             ? $"<strong>Personeelsgroep:</strong> {WebUtility.HtmlEncode(data.StaffCategory)}"
-            : $@"<strong>Naam leerling:</strong> {WebUtility.HtmlEncode(data.StudentName)}<br/>
+            : isSupporterOrder
+                ? "<strong>Besteltype:</strong> Sympathisant"
+                : $@"<strong>Naam leerling:</strong> {WebUtility.HtmlEncode(data.StudentName)}<br/>
                    <strong>Klas:</strong> {WebUtility.HtmlEncode(data.ClassName)}";
         var lines = new StringBuilder();
 

@@ -383,6 +383,22 @@ export default function CookieSalePage() {
                     />
                     <span className="text-sm font-medium text-gray-800">Personeelslid</span>
                   </label>
+                  <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-gray-200 p-3 hover:bg-gray-50">
+                    <input
+                      type="radio"
+                      name="cookie-order-type"
+                      value="supporter"
+                      checked={orderType === 'supporter'}
+                      onChange={() => {
+                        setOrderType('supporter');
+                        setStudentName('');
+                        setClassName('');
+                        setStaffCategory('');
+                      }}
+                      className="mt-1 h-4 w-4 border-gray-300 text-primary-600 focus:ring-primary-500"
+                    />
+                    <span className="text-sm font-medium text-gray-800">Sympathisant</span>
+                  </label>
                 </div>
               </fieldset>
 
@@ -427,7 +443,7 @@ export default function CookieSalePage() {
                 />
               </div>
 
-              {orderType === 'student' ? (
+              {orderType === 'student' && (
                 <div>
                   <label htmlFor="cookie-class" className="block text-sm font-medium text-gray-700">Klas</label>
                   <select
@@ -444,7 +460,9 @@ export default function CookieSalePage() {
                     ))}
                   </select>
                 </div>
-              ) : (
+              )}
+
+              {orderType === 'staff' && (
                 <div>
                   <label htmlFor="cookie-staff-category" className="block text-sm font-medium text-gray-700">Personeelsgroep</label>
                   <select
