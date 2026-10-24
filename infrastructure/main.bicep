@@ -212,7 +212,7 @@ resource hostingPlan 'Microsoft.Web/serverfarms@2023-12-01' = {
 }
 
 // ============================================================
-// Function App (.NET 8 isolated — Flex Consumption)
+// Function App (.NET 10 isolated — Flex Consumption)
 // ============================================================
 resource functionApp 'Microsoft.Web/sites@2023-12-01' = {
   name: functionAppName
@@ -239,7 +239,7 @@ resource functionApp 'Microsoft.Web/sites@2023-12-01' = {
       }
       runtime: {
         name: 'dotnet-isolated'
-        version: '8.0'
+        version: '10.0'
       }
     }
     siteConfig: {
