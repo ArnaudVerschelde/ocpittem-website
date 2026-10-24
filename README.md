@@ -2,7 +2,7 @@
 
 Moderne website voor het **Oudercomité met Pit** (Pittem) met online ticketverkoop, koekjesbestellingen, sponsorpakketten, QR-ticketvalidatie en contactformulier.
 
-De applicatie bestaat uit een **React single-page app** (frontend), een **Azure Functions API** (.NET 8 isolated) en een volledig via **Bicep** beschreven **Azure-infrastructuur**. Betalingen verlopen via **Stripe**, e-mails via **Mailjet** en tickets/orders worden opgeslagen in **Azure Table Storage**.
+De applicatie bestaat uit een **React single-page app** (frontend), een **Azure Functions API** (.NET 10 isolated) en een volledig via **Bicep** beschreven **Azure-infrastructuur**. Betalingen verlopen via **Stripe**, e-mails via **Mailjet** en tickets/orders worden opgeslagen in **Azure Table Storage**.
 
 ---
 
@@ -16,7 +16,7 @@ De applicatie bestaat uit een **React single-page app** (frontend), een **Azure 
                                             │  fetch /api/*
                                             ▼
                             ┌──────────────────────────────┐
-                            │  Azure Functions (.NET 8)     │
+                            │  Azure Functions (.NET 10)    │
                             │  Flex Consumption, HTTP + Timer│
                             └───┬─────────┬─────────┬───────┘
                                 │         │         │
@@ -57,7 +57,7 @@ De applicatie bestaat uit een **React single-page app** (frontend), een **Azure 
 │       └── App.tsx                 # react-router-dom routing
 │
 ├── backend/
-│   ├── OCPittem.Functions/         # Azure Functions app (.NET 8 isolated)
+│   ├── OCPittem.Functions/         # Azure Functions app (.NET 10 isolated)
 │   │   ├── Functions/              # HTTP- & Timer-triggers (endpoints)
 │   │   ├── Services/               # Stripe, Mailjet/SMTP, Storage, PDF, QR, sponsors …
 │   │   ├── Models/                 # DTO's & Table Storage entities
@@ -81,7 +81,7 @@ De applicatie bestaat uit een **React single-page app** (frontend), een **Azure 
 | Laag | Technologie |
 |------|-------------|
 | **Frontend** | React 18, TypeScript, Vite 5, Tailwind CSS 3, react-router-dom 6, html5-qrcode |
-| **Backend** | .NET 8, Azure Functions v4 (isolated worker), HTTP- & Timer-triggers |
+| **Backend** | .NET 10 (LTS), Azure Functions v4 (isolated worker), HTTP- & Timer-triggers |
 | **Betalingen** | Stripe.net (Checkout Sessions + webhooks) |
 | **E-mail** | Mailjet.Api (met SMTP-fallback) |
 | **Documenten** | QuestPDF (PDF-tickets), QRCoder (QR-codes), ClosedXML (Excel-rapporten) |
@@ -131,8 +131,9 @@ npm run dev
 ### Backend
 
 Vereisten:
-- .NET 8 SDK
-- Azure Functions Core Tools v4
+- .NET 10 SDK (10.0.x)
+- Azure Functions Core Tools v4 (recente 4.x-versie)
+- Azure CLI 2.87 of nieuwer (voor `az functionapp runtime config` en `update-strategy`)
 - Azurite (lokale storage-emulator)
 
 ```bash
@@ -171,7 +172,7 @@ Dit provisioned in **West Europe**: Storage Account (+ tables & blob-container),
 
 ### Continue deployment (GitHub Actions)
 
-- **Backend** — `.github/workflows/deploy-backend.yml`: bij een push naar `main` met wijzigingen in `backend/**` wordt de Function App gepubliceerd naar Flex Consumption.
+- **Backend** — `.github/workflows/deploy-backend.yml`: wordt **enkel handmatig** gestart (`workflow_dispatch`). De workflow bouwt op .NET 10, draait eerst alle tests en publiceert pas daarna naar Flex Consumption. De automatische deploy bij een push naar `main` is bewust uitgeschakeld tijdens de migratie naar .NET 10, omdat de runtime-stack in Azure en het code-pakket samen moeten omschakelen. Volg `docs/net10-upgrade-runbook.md` (backup, volgorde, controles en rollback).
 - **Frontend** — de Azure Static Web Apps-workflow bouwt en deployt de React-app automatisch.
 
 ---
