@@ -172,7 +172,7 @@ Dit provisioned in **West Europe**: Storage Account (+ tables & blob-container),
 
 ### Continue deployment (GitHub Actions)
 
-- **Backend** — `.github/workflows/deploy-backend.yml`: wordt **enkel handmatig** gestart (`workflow_dispatch`). De workflow bouwt op .NET 10, draait eerst alle tests en publiceert pas daarna naar Flex Consumption. De automatische deploy bij een push naar `main` is bewust uitgeschakeld tijdens de migratie naar .NET 10, omdat de runtime-stack in Azure en het code-pakket samen moeten omschakelen. Volg `docs/net10-upgrade-runbook.md` (backup, volgorde, controles en rollback).
+- **Backend** — `.github/workflows/deploy-backend.yml`: wordt **enkel handmatig** gestart (`workflow_dispatch`). De workflow bouwt op .NET 10, draait eerst alle tests, zet daarna (indien ingevuld via de input `runtime_version`, bv. `10.0`) de runtime-stack van de Function App om en publiceert dan pas naar Flex Consumption, gevolgd door een health check. De automatische deploy bij een push naar `main` is bewust uitgeschakeld tijdens de migratie naar .NET 10, omdat de runtime-stack in Azure en het code-pakket samen moeten omschakelen. Volg `docs/net10-upgrade-runbook.md` (backup, volgorde, controles en rollback).
 - **Frontend** — de Azure Static Web Apps-workflow bouwt en deployt de React-app automatisch.
 
 ---

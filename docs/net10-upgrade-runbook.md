@@ -28,12 +28,17 @@ Moving to it is a possible follow-up.
 ## 2. Local verification results (2026-10-24)
 
 - `dotnet restore` / `build -c Release` / `publish -c Release`: succeeded, 0 errors.
-- `dotnet test`: **320 passed, 0 failed** (317 existing + 3 new).
+- `dotnet test`: **320 passed, 0 failed** (317 existing + 3 new). Re-run after the dependency fix below.
 - `functions.metadata` lists **20 functions** (18 HTTP + 2 timer), the same as the `[Function]` attributes.
 - Local host (`func host start`, .NET 10, sanitized settings, timers disabled, no Azurite):
   all 18 HTTP functions registered, `GET /api/health` → 200 `{"status":"ok"}`,
   `GET /api/cookie-sale/config` → 200 camelCase JSON.
-- Warnings: `NU1903` for `System.IO.Packaging 6.0.0` (transitive via ClosedXML 0.102.3, not touched by this change).
+- Dependency vulnerability: `NU1903` (CVE-2024-43483 / CVE-2024-43484, denial of service) for `System.IO.Packaging 6.0.0`,
+  pulled in transitively by ClosedXML 0.102.3 (directly and via DocumentFormat.OpenXml 2.16.0). **Fixed** by pinning
+  `System.IO.Packaging` 6.0.1 (first patched version, same major, patch release) in `OCPittem.Functions.csproj`.
+  ClosedXML stays at 0.102.3 on purpose: 0.104+ moves to OpenXml 3.x, a larger change to the Excel reports.
+  `dotnet list package --vulnerable --include-transitive` now reports no vulnerable packages; the warning is not suppressed.
+- Remaining build warnings: only environmental `MSB3231` (cannot delete old output folders, access denied; local OneDrive/file locks).
 
 **Not verified locally:** anything needing storage (no Azurite installed), real Stripe checkout/webhook,
 real Mailjet, timer execution, Flex Consumption behaviour with the 10.0 runtime. These need step 3.
@@ -46,8 +51,8 @@ Create a separate Flex Consumption app (e.g. `func-ocpittem-test`) with:
 - `Email__Enabled=false`, empty `App__ReportRecipients` and `App__CookieReportRecipients`;
 - `AzureWebJobs.CookieSaleDailyReport.Disabled=true` and `AzureWebJobs.DailyReport.Disabled=true`.
 
-Then: set runtime 10.0, `func azure functionapp publish func-ocpittem-test --dotnet-isolated`,
-and run: health → cookie-sale/config → create-checkout → pay with a Stripe test card →
+Then run the **same workflow** against it (`app_name=func-ocpittem-test`, its resource group, `runtime_version=10.0`; the service principal needs access to that app),
+which rehearses the exact cut-over steps. Then run: health → cookie-sale/config → create-checkout → pay with a Stripe test card →
 webhook (check signature + status Paid + idempotent on resend) → order-status.
 Known community reports of `dotnet exited with code 150` on Flex with .NET 10 (azure-functions-dotnet-worker#3351):
 this test deployment is where such a problem would show up, so it is a hard gate.
@@ -80,21 +85,31 @@ this test deployment is where such a problem would show up, so it is a hard gate
    (e.g. Storage Explorer export or `az storage entity query`). Note the latest `CookieOrders` row count and the number
    of `Pending` orders for comparison afterwards.
 6. Stripe Dashboard: note the webhook endpoint ID, its signing-secret setup and the current delivery history (read only).
-7. Upgrade Azure CLI locally to ≥ 2.87.0 (currently 2.42.0 on this machine).
+7. **Azure CLI requirement.** The local machine has Azure CLI 2.42.0, which does not know `az functionapp runtime config`
+   (and `update-strategy` needs ≥ 2.87.0). Upgrade it (`winget upgrade Microsoft.AzureCLI`, then `az version`) before the
+   backup step and before any manual rollback command. The GitHub-hosted runner already ships a recent CLI; the workflow
+   prints its version in the "Show tool versions" step.
+   Also confirm the service principal in the `AZURE_CREDENTIALS` secret may update site config
+   (e.g. Contributor on the Function App), because the workflow now calls `az functionapp runtime config set`.
 
 ## 6. Deployment sequence
 
 Auto-deploy is off: merging to `main` **does not** deploy (the merged workflow has only `workflow_dispatch`).
 
-1. Non-production validation (section 3) passed; PR reviewed; backup checklist complete. Pick a low-traffic window.
+1. Non-production validation (section 3) passed; PR reviewed; backup checklist complete. Pick a low-traffic (evening) window.
 2. Merge the PR into `main` (requires your approval). Confirm in the Actions tab that **no** run started.
-3. Start the workflow manually (GitHub → Actions → Deploy Backend → Run workflow, ref `main`).
-   The build/test steps run first and do not affect production; **if they fail, stop. Nothing has changed.**
-4. When the run reaches **"Install Azure Functions Core Tools"**, immediately switch the runtime:
-   `az functionapp runtime config set -n func-ocpittem-2026 -g rg-ocpittem --runtime-version 10.0`
-   The publish step follows within about a minute. Expected impact: roughly 1–3 minutes of failed requests
-   (runtime restart + package publish). Do not run any other Bicep/App Settings deployment in between: each is a separate site update.
-5. Run the post-deployment checks (section 7). Do not run `az deployment group create` for `main.bicep` as part of this
+3. GitHub → Actions → Deploy Backend → **Run workflow**, ref `main`, with:
+   `app_name=func-ocpittem-2026`, `resource_group=rg-ocpittem`, **`runtime_version=10.0`**.
+4. The workflow does the coordination itself, in this order:
+   1. restore, build and **all tests**: if anything fails here the run stops and **nothing in Azure has changed**;
+   2. Azure login, then prints the current runtime config (record it);
+   3. `az functionapp runtime config set --runtime-version 10.0`, then waits 30 s (Microsoft's guidance);
+   4. `func azure functionapp publish` (the .NET 10 package);
+   5. health check against `/api/health` (retries up to ~2 minutes) and prints the final runtime config.
+   Expected impact: planned downtime from step 3 until the publish completes, roughly 1–3 minutes of failed requests.
+   Do not run any Bicep/app-settings change at the same time: each is a separate site update.
+5. If the run fails after step 3 (runtime already 10.0, code possibly not), go straight to section 8; do not re-run blindly.
+6. Run the post-deployment checks (section 7). Do not run `az deployment group create` for `main.bicep` as part of this
    rollout; it replaces the entire app-settings collection. If you want the Bicep and Azure to agree,
    run `az deployment group what-if` later as a separate, reviewed step.
 
@@ -125,15 +140,22 @@ Auto-deploy is off: merging to `main` **does not** deploy (the merged workflow h
 
 Trigger: health fails after ~5 minutes, functions are missing, webhooks keep failing, or orders cannot be finalized.
 
-1. Switch the runtime back: `az functionapp runtime config set -n func-ocpittem-2026 -g rg-ocpittem --runtime-version 8.0`
-2. Redeploy the previous code, by either:
-   - **A (preferred, CI):** GitHub → Actions → Deploy Backend → Run workflow, using the tag `pre-net10-a7ec102` as the ref
-     (that version's workflow targets .NET 8 and has `workflow_dispatch`); or
-   - **B (artifact):** publish the package saved in step 5.2 to the app (zip deploy).
+1. Switch the runtime back (needs Azure CLI ≥ 2.87, see 5.7):
+   `az functionapp runtime config set -n func-ocpittem-2026 -g rg-ocpittem --runtime-version 8.0`
+   Code and runtime must match, so do step 2 immediately: the app is down until the .NET 8 package is published.
+2. Redeploy the previous code:
+   - **A (CI):** GitHub → Actions → Deploy Backend → Run workflow, choosing the tag `pre-net10-a7ec102` as the ref
+     (that version's workflow builds with the .NET 8 SDK, publishes to `func-ocpittem-2026`, and has `workflow_dispatch`).
+     It rebuilds from source (about 3–5 min), so the outage lasts that long; to shorten it, start this run first and
+     run step 1 when it reaches the publish step; or
+   - **B (artifact):** deploy the package saved in 5.2 to the app. Rehearse this once on the test app
+     before relying on it; the exact zip-deploy command for Flex is not verified here.
 3. Re-run the checks in section 7 (runtime shows 8.0, health, config).
 4. Resend failed Stripe webhook deliveries; reconcile `Pending` orders against Stripe.
 5. The `main` branch still holds the .NET 10 code: do not trigger further deploys from it until fixed
    (`git revert` the merge or fix forward).
+
+Rehearse the rollback (set 8.0 + redeploy the tag) once on the non-production app before the real deployment.
 
 Rollback caveat: .NET 8 on Functions is only supported until 10 Nov 2026. Storage data is not changed by this
 migration, so no data rollback is expected; the backups in section 5 are for safety only.

@@ -1,15 +1,37 @@
 name: Deploy Backend (Azure Functions)
 
-# MANUAL deploy only (workflow_dispatch). The automatic deploy on push to main was
-# deliberately removed for the .NET 8 -> .NET 10 migration: the Azure runtime stack
-# (az functionapp runtime config set --runtime-version 10.0) and the code package must be
-# switched together. See docs/net10-upgrade-runbook.md before running this workflow.
+# MANUAL deploy only (workflow_dispatch). The automatic deploy on push to main was removed for the
+# .NET 8 -> .NET 10 migration. See docs/net10-upgrade-runbook.md before running this workflow.
+#
+# Order of operations (nothing in Azure changes until the tests have passed):
+#   build -> test -> Azure login -> [switch runtime stack] -> wait -> publish code -> health check
+#
+# For the .NET 10 cut-over set `runtime_version` to 10.0. Leave it empty for a normal code-only deploy.
+# Rollback to .NET 8 is NOT done with this workflow: see the runbook (set runtime 8.0 first, then run
+# the workflow from the pre-net10 tag).
 on:
   workflow_dispatch:
+    inputs:
+      app_name:
+        description: "Function App name (use the non-production app for validation)"
+        required: true
+        default: "func-ocpittem-2026"
+      resource_group:
+        description: "Resource group of the Function App"
+        required: true
+        default: "rg-ocpittem"
+      runtime_version:
+        description: "dotnet-isolated runtime version to set before publishing (e.g. 10.0). Empty = leave unchanged."
+        required: false
+        default: ""
 
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
+    env:
+      APP_NAME: ${{ inputs.app_name }}
+      RESOURCE_GROUP: ${{ inputs.resource_group }}
+      RUNTIME_VERSION: ${{ inputs.runtime_version }}
 
     steps:
       - uses: actions/checkout@v4
@@ -30,11 +52,6 @@ jobs:
       - name: Test (gate before deploy)
         run: dotnet test backend/OCPittem.Functions.Tests/OCPittem.Functions.Tests.csproj -c Release --no-build
 
-      - name: Azure Login
-        uses: Azure/login@v2
-        with:
-          creds: ${{ secrets.AZURE_CREDENTIALS }}
-
       - name: Install Azure Functions Core Tools
         run: npm install -g azure-functions-core-tools@4 --unsafe-perm true
 
@@ -42,8 +59,35 @@ jobs:
         run: |
           dotnet --version
           func --version
+          az version --query '"azure-cli"' -o tsv
+
+      - name: Azure Login
+        uses: Azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Show current runtime configuration
+        run: az functionapp runtime config show --name "$APP_NAME" --resource-group "$RESOURCE_GROUP"
+
+      - name: Switch runtime stack (only when runtime_version is set)
+        if: ${{ inputs.runtime_version != '' }}
+        run: |
+          az functionapp runtime config set \
+            --name "$APP_NAME" --resource-group "$RESOURCE_GROUP" \
+            --runtime-version "$RUNTIME_VERSION"
+          # Microsoft guidance: let the settings restart finish before deploying code.
+          sleep 30
 
       - name: Deploy to Flex Consumption
         run: |
           cd backend/OCPittem.Functions
-          func azure functionapp publish func-ocpittem-2026 --dotnet-isolated
+          func azure functionapp publish "$APP_NAME" --dotnet-isolated
+
+      - name: Health check
+        run: |
+          HOST=$(az functionapp show --name "$APP_NAME" --resource-group "$RESOURCE_GROUP" --query defaultHostName -o tsv)
+          echo "Checking https://$HOST/api/health"
+          curl --fail --silent --show-error --retry 12 --retry-delay 10 --retry-all-errors \
+            "https://$HOST/api/health"
+          echo
+          az functionapp runtime config show --name "$APP_NAME" --resource-group "$RESOURCE_GROUP"
