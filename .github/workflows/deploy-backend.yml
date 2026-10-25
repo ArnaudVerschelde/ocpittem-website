@@ -85,9 +85,28 @@ jobs:
 
       - name: Health check
         run: |
-          HOST=$(az functionapp show --name "$APP_NAME" --resource-group "$RESOURCE_GROUP" --query defaultHostName -o tsv)
-          echo "Checking https://$HOST/api/health"
-          curl --fail --silent --show-error --retry 12 --retry-delay 10 --retry-all-errors \
-            "https://$HOST/api/health"
-          echo
+          set -euo pipefail
+          # Flex Consumption apps return the host name under 'properties' ('defaultHostName' alone is empty).
+          HOST=$(az functionapp show --name "$APP_NAME" --resource-group "$RESOURCE_GROUP" --query properties.defaultHostName -o tsv | tr -d '\r')
+          if [ -z "$HOST" ] || [ "$HOST" = "null" ]; then
+            echo "::error::Could not determine the default host name of $APP_NAME (got '${HOST}'); refusing to run the health check."
+            exit 1
+          fi
+          URL="https://$HOST/api/health"
+          echo "Checking $URL"
+          CODE=000
+          for attempt in $(seq 1 13); do
+            CODE=$(curl --silent --output /dev/null --max-time 20 --write-out '%{http_code}' "$URL" || true)
+            echo "Attempt $attempt/13: HTTP $CODE"
+            if [ "$CODE" = "200" ]; then
+              break
+            fi
+            if [ "$attempt" -lt 13 ]; then
+              sleep 10
+            fi
+          done
+          if [ "$CODE" != "200" ]; then
+            echo "::error::Health check failed: expected HTTP 200 from $URL, last status was $CODE."
+            exit 1
+          fi
           az functionapp runtime config show --name "$APP_NAME" --resource-group "$RESOURCE_GROUP"
