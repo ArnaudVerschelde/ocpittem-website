@@ -2,8 +2,14 @@ import { Link } from 'react-router-dom';
 import Hero from '../components/Hero';
 import Section from '../components/Section';
 import { BAL_PARENTAL_ACTIVE, SFEERBEELDEN_BUTTON_ACTIVE } from '../config/balParental';
+import { COOKIE_SALE_CLOSED_MESSAGE } from '../config/cookieSale';
+import { useCookieSaleOpen } from '../hooks/useCookieSaleOpen';
 
 const paymentsEnabled = import.meta.env.VITE_ENABLE_PAYMENTS === 'true';
+
+// Zolang de koekjesverkoop gesloten is (zie config/cookieSale.ts) toont deze
+// activiteit de bedankingsboodschap en geen bestelknop.
+const COOKIE_SALE_EVENT_ID = 'koekjesverkoop-2026';
 
 const events = [
   {
@@ -102,6 +108,13 @@ function getColorClasses(color: string) {
 }
 
 export default function ActiviteitenPage() {
+  const cookieSaleOpen = useCookieSaleOpen();
+  const visibleEvents = events.map((event) =>
+    event.id === COOKIE_SALE_EVENT_ID && !cookieSaleOpen
+      ? { ...event, description: COOKIE_SALE_CLOSED_MESSAGE, cta: null }
+      : event,
+  );
+
   return (
     <>
       <Hero
@@ -112,7 +125,7 @@ export default function ActiviteitenPage() {
 
       <Section>
         <div className="space-y-8">
-          {events.map((event) => {
+          {visibleEvents.map((event) => {
             const colors = getColorClasses(event.color);
             return (
               <div
