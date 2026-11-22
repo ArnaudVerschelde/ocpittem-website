@@ -154,6 +154,8 @@ func start
 - Vervang `Stripe__PriceIdCookieCoteDor` en `Stripe__PriceIdCookieLotus` door echte Stripe Price IDs voor respectievelijk €11 en €9. De meegeleverde `price_xxx`-waarden zijn alleen placeholders.
 - De bestellingen worden opgeslagen in de bestaande Storage Account, tabel `CookieOrders`.
 - De aparte dagelijkse koekjesrapportmail gebruikt `App__CookieReportRecipients`. Als deze instelling leeg is, valt ze voor achterwaartse compatibiliteit terug op `App__ReportRecipients`.
+- Open/gesloten op de website: `frontend/src/config/cookieSale.ts` (`enabled` en `closesAt` in Brusselse tijd). Gesloten verbergt de promo en bestelknoppen; `/koekjesverkoop` toont dan een bedankingsboodschap.
+- Nieuwe bestellingen in de API stoppen gebeurt apart via de app setting `AzureWebJobs.CreateCookieSaleCheckout.Disabled=true`. Zie `docs/cookie-sale-closure-runbook.md` voor afsluiten, verificatie, rollback, de vereiste Bicep-opvolging en heractivatie.
 
 ---
 

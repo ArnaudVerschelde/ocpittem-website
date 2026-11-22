@@ -2,6 +2,8 @@ import { FormEvent, useEffect, useId, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import Section from '../components/Section';
 import { api, CookieSaleConfig, CookieSaleOrderType } from '../services/api';
+import { COOKIE_SALE_CLOSED_MESSAGE } from '../config/cookieSale';
+import { useCookieSaleOpen } from '../hooks/useCookieSaleOpen';
 import coteDorPackage from '../assets/cookies/cote-dor-package.webp';
 import lotusPackage from '../assets/cookies/lotus-package.webp';
 
@@ -135,7 +137,71 @@ function QuantitySelector({
   );
 }
 
+function CookieSaleHero({ subtitle }: { subtitle: string }) {
+  return (
+    <section className="relative isolate overflow-hidden bg-gradient-to-br from-amber-500 via-orange-600 to-orange-800">
+      <div
+        aria-hidden="true"
+        className="absolute inset-0 bg-[radial-gradient(circle_at_15%_20%,rgba(255,255,255,0.16),transparent_22%),radial-gradient(circle_at_82%_70%,rgba(120,53,15,0.24),transparent_32%)]"
+      />
+
+      <div aria-hidden="true" className="absolute -left-20 -top-24 h-64 w-64 rounded-full border-[22px] border-amber-200/10 bg-amber-100/10" />
+      <div aria-hidden="true" className="absolute right-[8%] top-10 h-36 w-36 rounded-full border border-orange-100/20 bg-amber-100/10 shadow-[inset_0_0_0_12px_rgba(255,255,255,0.035)]">
+        <span className="absolute left-8 top-9 h-3 w-3 rounded-full bg-orange-950/15" />
+        <span className="absolute right-9 top-7 h-2.5 w-2.5 rounded-full bg-orange-950/15" />
+        <span className="absolute bottom-8 left-12 h-2 w-2 rounded-full bg-orange-950/15" />
+        <span className="absolute bottom-12 right-7 h-3.5 w-3.5 rounded-full bg-orange-950/15" />
+      </div>
+      <div aria-hidden="true" className="absolute bottom-10 right-[30%] hidden sm:block">
+        <span className="absolute h-2.5 w-2.5 rounded-full bg-amber-100/25" />
+        <span className="absolute left-8 top-5 h-1.5 w-1.5 rounded-full bg-amber-100/30" />
+        <span className="absolute -left-5 top-10 h-2 w-2 rounded-full bg-orange-950/15" />
+      </div>
+      <div aria-hidden="true" className="absolute -bottom-24 -right-20 h-72 w-72 rounded-full bg-orange-950/10" />
+
+      <div className="relative mx-auto max-w-7xl px-4 py-20 sm:px-6 sm:py-28 lg:px-8">
+        <div className="max-w-2xl">
+          <h1 className="font-display text-4xl font-extrabold tracking-tight text-white drop-shadow-sm sm:text-5xl lg:text-6xl">
+            Koekjesverkoop
+          </h1>
+          <p className="mt-6 max-w-2xl text-lg leading-relaxed text-orange-50">
+            {subtitle}
+          </p>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function CookieSaleClosed() {
+  return (
+    <>
+      <CookieSaleHero subtitle="Bedankt om de activiteiten van Oudercomité met Pit te steunen." />
+
+      <Section className="bg-gradient-to-b from-amber-50/60 via-white to-white">
+        <div className="mx-auto max-w-2xl rounded-2xl border border-amber-200 bg-white p-6 text-center shadow-xl shadow-gray-900/5 ring-1 ring-gray-100 sm:p-10">
+          <p className="text-4xl" aria-hidden="true">🍪</p>
+          <h2 className="mt-4 text-2xl font-bold text-gray-900">{COOKIE_SALE_CLOSED_MESSAGE}</h2>
+          <p className="mt-4 text-gray-600">
+            Heb je besteld en betaald? Dan ontving je een bevestiging met je bestelnummer per e-mail.
+            Vragen over je bestelling? Neem gerust contact met ons op.
+          </p>
+          <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
+            <Link to="/" className="btn-primary">Naar de homepage</Link>
+            <Link to="/contact" className="btn-secondary">Contact</Link>
+          </div>
+        </div>
+      </Section>
+    </>
+  );
+}
+
 export default function CookieSalePage() {
+  const cookieSaleOpen = useCookieSaleOpen();
+  return cookieSaleOpen ? <CookieSaleOrderPage /> : <CookieSaleClosed />;
+}
+
+function CookieSaleOrderPage() {
   const [config, setConfig] = useState<CookieSaleConfig | null>(null);
   const [configError, setConfigError] = useState('');
   const [name, setName] = useState('');
@@ -242,37 +308,7 @@ export default function CookieSalePage() {
 
   return (
     <>
-      <section className="relative isolate overflow-hidden bg-gradient-to-br from-amber-500 via-orange-600 to-orange-800">
-        <div
-          aria-hidden="true"
-          className="absolute inset-0 bg-[radial-gradient(circle_at_15%_20%,rgba(255,255,255,0.16),transparent_22%),radial-gradient(circle_at_82%_70%,rgba(120,53,15,0.24),transparent_32%)]"
-        />
-
-        <div aria-hidden="true" className="absolute -left-20 -top-24 h-64 w-64 rounded-full border-[22px] border-amber-200/10 bg-amber-100/10" />
-        <div aria-hidden="true" className="absolute right-[8%] top-10 h-36 w-36 rounded-full border border-orange-100/20 bg-amber-100/10 shadow-[inset_0_0_0_12px_rgba(255,255,255,0.035)]">
-          <span className="absolute left-8 top-9 h-3 w-3 rounded-full bg-orange-950/15" />
-          <span className="absolute right-9 top-7 h-2.5 w-2.5 rounded-full bg-orange-950/15" />
-          <span className="absolute bottom-8 left-12 h-2 w-2 rounded-full bg-orange-950/15" />
-          <span className="absolute bottom-12 right-7 h-3.5 w-3.5 rounded-full bg-orange-950/15" />
-        </div>
-        <div aria-hidden="true" className="absolute bottom-10 right-[30%] hidden sm:block">
-          <span className="absolute h-2.5 w-2.5 rounded-full bg-amber-100/25" />
-          <span className="absolute left-8 top-5 h-1.5 w-1.5 rounded-full bg-amber-100/30" />
-          <span className="absolute -left-5 top-10 h-2 w-2 rounded-full bg-orange-950/15" />
-        </div>
-        <div aria-hidden="true" className="absolute -bottom-24 -right-20 h-72 w-72 rounded-full bg-orange-950/10" />
-
-        <div className="relative mx-auto max-w-7xl px-4 py-20 sm:px-6 sm:py-28 lg:px-8">
-          <div className="max-w-2xl">
-            <h1 className="font-display text-4xl font-extrabold tracking-tight text-white drop-shadow-sm sm:text-5xl lg:text-6xl">
-              Koekjesverkoop
-            </h1>
-            <p className="mt-6 max-w-2xl text-lg leading-relaxed text-orange-50">
-              Bestel je favoriete pakketten en steun de activiteiten van Oudercomité met Pit.
-            </p>
-          </div>
-        </div>
-      </section>
+      <CookieSaleHero subtitle="Bestel je favoriete pakketten en steun de activiteiten van Oudercomité met Pit." />
 
       <Section className="bg-gradient-to-b from-amber-50/60 via-white to-white">
         <div className="grid gap-10 lg:grid-cols-2">

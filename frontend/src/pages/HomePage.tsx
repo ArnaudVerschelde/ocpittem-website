@@ -1,8 +1,11 @@
 import { Link } from 'react-router-dom';
 import Section from '../components/Section';
 import { BAL_PARENTAL_ACTIVE } from '../config/balParental';
+import { useCookieSaleOpen } from '../hooks/useCookieSaleOpen';
 
 export default function HomePage() {
+  const cookieSaleOpen = useCookieSaleOpen();
+
   return (
     <>
       {/* Hero */}
@@ -75,7 +78,8 @@ export default function HomePage() {
       </div>
       )}
 
-      {/* Koekjesverkoop promo */}
+      {/* Koekjesverkoop promo (enkel zolang de verkoop open is, zie config/cookieSale.ts) */}
+      {cookieSaleOpen && (
       <div className="relative overflow-hidden bg-gradient-to-br from-amber-50 via-orange-50 to-yellow-100">
         <div className="absolute -right-16 -top-20 h-64 w-64 rounded-full bg-amber-300/20" />
         <div className="relative mx-auto flex max-w-7xl flex-col items-center gap-6 px-4 py-14 text-center sm:px-6 lg:flex-row lg:px-8 lg:text-left">
@@ -95,6 +99,7 @@ export default function HomePage() {
           </Link>
         </div>
       </div>
+      )}
 
       {/* Kort overzicht */}
       <Section>
